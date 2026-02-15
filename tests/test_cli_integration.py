@@ -2546,6 +2546,23 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
         env=env,
     )
     assert "feature/filters" in tag_filtered.stdout
+    tag_filtered_json = json.loads(
+        _run_dock(
+            [
+                "search",
+                "Filter target objective",
+                "--tag",
+                "beta",
+                "--branch",
+                "feature/filters",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(tag_filtered_json) == 1
+    assert tag_filtered_json[0]["branch"] == "feature/filters"
 
 
 def test_ls_json_ordering_prioritizes_open_review_count(
