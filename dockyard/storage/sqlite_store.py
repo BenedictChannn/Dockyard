@@ -677,6 +677,7 @@ class SQLiteStore:
                 {
                     "id": row["id"],
                     "repo_id": row["repo_id"],
+                    "berth_name": row["berth_name"],
                     "branch": row["branch"],
                     "created_at": row["created_at"],
                     "snippet": snippet.strip(),
@@ -698,6 +699,7 @@ class SQLiteStore:
             SELECT
                 c.id,
                 c.repo_id,
+                b.name AS berth_name,
                 c.branch,
                 c.created_at,
                 c.objective,
@@ -706,6 +708,7 @@ class SQLiteStore:
                 c.tags_json
             FROM checkpoint_fts f
             JOIN checkpoints c ON c.id = f.checkpoint_id
+            JOIN berths b ON b.repo_id = c.repo_id
             WHERE checkpoint_fts MATCH ?
         """
         params: list[Any] = [query]
@@ -731,15 +734,17 @@ class SQLiteStore:
         like = f"%{query}%"
         base = """
             SELECT
-                id,
-                repo_id,
-                branch,
-                created_at,
-                objective,
-                decisions,
-                next_steps_json,
-                tags_json
-            FROM checkpoints
+                c.id,
+                c.repo_id,
+                b.name AS berth_name,
+                c.branch,
+                c.created_at,
+                c.objective,
+                c.decisions,
+                c.next_steps_json,
+                c.tags_json
+            FROM checkpoints c
+            JOIN berths b ON b.repo_id = c.repo_id
             WHERE objective LIKE ?
                OR decisions LIKE ?
                OR next_steps_json LIKE ?
@@ -747,12 +752,12 @@ class SQLiteStore:
         """
         params: list[Any] = [like, like, like, like]
         if repo_id:
-            base += " AND repo_id = ?"
+            base += " AND c.repo_id = ?"
             params.append(repo_id)
         if branch:
-            base += " AND branch = ?"
+            base += " AND c.branch = ?"
             params.append(branch)
-        base += " ORDER BY created_at DESC LIMIT ?"
+        base += " ORDER BY c.created_at DESC LIMIT ?"
         params.append(limit)
         return conn.execute(base, tuple(params)).fetchall()
 

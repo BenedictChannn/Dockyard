@@ -61,6 +61,7 @@ def test_search_returns_matches_and_honors_filters(tmp_path: Path) -> None:
     all_hits = store.search_checkpoints("indexing")
     assert len(all_hits) == 1
     assert all_hits[0]["id"] == "cp1"
+    assert all_hits[0]["berth_name"] == "A"
 
     repo_hits = store.search_checkpoints("indexing", repo_id="repo_a")
     assert len(repo_hits) == 1
