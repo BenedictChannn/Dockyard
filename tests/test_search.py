@@ -57,23 +57,29 @@ def test_search_returns_matches_and_honors_filters(tmp_path: Path) -> None:
     )
     store.add_checkpoint(_checkpoint("cp1", "repo_a", "main", "Implement search indexing", ["mvp"]))
     store.add_checkpoint(_checkpoint("cp2", "repo_b", "main", "Refactor docs", ["docs"]))
+    store.add_checkpoint(_checkpoint("cp3", "repo_a", "feature/x", "Improve search indexing", ["mvp"]))
 
     all_hits = store.search_checkpoints("indexing")
-    assert len(all_hits) == 1
-    assert all_hits[0]["id"] == "cp1"
+    assert len(all_hits) == 2
+    assert {hit["id"] for hit in all_hits} == {"cp1", "cp3"}
     assert all_hits[0]["berth_name"] == "A"
 
     repo_hits = store.search_checkpoints("indexing", repo_id="repo_a")
-    assert len(repo_hits) == 1
+    assert len(repo_hits) == 2
     tag_hits = store.search_checkpoints("indexing", tag="mvp")
-    assert len(tag_hits) == 1
+    assert len(tag_hits) == 2
     filtered_out = store.search_checkpoints("indexing", tag="docs")
     assert filtered_out == []
+    branch_hits = store.search_checkpoints("indexing", repo_id="repo_a", branch="main")
+    assert len(branch_hits) == 1
+    assert branch_hits[0]["id"] == "cp1"
 
     # Verify repo filter is applied across all text-match branches.
     common_term_repo_hits = store.search_checkpoints("Decision", repo_id="repo_a")
-    assert len(common_term_repo_hits) == 1
-    assert common_term_repo_hits[0]["id"] == "cp1"
+    assert len(common_term_repo_hits) == 2
+    common_term_branch_hits = store.search_checkpoints("Decision", repo_id="repo_a", branch="main")
+    assert len(common_term_branch_hits) == 1
+    assert common_term_branch_hits[0]["id"] == "cp1"
 
 
 def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
