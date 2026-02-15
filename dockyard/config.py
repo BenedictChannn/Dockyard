@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -131,6 +132,10 @@ def load_runtime_config(paths: DockyardPaths | None = None) -> DockyardRuntimeCo
         default=heuristics.risky_path_patterns,
         field_name="review_heuristics.risky_path_patterns",
     )
+    _validate_regex_patterns(
+        heuristics.risky_path_patterns,
+        field_name="review_heuristics.risky_path_patterns",
+    )
     heuristics.files_changed_threshold = _parse_int(
         review.get("files_changed_threshold"),
         default=heuristics.files_changed_threshold,
@@ -175,3 +180,14 @@ def _parse_str_list(value, default: list[str], field_name: str) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise DockyardError(f"Config field {field_name} must be an array of strings.")
     return value
+
+
+def _validate_regex_patterns(patterns: list[str], field_name: str) -> None:
+    """Validate regex patterns and raise actionable errors on failure."""
+    for pattern in patterns:
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            raise DockyardError(
+                f"Invalid regex in {field_name}: {pattern}"
+            ) from exc

@@ -78,3 +78,19 @@ def test_load_runtime_config_rejects_invalid_types(tmp_path: Path) -> None:
     )
     with pytest.raises(DockyardError):
         load_runtime_config(paths)
+
+
+def test_load_runtime_config_rejects_invalid_regex_patterns(tmp_path: Path) -> None:
+    """Invalid risky-path regexes should raise config errors."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                'risky_path_patterns = ["(^|/)[bad"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(DockyardError):
+        load_runtime_config(paths)

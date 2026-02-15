@@ -665,3 +665,48 @@ def test_invalid_config_produces_actionable_error(git_repo: Path, tmp_path: Path
     output = f"{result.stdout}\n{result.stderr}"
     assert "Invalid config TOML" in output
     assert "Traceback" not in output
+
+
+def test_invalid_regex_config_produces_actionable_error(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Invalid regex config should fail cleanly with actionable messaging."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                'risky_path_patterns = ["(^|/)[bad"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Regex config failure case",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix regex",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Invalid regex" in output
+    assert "Traceback" not in output
