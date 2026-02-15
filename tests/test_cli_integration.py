@@ -2075,6 +2075,32 @@ def test_ls_limit_flag_restricts_result_count(git_repo: Path, tmp_path: Path) ->
     assert len(rows) == 1
 
 
+def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
+    """Limit/stale flags should reject invalid values with actionable errors."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    ls_bad = _run_dock(["ls", "--limit", "0"], cwd=tmp_path, env=env, expect_code=2)
+    ls_output = f"{ls_bad.stdout}\n{ls_bad.stderr}"
+    assert "--limit must be >= 1." in ls_output
+    assert "Traceback" not in ls_output
+
+    stale_bad = _run_dock(["ls", "--stale", "-1"], cwd=tmp_path, env=env, expect_code=2)
+    stale_output = f"{stale_bad.stdout}\n{stale_bad.stderr}"
+    assert "--stale must be >= 0." in stale_output
+    assert "Traceback" not in stale_output
+
+    search_bad = _run_dock(
+        ["search", "anything", "--limit", "0"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    search_output = f"{search_bad.stdout}\n{search_bad.stderr}"
+    assert "--limit must be >= 1." in search_output
+    assert "Traceback" not in search_output
+
+
 def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
     """Links should remain scoped by branch across context switches."""
     env = dict(os.environ)

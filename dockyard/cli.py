@@ -252,6 +252,27 @@ def _validate_review_severity(raw: str) -> str:
     return normalized
 
 
+def _require_minimum_int(value: int | None, minimum: int, field_name: str) -> int | None:
+    """Validate optional integer threshold/limit arguments.
+
+    Args:
+        value: Optional integer value.
+        minimum: Inclusive minimum allowed value.
+        field_name: Human-readable field identifier for error messages.
+
+    Returns:
+        Original value when valid, else None.
+
+    Raises:
+        typer.BadParameter: If value is below minimum.
+    """
+    if value is None:
+        return None
+    if value < minimum:
+        raise typer.BadParameter(f"{field_name} must be >= {minimum}.")
+    return value
+
+
 def _resolve_repo_context(
     root: str | None = None,
     require_git: bool = True,
@@ -519,6 +540,8 @@ def ls_command(
 ) -> None:
     """List harbor dashboard across berths and slips."""
     store, _ = _store()
+    stale = _require_minimum_int(stale, minimum=0, field_name="--stale")
+    limit = _require_minimum_int(limit, minimum=1, field_name="--limit")
     rows = store.list_harbor(stale_days=stale, tag=tag, limit=limit)
     if as_json:
         console.print(json.dumps(rows, indent=2))
@@ -540,6 +563,7 @@ def search_command(
 ) -> None:
     """Search checkpoint objectives/decisions/next steps."""
     store, _ = _store()
+    limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
     repo_filter = repo
     if repo:
         berth = store.resolve_berth(repo)
