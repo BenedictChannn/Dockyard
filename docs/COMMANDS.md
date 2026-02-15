@@ -102,6 +102,7 @@ Search checkpoint objectives, decisions, next steps, and risks.
 ```bash
 python3 -m dockyard search "<query>"
 python3 -m dockyard search "<query>" --json
+python3 -m dockyard f "<query>" --branch feature/workstream --json
 ```
 
 When no results match, Dockyard prints: `No checkpoint matches found.`
