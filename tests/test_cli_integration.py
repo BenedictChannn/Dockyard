@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -777,3 +778,108 @@ def test_configured_heuristics_can_disable_default_review_trigger(
 
     review_list = _run_dock(["review"], cwd=tmp_path, env=env)
     assert "No review items." in review_list.stdout
+
+
+def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
+    """CLI filters for harbor and search should narrow results correctly."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filter target objective main",
+            "--decisions",
+            "main branch checkpoint",
+            "--next-step",
+            "run filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/filters"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filter target objective feature",
+            "--decisions",
+            "feature branch checkpoint",
+            "--next-step",
+            "run feature filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tag",
+            "beta",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    tagged_alpha = json.loads(_run_dock(["ls", "--tag", "alpha", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(tagged_alpha) == 1
+    assert tagged_alpha[0]["branch"] in {"main", "master"}
+
+    tagged_beta = json.loads(_run_dock(["ls", "--tag", "beta", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(tagged_beta) == 1
+    assert tagged_beta[0]["branch"] == "feature/filters"
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET updated_at = ? WHERE branch = ?",
+        ("2000-01-01T00:00:00+00:00", "feature/filters"),
+    )
+    conn.commit()
+    conn.close()
+
+    stale_rows = json.loads(_run_dock(["ls", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(stale_rows) == 1
+    assert stale_rows[0]["branch"] == "feature/filters"
+
+    search_branch = _run_dock(
+        ["search", "Filter target objective", "--branch", "feature/filters"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "feature/filters" in search_branch.stdout
