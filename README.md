@@ -107,6 +107,7 @@ python3 -m dockyard ls --stale 3 --tag mvp --limit 20
 ```bash
 python3 -m dockyard search "migration"
 python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --tag mvp
+# --repo also accepts berth name
 ```
 
 ### 5) Review queue

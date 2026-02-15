@@ -425,13 +425,29 @@ def ls_command(
 def search_command(
     query: str = typer.Argument(..., help="Search query string."),
     tag: str | None = typer.Option(None, "--tag", help="Filter by tag."),
-    repo: str | None = typer.Option(None, "--repo", help="Filter by repo_id."),
+    repo: str | None = typer.Option(
+        None,
+        "--repo",
+        help="Filter by repo_id or berth name.",
+    ),
     branch: str | None = typer.Option(None, "--branch", help="Filter by branch."),
     limit: int = typer.Option(20, "--limit", help="Max results."),
 ) -> None:
     """Search checkpoint objectives/decisions/next steps."""
     store, _ = _store()
-    rows = search_service(store, query=query, tag=tag, repo=repo, branch=branch, limit=limit)
+    repo_filter = repo
+    if repo:
+        berth = store.resolve_berth(repo)
+        if berth:
+            repo_filter = berth.repo_id
+    rows = search_service(
+        store,
+        query=query,
+        tag=tag,
+        repo=repo_filter,
+        branch=branch,
+        limit=limit,
+    )
     print_search(console, rows)
 
 

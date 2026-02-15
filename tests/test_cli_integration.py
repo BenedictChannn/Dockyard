@@ -883,3 +883,10 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
         env=env,
     )
     assert "feature/filters" in search_branch.stdout
+
+    search_repo_name = _run_dock(
+        ["search", "Filter target objective", "--repo", git_repo.name],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "feature/filters" in search_repo_name.stdout

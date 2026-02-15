@@ -86,7 +86,7 @@ python3 -m dockyard search "<query>"
 ### Options
 
 - `--tag <tag>`
-- `--repo <repo_id>`
+- `--repo <repo_id|berth_name>`
 - `--branch <branch>`
 - `--limit <n>`
 
