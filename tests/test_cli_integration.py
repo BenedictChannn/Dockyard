@@ -3178,6 +3178,46 @@ def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
     assert json.loads(result.stdout) == []
 
 
+def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path) -> None:
+    """Search snippets should surface matches from risks text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Risk snippet objective",
+            "--decisions",
+            "generic decisions text",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            "Requires risktoken validation before deploy",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["search", "risktoken", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "risktoken" in rows[0]["snippet"].lower()
+
+
 def test_search_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
     """Search JSON mode should honor --limit constraint."""
     env = dict(os.environ)
