@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -111,6 +112,79 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _run(["python3", "-m", "dockyard", "search", "baseline"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "review"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "links"], cwd=git_repo, env=env)
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
+def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Dockyard metadata mutations must not alter repository working tree."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Mutation command baseline",
+            "--decisions",
+            "Validate review/link non-interference",
+            "--next-step",
+            "Run link and review commands",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        ["python3", "-m", "dockyard", "link", "https://example.com/non-interference"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_output = _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "review",
+            "add",
+            "--reason",
+            "manual",
+            "--severity",
+            "low",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", review_output)
+    assert review_match is not None
+    _run(
+        ["python3", "-m", "dockyard", "review", "done", review_match.group(0)],
+        cwd=git_repo,
+        env=env,
+    )
 
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert status_after == ""
