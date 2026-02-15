@@ -421,6 +421,11 @@ def test_resume_by_berth_from_outside_repo_with_handoff(
     assert "Cross-repo resume lookup" in result.stdout
     assert "### Dockyard Handoff" in result.stdout
 
+    payload = json.loads(
+        _run_dock(["resume", git_repo.name, "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert payload["project_name"] == git_repo.name
+
 
 def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
     """Hidden aliases should mirror primary command behavior."""
