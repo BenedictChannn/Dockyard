@@ -90,6 +90,7 @@ Search checkpoint objectives/decisions/next steps.
 
 ```bash
 python3 -m dockyard search "<query>"
+python3 -m dockyard search "<query>" --json
 ```
 
 When no results match, Dockyard prints: `No checkpoint matches found.`
