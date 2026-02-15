@@ -56,3 +56,41 @@ def test_review_listing_prioritizes_high_severity(tmp_path) -> None:
 
     listed = store.list_reviews(open_only=True)
     assert [item.id for item in listed] == ["rev_high", "rev_med", "rev_low"]
+
+
+def test_review_listing_uses_recency_within_same_severity(tmp_path) -> None:
+    """Within same severity bucket, newer items should appear first."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.add_review_item(
+        ReviewItem(
+            id="rev_old",
+            repo_id="repo",
+            branch="main",
+            checkpoint_id=None,
+            created_at="2026-01-01T00:00:00+00:00",
+            reason="old",
+            severity="med",
+            status="open",
+            notes=None,
+            files=[],
+        )
+    )
+    store.add_review_item(
+        ReviewItem(
+            id="rev_new",
+            repo_id="repo",
+            branch="main",
+            checkpoint_id=None,
+            created_at="2026-01-01T00:00:01+00:00",
+            reason="new",
+            severity="med",
+            status="open",
+            notes=None,
+            files=[],
+        )
+    )
+
+    listed = store.list_reviews(open_only=True)
+    assert [item.id for item in listed] == ["rev_new", "rev_old"]
