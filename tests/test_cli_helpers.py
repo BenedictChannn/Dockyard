@@ -28,6 +28,12 @@ def test_normalize_editor_text_preserves_internal_blank_lines() -> None:
     assert _normalize_editor_text(raw) == "First paragraph\n\nSecond paragraph"
 
 
+def test_normalize_editor_text_preserves_non_scaffold_hash_lines() -> None:
+    """Non-scaffold hash-prefixed lines should remain in normalized text."""
+    raw = "# Decisions / Findings\n# Keep heading\nDecision body"
+    assert _normalize_editor_text(raw) == "# Keep heading\nDecision body"
+
+
 def test_normalize_editor_text_trims_outer_blank_lines() -> None:
     """Leading and trailing blank lines should be dropped."""
     raw = "# Decisions / Findings\n\n\nCore line\n\n"
