@@ -32,3 +32,10 @@ def test_run_commands_executes_all_when_successful(tmp_path: Path) -> None:
     assert success is True
     assert results == [("echo first", 0), (f"echo ok > {marker}", 0)]
     assert marker.exists()
+
+
+def test_run_commands_empty_sequence_is_success(tmp_path: Path) -> None:
+    """Runner should treat an empty command list as successful no-op."""
+    success, results = run_commands([], cwd=tmp_path)
+    assert success is True
+    assert results == []
