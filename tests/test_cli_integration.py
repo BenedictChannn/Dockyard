@@ -3462,6 +3462,50 @@ def test_search_json_snippet_is_bounded(git_repo: Path, tmp_path: Path) -> None:
     assert len(rows[0]["snippet"]) <= 140
 
 
+def test_search_json_multiline_snippet_remains_parseable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search JSON should remain parseable when snippet includes newlines."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_risk = "line1\nmultilinetoken line2\nline3"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Multiline snippet objective",
+            "--decisions",
+            "generic decisions",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            multiline_risk,
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["search", "multilinetoken", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "multilinetoken" in rows[0]["snippet"]
+
+
 def test_search_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
     """Search JSON mode should honor --limit constraint."""
     env = dict(os.environ)
