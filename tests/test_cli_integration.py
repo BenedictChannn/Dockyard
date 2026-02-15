@@ -3882,6 +3882,7 @@ def test_search_json_multiline_snippet_remains_parseable(
     assert len(rows) == 1
     assert "multilinetoken" in rows[0]["snippet"]
     assert "\n" not in rows[0]["snippet"]
+    assert rows[0]["snippet"] == "line1 multilinetoken line2 line3"
 
 
 def test_search_json_preserves_unicode_snippets(git_repo: Path, tmp_path: Path) -> None:
