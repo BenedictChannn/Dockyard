@@ -67,8 +67,15 @@ def _normalize_editor_text(raw: str) -> str:
     Returns:
         Cleaned text content suitable for persistence.
     """
-    lines = [line for line in raw.splitlines() if line.strip() and not line.lstrip().startswith("#")]
-    return "\n".join(lines).strip()
+    normalized_lines: list[str] = []
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped == "# Decisions / Findings":
+            continue
+        normalized_lines.append(line.rstrip())
+    return "\n".join(normalized_lines).strip()
 
 
 def _verification_from_inputs(
