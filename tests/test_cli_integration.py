@@ -1058,6 +1058,44 @@ def test_invalid_template_content_produces_actionable_error(
     assert "Traceback" not in output
 
 
+def test_unsupported_template_extension_produces_actionable_error(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Unsupported template extension should fail with clear guidance."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "template.yaml"
+    bad_template.write_text("objective: bad extension\n", encoding="utf-8")
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Unsupported template extension",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use json or toml",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template must be .json or .toml" in output
+    assert "Traceback" not in output
+
+
 def test_configured_heuristics_can_disable_default_review_trigger(
     git_repo: Path,
     tmp_path: Path,

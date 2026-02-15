@@ -14,7 +14,7 @@ Create a new checkpoint for current repo/branch.
 
 - `--root <path>`: explicit repo root
 - `--editor`: open `$EDITOR` for decisions text
-- `--template <path>`: load default fields from JSON/TOML template
+- `--template <path>`: load default fields from `.json` or `.toml` template
 - `--tag <tag>`: repeatable
 - `--link <url>`: repeatable
 - `--no-prompt`: non-interactive mode
