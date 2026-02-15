@@ -73,6 +73,10 @@ Harbor dashboard listing slips across berths.
 - `--limit <n>`
 - `--json`
 
+Validation:
+- `--stale` must be `>= 0`
+- `--limit` must be `>= 1`
+
 ## `search` (`f`)
 
 Search checkpoint objectives/decisions/next steps.
@@ -91,6 +95,10 @@ When no results match, Dockyard prints: `No checkpoint matches found.`
 - `--repo <repo_id|berth_name>`
 - `--branch <branch>`
 - `--limit <n>`
+
+Validation:
+- query must be non-empty
+- `--limit` must be `>= 1`
 
 ## `review`
 
