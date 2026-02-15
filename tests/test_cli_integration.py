@@ -725,6 +725,48 @@ def test_ls_json_empty_store_returns_array(tmp_path: Path) -> None:
     assert payload == []
 
 
+def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should honor tag filtering like ls."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor tag filter objective",
+            "--decisions",
+            "Use harbor alias with tag filter",
+            "--next-step",
+            "run harbor alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "harbor-tag",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["harbor", "--tag", "harbor-tag", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "harbor-tag" in rows[0]["tags"]
+
+
 def test_no_subcommand_defaults_to_harbor_inside_repo(
     git_repo: Path,
     tmp_path: Path,
