@@ -1565,6 +1565,55 @@ def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) 
     assert payload["verification"]["smoke_ok"] is False
 
 
+def test_template_bool_like_invalid_string_is_rejected(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Unknown bool-like strings in template verification should fail."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_bool_like.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "Invalid bool-like",
+                "decisions": "bad tests_run value",
+                "next_steps": ["step"],
+                "risks_review": "none",
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
 def test_invalid_config_produces_actionable_error(git_repo: Path, tmp_path: Path) -> None:
     """Invalid config TOML should fail with concise actionable message."""
     env = dict(os.environ)
