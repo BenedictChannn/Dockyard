@@ -1935,3 +1935,20 @@ def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> 
     main_links_again = _run_dock(["links"], cwd=git_repo, env=env).stdout
     assert "https://example.com/main-link" in main_links_again
     assert "https://example.com/feature-link" not in main_links_again
+
+
+def test_link_commands_support_root_override_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Link and links commands should work from outside repo with --root."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        ["link", "https://example.com/root-override", "--root", str(git_repo)],
+        cwd=tmp_path,
+        env=env,
+    )
+    listed = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
+    assert "https://example.com/root-override" in listed
