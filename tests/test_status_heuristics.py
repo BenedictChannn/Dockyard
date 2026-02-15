@@ -70,6 +70,25 @@ def test_review_triggers_detect_risky_paths_and_large_diff() -> None:
     assert "large_diff_churn" in triggers
 
 
+def test_review_triggers_include_missing_tests_for_non_trivial_diff() -> None:
+    """Non-trivial diffs without tests should create missing-tests trigger."""
+    cp = _checkpoint(
+        diff_files_changed=4,
+        diff_insertions=10,
+        diff_deletions=2,
+        verification=VerificationState(tests_run=False, build_ok=False, lint_ok=False, smoke_ok=False),
+    )
+    triggers = review_triggers(cp)
+    assert "missing_tests_non_trivial_diff" in triggers
+
+
+def test_review_triggers_include_release_hotfix_branch_default() -> None:
+    """Release/hotfix branch naming should trigger review suggestion."""
+    cp = _checkpoint(branch="release/2026.02", verification=VerificationState())
+    triggers = review_triggers(cp)
+    assert "release_or_hotfix_branch" in triggers
+
+
 def test_review_triggers_honor_custom_config_thresholds() -> None:
     """Review trigger logic should use provided configuration overrides."""
     cp = _checkpoint(
