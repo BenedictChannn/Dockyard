@@ -931,6 +931,8 @@ def test_ls_json_preserves_unicode_objective(git_repo: Path, tmp_path: Path) -> 
 
     rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
     assert unicode_objective in [row["objective"] for row in rows]
+    harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    assert unicode_objective in [row["objective"] for row in harbor_rows]
 
 
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
