@@ -81,3 +81,8 @@ risky_path_patterns = [
   "(^|/)critical/"
 ]
 ```
+
+Validation rules:
+- numeric threshold values must be integers `>= 0`
+- list fields must contain strings only
+- risky path patterns must be valid regexes
