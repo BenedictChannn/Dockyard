@@ -2846,6 +2846,17 @@ def test_harbor_alias_validates_limit_argument(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_harbor_alias_validates_stale_argument(tmp_path: Path) -> None:
+    """Harbor alias should enforce stale lower bound."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["harbor", "--stale", "-1"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--stale must be >= 0." in output
+    assert "Traceback" not in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
