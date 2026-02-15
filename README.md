@@ -117,6 +117,7 @@ python3 -m dockyard search "migration"
 python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --tag mvp
 python3 -m dockyard search "auth" --json
 python3 -m dockyard f "auth" --branch feature/workstream --json
+python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream --json
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
 # in --json mode, no matches are returned as []
