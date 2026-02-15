@@ -44,6 +44,11 @@ def test_comma_or_pipe_values_prioritizes_pipe_separator() -> None:
     assert _comma_or_pipe_values("alpha| beta |gamma") == ["alpha", "beta", "gamma"]
 
 
+def test_comma_or_pipe_values_empty_input_returns_empty_list() -> None:
+    """Empty helper input should normalize to an empty list."""
+    assert _comma_or_pipe_values("   ") == []
+
+
 def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.MonkeyPatch) -> None:
     """JSON emitter should output parseable text without unicode escaping."""
     captured: list[str] = []
