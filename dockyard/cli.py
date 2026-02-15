@@ -580,6 +580,7 @@ def search_command(
     ),
     branch: str | None = typer.Option(None, "--branch", help="Filter by branch."),
     limit: int = typer.Option(20, "--limit", help="Max results."),
+    as_json: bool = typer.Option(False, "--json", help="Output as JSON."),
 ) -> None:
     """Search checkpoint objectives/decisions/next steps."""
     store, _ = _store()
@@ -600,7 +601,10 @@ def search_command(
         branch=branch,
         limit=limit,
     )
-    print_search(console, rows)
+    if as_json:
+        console.print(json.dumps(rows, indent=2))
+    else:
+        print_search(console, rows)
 
 
 @review_app.callback()

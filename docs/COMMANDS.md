@@ -100,6 +100,7 @@ When no results match, Dockyard prints: `No checkpoint matches found.`
 - `--repo <repo_id|berth_name>`
 - `--branch <branch>`
 - `--limit <n>`
+- `--json`
 
 Validation:
 - query must be non-empty
