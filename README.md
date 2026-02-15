@@ -55,6 +55,13 @@ Template-powered non-interactive mode:
 python3 -m dockyard save --template ./checkpoint_template.json --no-prompt
 ```
 
+Optional editor capture for decisions:
+
+```bash
+python3 -m dockyard save --editor
+# if --decisions is provided, it takes precedence and $EDITOR is not invoked
+```
+
 Example template:
 
 ```json
