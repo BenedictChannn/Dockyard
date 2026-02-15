@@ -2677,3 +2677,19 @@ def test_link_commands_support_root_override_outside_repo(
     )
     listed = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
     assert "https://example.com/root-override" in listed
+
+
+def test_link_outside_repo_without_root_is_actionable(tmp_path: Path) -> None:
+    """Link command outside repo should fail unless root override is provided."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        ["link", "https://example.com/no-root"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "not inside a git repository" in output
+    assert "Traceback" not in output
