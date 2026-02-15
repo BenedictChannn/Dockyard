@@ -449,7 +449,16 @@ class SQLiteStore:
         params: tuple[Any, ...] = ()
         if open_only:
             query += " WHERE status = 'open'"
-        query += " ORDER BY created_at DESC"
+        query += """
+            ORDER BY
+                CASE severity
+                    WHEN 'high' THEN 3
+                    WHEN 'med' THEN 2
+                    WHEN 'low' THEN 1
+                    ELSE 0
+                END DESC,
+                created_at DESC
+        """
 
         with self.connect() as conn:
             rows = conn.execute(query, params).fetchall()
