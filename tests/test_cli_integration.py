@@ -712,3 +712,68 @@ def test_invalid_regex_config_produces_actionable_error(
     output = f"{result.stdout}\n{result.stderr}"
     assert "Invalid regex" in output
     assert "Traceback" not in output
+
+
+def test_configured_heuristics_can_disable_default_review_trigger(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Configured heuristics should influence auto-review creation behavior."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                # Exclude default `security/` trigger; only `critical/` now.
+                'risky_path_patterns = ["(^|/)critical/"]',
+                # Keep other triggers intentionally high to avoid accidental matches.
+                "files_changed_threshold = 999",
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'branch_prefixes = ["urgent/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    save_result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Configurable review trigger behavior",
+            "--decisions",
+            "Custom heuristic should skip default security trigger",
+            "--next-step",
+            "Confirm no auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Created review item" not in save_result.stdout
+    assert "Review triggers:" not in save_result.stdout
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env)
+    assert "No review items." in review_list.stdout
