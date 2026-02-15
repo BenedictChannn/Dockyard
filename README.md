@@ -147,3 +147,11 @@ Dogfood script:
 ```bash
 bash scripts/dogfood_demo.sh
 ```
+
+Performance smoke script:
+
+```bash
+python3 scripts/perf_smoke.py
+# optional target enforcement
+python3 scripts/perf_smoke.py --enforce-targets
+```
