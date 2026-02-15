@@ -148,12 +148,17 @@ class GitSnapshot:
     diff_stat_text: str
 
 
-def checkpoint_to_jsonable(checkpoint: Checkpoint, open_reviews: int = 0) -> dict[str, Any]:
+def checkpoint_to_jsonable(
+    checkpoint: Checkpoint,
+    open_reviews: int = 0,
+    project_name: str | None = None,
+) -> dict[str, Any]:
     """Convert checkpoint to JSON-serializable dictionary.
 
     Args:
         checkpoint: Checkpoint model instance.
         open_reviews: Number of open review items for this slip.
+        project_name: Optional human-friendly berth/project name.
 
     Returns:
         JSON-friendly dictionary representing the checkpoint.
@@ -180,4 +185,5 @@ def checkpoint_to_jsonable(checkpoint: Checkpoint, open_reviews: int = 0) -> dic
         "verification": asdict(checkpoint.verification),
         "tags": checkpoint.tags,
         "open_reviews": open_reviews,
+        "project_name": project_name,
     }

@@ -361,7 +361,13 @@ def resume_command(
     project_name = berth_record.name if berth_record else checkpoint.repo_id
 
     if as_json:
-        console.print_json(data=checkpoint_to_jsonable(checkpoint, open_reviews=open_reviews))
+        console.print_json(
+            data=checkpoint_to_jsonable(
+                checkpoint,
+                open_reviews=open_reviews,
+                project_name=project_name,
+            )
+        )
     else:
         print_resume(
             console,

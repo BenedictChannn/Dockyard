@@ -123,6 +123,8 @@ def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     payload = json.loads(resume_json.stdout)
     assert payload["objective"] == "Implement integration flow"
     assert payload["next_steps"][0] == "Run command flow checks"
+    assert payload["project_name"] == git_repo.name
+    assert payload["open_reviews"] == 0
 
 
 def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
