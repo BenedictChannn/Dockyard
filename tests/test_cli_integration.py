@@ -2189,6 +2189,95 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     assert "Traceback" not in search_output
 
 
+def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
+    """Combined ls filters should still obey limit and tag constraints."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tagged alpha checkpoint",
+            "--decisions",
+            "alpha branch context",
+            "--next-step",
+            "seed alpha tag",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/alpha-two"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tagged alpha checkpoint two",
+            "--decisions",
+            "alpha second branch context",
+            "--next-step",
+            "seed second alpha tag",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-two",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(
+        _run_dock(["ls", "--tag", "alpha", "--limit", "1", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert len(rows) == 1
+    assert "alpha" in rows[0]["tags"]
+
+
 def test_search_rejects_blank_query(tmp_path: Path) -> None:
     """Search should reject whitespace-only query strings."""
     env = dict(os.environ)
