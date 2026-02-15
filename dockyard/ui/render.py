@@ -20,7 +20,7 @@ def format_age(timestamp_iso: str) -> str:
         return "unknown"
     now = datetime.now(timezone.utc)
     delta = now - then
-    seconds = int(delta.total_seconds())
+    seconds = max(0, int(delta.total_seconds()))
     if seconds < 60:
         return f"{seconds}s"
     minutes = seconds // 60
