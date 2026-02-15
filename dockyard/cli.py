@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tomllib
 import uuid
 from pathlib import Path
 
@@ -106,6 +107,61 @@ def _verification_from_inputs(
     )
 
 
+def _load_template_data(template_path: str | None) -> dict:
+    """Load save template data from JSON or TOML file.
+
+    Args:
+        template_path: Optional template file path.
+
+    Returns:
+        Parsed dictionary from template file, or empty dictionary if omitted.
+
+    Raises:
+        DockyardError: If file is unreadable or extension unsupported.
+    """
+    if not template_path:
+        return {}
+    path = Path(template_path).expanduser().resolve()
+    if not path.exists():
+        raise DockyardError(f"Template not found: {path}")
+
+    raw = path.read_text(encoding="utf-8")
+    suffix = path.suffix.lower()
+    try:
+        if suffix == ".json":
+            return json.loads(raw)
+        if suffix in {".toml", ".tml"}:
+            return tomllib.loads(raw)
+    except (json.JSONDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise DockyardError(f"Failed to parse template: {path}") from exc
+    raise DockyardError("Template must be .json or .toml")
+
+
+def _template_or_default(template: dict, key: str, fallback):
+    """Return template value by key, otherwise fallback value."""
+    return template.get(key, fallback)
+
+
+def _coerce_optional_bool(value) -> bool | None:
+    """Coerce optional bool-like value from templates.
+
+    Args:
+        value: Raw template value.
+
+    Returns:
+        Parsed boolean value or None when unsupported.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "y"}:
+            return True
+        if lowered in {"0", "false", "no", "n"}:
+            return False
+    return None
+
+
 def _resolve_repo_context(
     root: str | None = None,
     require_git: bool = True,
@@ -130,6 +186,11 @@ def root_callback(ctx: typer.Context) -> None:
 def save_command(
     root: str | None = typer.Option(None, "--root", help="Repository root override."),
     editor: bool = typer.Option(False, "--editor", help="Open $EDITOR for decisions."),
+    template: str | None = typer.Option(
+        None,
+        "--template",
+        help="Path to JSON/TOML save template.",
+    ),
     tag: list[str] = typer.Option(None, "--tag", help="Tag for this slip/checkpoint."),
     link: list[str] = typer.Option(None, "--link", help="Attach URL(s) to current slip."),
     no_prompt: bool = typer.Option(False, "--no-prompt", help="Do not ask interactive prompts."),
@@ -152,6 +213,55 @@ def save_command(
     store, _ = _store()
     snapshot = _resolve_repo_context(root=root, require_git=True)
     assert snapshot is not None
+    template_data = _load_template_data(template)
+
+    objective = objective or _template_or_default(template_data, "objective", None)
+    decisions = decisions or _template_or_default(template_data, "decisions", None)
+    risks = risks or _template_or_default(template_data, "risks_review", None)
+
+    if not next_step:
+        templated_steps = _template_or_default(template_data, "next_steps", [])
+        if isinstance(templated_steps, list):
+            next_step = [str(item) for item in templated_steps if str(item).strip()]
+    if not command:
+        templated_commands = _template_or_default(template_data, "resume_commands", [])
+        if isinstance(templated_commands, list):
+            command = [str(item) for item in templated_commands if str(item).strip()]
+    if not tag:
+        templated_tags = _template_or_default(template_data, "tags", [])
+        if isinstance(templated_tags, list):
+            tag = [str(item) for item in templated_tags if str(item).strip()]
+    if not link:
+        templated_links = _template_or_default(template_data, "links", [])
+        if isinstance(templated_links, list):
+            link = [str(item) for item in templated_links if str(item).strip()]
+
+    template_verification = _template_or_default(template_data, "verification", {})
+    if isinstance(template_verification, dict):
+        tests_run = (
+            tests_run
+            if tests_run is not None
+            else _coerce_optional_bool(template_verification.get("tests_run"))
+        )
+        tests_command = tests_command or template_verification.get("tests_command")
+        build_ok = (
+            build_ok
+            if build_ok is not None
+            else _coerce_optional_bool(template_verification.get("build_ok"))
+        )
+        build_command = build_command or template_verification.get("build_command")
+        lint_ok = (
+            lint_ok
+            if lint_ok is not None
+            else _coerce_optional_bool(template_verification.get("lint_ok"))
+        )
+        lint_command = lint_command or template_verification.get("lint_command")
+        smoke_ok = (
+            smoke_ok
+            if smoke_ok is not None
+            else _coerce_optional_bool(template_verification.get("smoke_ok"))
+        )
+        smoke_notes = smoke_notes or template_verification.get("smoke_notes")
 
     if editor and not decisions:
         edited = click.edit("# Decisions / Findings\n")

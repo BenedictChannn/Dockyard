@@ -484,3 +484,57 @@ def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path)
     _run_dock(["review", "done", review_id], cwd=tmp_path, env=env)
     after_done_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
     assert after_done_rows[0]["status"] == "green"
+
+
+def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """Template-based save should work in no-prompt mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "save_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Template checkpoint objective",
+                "decisions": "Template decisions block",
+                "next_steps": ["Template next step 1", "Template next step 2"],
+                "risks_review": "Template risk notes",
+                "resume_commands": ["echo template-cmd"],
+                "tags": ["template", "mvp"],
+                "links": ["https://example.com/template-doc"],
+                "verification": {
+                    "tests_run": True,
+                    "tests_command": "pytest -q",
+                    "build_ok": True,
+                    "build_command": "echo build",
+                    "lint_ok": False,
+                    "smoke_ok": False,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert resume_payload["objective"] == "Template checkpoint objective"
+    assert resume_payload["next_steps"] == ["Template next step 1", "Template next step 2"]
+    assert resume_payload["verification"]["tests_run"] is True
+    assert resume_payload["verification"]["build_ok"] is True
+    assert resume_payload["verification"]["lint_ok"] is False
+
+    links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/template-doc" in links_output

@@ -14,6 +14,7 @@ Create a new checkpoint for current repo/branch.
 
 - `--root <path>`: explicit repo root
 - `--editor`: open `$EDITOR` for decisions text
+- `--template <path>`: load default fields from JSON/TOML template
 - `--tag <tag>`: repeatable
 - `--link <url>`: repeatable
 - `--no-prompt`: non-interactive mode
@@ -34,6 +35,14 @@ python3 -m dockyard save --no-prompt \
   --next-step "Add migration idempotence test" \
   --risks "Needs schema review" \
   --command "pytest -q"
+```
+
+Template mode:
+
+```bash
+python3 -m dockyard save \
+  --template ./checkpoint_template.json \
+  --no-prompt
 ```
 
 ## `resume` (`r`, `undock`)

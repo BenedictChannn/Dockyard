@@ -49,6 +49,34 @@ python3 -m dockyard save \
   --build-ok --build-command "python -m build"
 ```
 
+Template-powered non-interactive mode:
+
+```bash
+python3 -m dockyard save --template ./checkpoint_template.json --no-prompt
+```
+
+Example template:
+
+```json
+{
+  "objective": "Ship harbor sorting polish",
+  "decisions": "Keep sorting in SQL-backed index layer",
+  "next_steps": ["Add integration test", "Re-run perf smoke"],
+  "risks_review": "Review ordering assumptions",
+  "resume_commands": ["pytest -q"],
+  "tags": ["mvp"],
+  "links": ["https://example.com/pr/123"],
+  "verification": {
+    "tests_run": true,
+    "tests_command": "pytest -q",
+    "build_ok": true,
+    "build_command": "python -m build",
+    "lint_ok": false,
+    "smoke_ok": false
+  }
+}
+```
+
 ### 2) Resume quickly
 
 ```bash
