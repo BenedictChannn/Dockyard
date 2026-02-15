@@ -58,6 +58,11 @@ def _comma_or_pipe_values(raw: str) -> list[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
+def _emit_json(payload: Any) -> None:
+    """Emit machine-readable JSON without Rich wrapping effects."""
+    typer.echo(json.dumps(payload, indent=2))
+
+
 def _normalize_editor_text(raw: str) -> str:
     """Normalize editor text by dropping comment-only scaffold lines.
 
@@ -507,8 +512,8 @@ def resume_command(
     project_name = berth_record.name if berth_record else checkpoint.repo_id
 
     if as_json:
-        console.print_json(
-            data=checkpoint_to_jsonable(
+        _emit_json(
+            checkpoint_to_jsonable(
                 checkpoint,
                 open_reviews=open_reviews,
                 project_name=project_name,
@@ -564,7 +569,7 @@ def ls_command(
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit")
     rows = store.list_harbor(stale_days=stale, tag=tag, limit=limit)
     if as_json:
-        console.print(json.dumps(rows, indent=2))
+        _emit_json(rows)
     else:
         print_harbor(console, rows)
 
@@ -602,7 +607,7 @@ def search_command(
         limit=limit,
     )
     if as_json:
-        console.print(json.dumps(rows, indent=2))
+        _emit_json(rows)
     else:
         print_search(console, rows)
 
