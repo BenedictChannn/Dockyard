@@ -110,3 +110,19 @@ def test_load_runtime_config_rejects_boolean_for_int_field(tmp_path: Path) -> No
     )
     with pytest.raises(DockyardError):
         load_runtime_config(paths)
+
+
+def test_load_runtime_config_rejects_non_string_list_entries(tmp_path: Path) -> None:
+    """List-based fields should reject non-string entries."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "branch_prefixes = [\"release/\", 123]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(DockyardError):
+        load_runtime_config(paths)
