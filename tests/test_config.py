@@ -126,3 +126,15 @@ def test_load_runtime_config_rejects_non_string_list_entries(tmp_path: Path) -> 
     )
     with pytest.raises(DockyardError):
         load_runtime_config(paths)
+
+
+def test_load_runtime_config_empty_review_section_uses_defaults(tmp_path: Path) -> None:
+    """Empty review_heuristics table should preserve default values."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text("[review_heuristics]\n", encoding="utf-8")
+
+    loaded = load_runtime_config(paths)
+    defaults = default_runtime_config()
+    assert loaded.review_heuristics.files_changed_threshold == defaults.review_heuristics.files_changed_threshold
+    assert loaded.review_heuristics.churn_threshold == defaults.review_heuristics.churn_threshold
+    assert loaded.review_heuristics.branch_prefixes == defaults.review_heuristics.branch_prefixes
