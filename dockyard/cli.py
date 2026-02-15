@@ -64,13 +64,14 @@ def _emit_json(payload: Any) -> None:
 
 
 def _normalize_editor_text(raw: str) -> str:
-    """Normalize editor text by dropping comment-only scaffold lines.
+    """Normalize editor text by dropping scaffold comments and outer blanks.
 
     Args:
         raw: Raw text returned by click editor integration.
 
     Returns:
-        Cleaned text content suitable for persistence.
+        Cleaned text content suitable for persistence, with intentional
+        internal blank lines preserved.
     """
     normalized_lines: list[str] = []
     for line in raw.splitlines():
