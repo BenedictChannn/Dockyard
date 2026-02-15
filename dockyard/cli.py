@@ -624,6 +624,9 @@ def review_add(
     """Create a manual review item."""
     store, _ = _store()
     normalized_severity = _validate_review_severity(severity)
+    normalized_reason = reason.strip()
+    if not normalized_reason:
+        raise typer.BadParameter("--reason must be a non-empty string.")
     if (repo and not branch) or (branch and not repo):
         raise DockyardError("Provide both --repo and --branch when overriding context.")
     if repo and branch:
@@ -641,7 +644,7 @@ def review_add(
         branch=branch,
         checkpoint_id=checkpoint_id,
         created_at=utc_now_iso(),
-        reason=reason,
+        reason=normalized_reason,
         severity=normalized_severity,
         status="open",
         notes=notes,
