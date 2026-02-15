@@ -5,6 +5,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
+from dockyard.errors import NotGitRepositoryError
 from dockyard.git_info import detect_repo_root, inspect_repository
 
 
@@ -14,6 +17,12 @@ def test_detect_repo_root(git_repo: Path) -> None:
     nested.mkdir(parents=True, exist_ok=True)
     root = detect_repo_root(nested)
     assert root == git_repo
+
+
+def test_detect_repo_root_raises_for_non_repo(tmp_path: Path) -> None:
+    """Repo detection should raise helpful error outside git repos."""
+    with pytest.raises(NotGitRepositoryError):
+        detect_repo_root(tmp_path)
 
 
 def test_inspect_repository_captures_required_fields(git_repo: Path) -> None:
