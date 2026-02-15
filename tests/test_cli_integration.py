@@ -264,6 +264,46 @@ def test_resume_json_preserves_unicode_text(git_repo: Path, tmp_path: Path) -> N
     assert payload["decisions"] == unicode_decisions
 
 
+def test_resume_json_preserves_multiline_text(git_repo: Path, tmp_path: Path) -> None:
+    """Resume JSON should preserve multiline decisions text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_decisions = "line one\nline two\nline three"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Multiline resume objective",
+            "--decisions",
+            multiline_decisions,
+            "--next-step",
+            "run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == multiline_decisions
+
+
 def test_json_outputs_do_not_include_ansi_sequences(git_repo: Path, tmp_path: Path) -> None:
     """JSON output modes should emit plain parseable text without ANSI codes."""
     env = dict(os.environ)
