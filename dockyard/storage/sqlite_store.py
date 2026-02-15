@@ -793,7 +793,8 @@ class SQLiteStore:
                 return self._normalize_snippet_text(text)[:140]
         return ""
 
-    def _normalize_snippet_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_snippet_text(text: str) -> str:
         """Normalize snippet text for compact single-line rendering."""
         return " ".join(text.split())
 
