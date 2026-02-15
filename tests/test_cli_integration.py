@@ -1008,6 +1008,9 @@ def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path)
     search_alias = _run_dock(["f", "Alias coverage"], cwd=tmp_path, env=env)
     assert "Dockyard Search Results" in search_alias.stdout
     assert "master" in search_alias.stdout or "main" in search_alias.stdout
+    search_alias_json = json.loads(_run_dock(["f", "Alias coverage", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(search_alias_json) >= 1
+    assert "branch" in search_alias_json[0]
 
     resume_alias = _run_dock(["r"], cwd=git_repo, env=env)
     assert "Objective: Alias coverage objective" in resume_alias.stdout
