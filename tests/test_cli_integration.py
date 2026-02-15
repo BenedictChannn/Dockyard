@@ -707,6 +707,15 @@ def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> Non
     assert "Dockyard Harbor" in result.stdout
 
 
+def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
+    """Harbor alias should support JSON mode for empty datasets."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    payload = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    assert payload == []
+
+
 def test_no_subcommand_defaults_to_harbor_inside_repo(
     git_repo: Path,
     tmp_path: Path,
