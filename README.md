@@ -118,6 +118,7 @@ python3 -m dockyard search "auth" --json
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
 # in --json mode, no matches are returned as []
+# snippets are compacted to single-line text for scanability
 ```
 
 ### 5) Review queue
