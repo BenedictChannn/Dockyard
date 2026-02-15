@@ -1500,6 +1500,52 @@ def test_search_alias_json_handles_unicode_query(git_repo: Path, tmp_path: Path)
     assert "façade" in rows[0]["objective"]
 
 
+def test_search_alias_repo_filter_accepts_berth_name(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias repo filter should accept berth names."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias repo filter objective",
+            "--decisions",
+            "Alias repo filter decision",
+            "--next-step",
+            "run alias repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["f", "Alias repo filter objective", "--repo", git_repo.name, "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["berth_name"] == git_repo.name
+
+
 def test_undock_alias_matches_resume_behavior(git_repo: Path, tmp_path: Path) -> None:
     """`undock` alias should resolve to the same resume behavior."""
     env = dict(os.environ)
