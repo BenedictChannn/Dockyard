@@ -140,6 +140,50 @@ def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     assert payload["open_reviews"] == 0
 
 
+def test_resume_json_reports_open_review_count(git_repo: Path, tmp_path: Path) -> None:
+    """Resume JSON should reflect unresolved review debt for current slip."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Open review count objective",
+            "--decisions",
+            "Validate resume json review count",
+            "--next-step",
+            "Create unresolved review",
+            "--risks",
+            "manual review pending",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        ["review", "add", "--reason", "manual_followup", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["open_reviews"] == 1
+
+
 def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     """Short alias `s` should behave the same as `save`."""
     env = dict(os.environ)
