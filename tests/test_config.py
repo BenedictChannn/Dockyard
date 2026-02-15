@@ -138,3 +138,21 @@ def test_load_runtime_config_empty_review_section_uses_defaults(tmp_path: Path) 
     assert loaded.review_heuristics.files_changed_threshold == defaults.review_heuristics.files_changed_threshold
     assert loaded.review_heuristics.churn_threshold == defaults.review_heuristics.churn_threshold
     assert loaded.review_heuristics.branch_prefixes == defaults.review_heuristics.branch_prefixes
+
+
+def test_load_runtime_config_ignores_unknown_sections(tmp_path: Path) -> None:
+    """Unknown config sections should not break runtime config loading."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text(
+        "\n".join(
+            [
+                "[other_section]",
+                'foo = "bar"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_runtime_config(paths)
+    defaults = default_runtime_config()
+    assert loaded.review_heuristics.risky_path_patterns == defaults.review_heuristics.risky_path_patterns
