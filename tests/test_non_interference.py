@@ -187,6 +187,11 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
     review_match = re.search(r"rev_[a-f0-9]+", review_output)
     assert review_match is not None
     _run(
+        ["python3", "-m", "dockyard", "review", "open", review_match.group(0)],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
         ["python3", "-m", "dockyard", "review", "done", review_match.group(0)],
         cwd=git_repo,
         env=env,
