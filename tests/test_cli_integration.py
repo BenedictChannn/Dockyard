@@ -311,6 +311,69 @@ def test_resume_run_with_berth_executes_in_repo_root(
     assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
 
 
+def test_save_truncates_next_steps_and_commands_to_mvp_limits(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save should cap next steps to 3 and resume commands to 5."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Truncation behavior",
+            "--decisions",
+            "Verify cap on next steps and commands",
+            "--next-step",
+            "step-1",
+            "--next-step",
+            "step-2",
+            "--next-step",
+            "step-3",
+            "--next-step",
+            "step-4",
+            "--next-step",
+            "step-5",
+            "--risks",
+            "none",
+            "--command",
+            "cmd-1",
+            "--command",
+            "cmd-2",
+            "--command",
+            "cmd-3",
+            "--command",
+            "cmd-4",
+            "--command",
+            "cmd-5",
+            "--command",
+            "cmd-6",
+            "--command",
+            "cmd-7",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["next_steps"] == ["step-1", "step-2", "step-3"]
+    assert payload["resume_commands"] == ["cmd-1", "cmd-2", "cmd-3", "cmd-4", "cmd-5"]
+
+
 def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     """Dockyard user-facing errors should be actionable without traceback spam."""
     env = dict(os.environ)
