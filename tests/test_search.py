@@ -226,3 +226,39 @@ def test_search_snippet_prefers_objective_when_multiple_fields_match(tmp_path: P
     hits = store.search_checkpoints("priority token")
     assert len(hits) == 1
     assert hits[0]["snippet"] == "priority token in objective"
+
+
+def test_search_snippet_normalizes_multiline_whitespace(tmp_path: Path) -> None:
+    """Snippet text should collapse multiline whitespace for readability."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_ws", name="Whitespace", root_path="/tmp/ws", remote_url=None))
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_ws",
+            repo_id="repo_ws",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="Objective",
+            decisions="",
+            next_steps=["line one\nline two\tline three"],
+            risks_review="risk",
+            resume_commands=["echo ws"],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hits = store.search_checkpoints("line two")
+    assert len(hits) == 1
+    assert hits[0]["snippet"] == "line one line two line three"

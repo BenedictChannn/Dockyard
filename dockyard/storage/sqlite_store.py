@@ -786,12 +786,16 @@ class SQLiteStore:
         for candidate in candidates:
             text = candidate.strip()
             if text and query_lower in text.lower():
-                return text[:140]
+                return self._normalize_snippet_text(text)[:140]
         for candidate in candidates:
             text = candidate.strip()
             if text:
-                return text[:140]
+                return self._normalize_snippet_text(text)[:140]
         return ""
+
+    def _normalize_snippet_text(self, text: str) -> str:
+        """Normalize snippet text for compact single-line rendering."""
+        return " ".join(text.split())
 
     def _has_fts(self, conn: sqlite3.Connection) -> bool:
         """Return whether FTS table is available."""
