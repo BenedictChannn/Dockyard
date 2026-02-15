@@ -261,9 +261,10 @@ def test_json_outputs_do_not_include_ansi_sequences(git_repo: Path, tmp_path: Pa
 
     resume_output = _run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout
     ls_output = _run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout
+    harbor_output = _run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout
     search_output = _run_dock(["search", "JSON plain output", "--json"], cwd=tmp_path, env=env).stdout
 
-    for output in [resume_output, ls_output, search_output]:
+    for output in [resume_output, ls_output, harbor_output, search_output]:
         assert "\x1b[" not in output
         json.loads(output)
 
