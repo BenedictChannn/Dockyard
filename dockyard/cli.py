@@ -75,12 +75,16 @@ def _normalize_editor_text(raw: str) -> str:
     normalized_lines: list[str] = []
     for line in raw.splitlines():
         stripped = line.strip()
-        if not stripped:
-            continue
         if stripped == "# Decisions / Findings":
             continue
         normalized_lines.append(line.rstrip())
-    return "\n".join(normalized_lines).strip()
+
+    while normalized_lines and not normalized_lines[0].strip():
+        normalized_lines.pop(0)
+    while normalized_lines and not normalized_lines[-1].strip():
+        normalized_lines.pop()
+
+    return "\n".join(normalized_lines)
 
 
 def _verification_from_inputs(
