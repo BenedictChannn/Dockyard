@@ -828,6 +828,67 @@ def test_review_add_partial_override_requires_both_repo_and_branch(tmp_path: Pat
     assert "Traceback" not in output
 
 
+def test_review_add_accepts_berth_name_override(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review add should resolve berth name in --repo override."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Berth name review add baseline",
+            "--decisions",
+            "Need berth metadata available",
+            "--next-step",
+            "create manual review by berth name",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    repo_id = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)["repo_id"]
+
+    _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "berth_name_override",
+            "--severity",
+            "low",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert f"{repo_id}/{branch}" in listed
+    assert "berth_name_override" in listed
+
+
 def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path) -> None:
     """Slip status should reflect review add/done transitions."""
     env = dict(os.environ)

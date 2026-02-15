@@ -602,7 +602,12 @@ def review_add(
     normalized_severity = _validate_review_severity(severity)
     if (repo and not branch) or (branch and not repo):
         raise DockyardError("Provide both --repo and --branch when overriding context.")
-    if not repo or not branch:
+    if repo and branch:
+        # Allow using berth name for ergonomics in cross-repo contexts.
+        berth = store.resolve_berth(repo)
+        if berth:
+            repo = berth.repo_id
+    else:
         snapshot = inspect_repository()
         repo = repo or snapshot.repo_id
         branch = branch or snapshot.branch
