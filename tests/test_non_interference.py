@@ -63,3 +63,54 @@ def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_pa
 
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert status_after == ""
+
+
+def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Resume/ls/search/review read paths must not mutate repository state."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Read-only command baseline",
+            "--decisions",
+            "Validate non-mutating command paths",
+            "--next-step",
+            "Run resume and harbor commands",
+            "--risks",
+            "None",
+            "--command",
+            "echo do-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(["python3", "-m", "dockyard", "resume"], cwd=git_repo, env=env)
+    _run(["python3", "-m", "dockyard", "ls"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "search", "baseline"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "review"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "links"], cwd=git_repo, env=env)
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
