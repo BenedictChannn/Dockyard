@@ -745,10 +745,12 @@ class SQLiteStore:
                 c.tags_json
             FROM checkpoints c
             JOIN berths b ON b.repo_id = c.repo_id
-            WHERE objective LIKE ?
-               OR decisions LIKE ?
-               OR next_steps_json LIKE ?
-               OR risks_review LIKE ?
+            WHERE (
+                   c.objective LIKE ?
+                OR c.decisions LIKE ?
+                OR c.next_steps_json LIKE ?
+                OR c.risks_review LIKE ?
+            )
         """
         params: list[Any] = [like, like, like, like]
         if repo_id:

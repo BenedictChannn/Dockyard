@@ -70,6 +70,11 @@ def test_search_returns_matches_and_honors_filters(tmp_path: Path) -> None:
     filtered_out = store.search_checkpoints("indexing", tag="docs")
     assert filtered_out == []
 
+    # Verify repo filter is applied across all text-match branches.
+    common_term_repo_hits = store.search_checkpoints("Decision", repo_id="repo_a")
+    assert len(common_term_repo_hits) == 1
+    assert common_term_repo_hits[0]["id"] == "cp1"
+
 
 def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     """Search should succeed when query contains FTS-special syntax."""
