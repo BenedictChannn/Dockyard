@@ -439,6 +439,98 @@ def test_resume_by_berth_from_outside_repo_with_handoff(
     assert payload["project_name"] == git_repo.name
 
 
+def test_resume_branch_flag_selects_requested_branch(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume --branch should return checkpoint for selected branch context."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    base_branch = _git_current_branch(git_repo)
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Main branch objective",
+            "--decisions",
+            "baseline",
+            "--next-step",
+            "main task",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/resume-target"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Feature branch objective",
+            "--decisions",
+            "feature baseline",
+            "--next-step",
+            "feature task",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    selected = json.loads(
+        _run_dock(
+            ["resume", "--branch", "feature/resume-target", "--json"],
+            cwd=git_repo,
+            env=env,
+        ).stdout
+    )
+    assert selected["branch"] == "feature/resume-target"
+    assert selected["objective"] == "Feature branch objective"
+
+
 def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
     """Hidden aliases should mirror primary command behavior."""
     env = dict(os.environ)
