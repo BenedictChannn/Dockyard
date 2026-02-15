@@ -1096,6 +1096,103 @@ def test_unsupported_template_extension_produces_actionable_error(
     assert "Traceback" not in output
 
 
+def test_template_type_validation_for_list_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Template should reject invalid types for list-based fields."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_types.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "bad list shape",
+                "decisions": "invalid next_steps type",
+                "next_steps": "not-a-list",
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template field 'next_steps' must be an array of strings" in output
+    assert "Traceback" not in output
+
+
+def test_template_type_validation_for_verification_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Template should reject invalid types inside verification object."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_verification.toml"
+    bad_template.write_text(
+        "\n".join(
+            [
+                'objective = "bad verification"',
+                'decisions = "verification section malformed"',
+                'next_steps = ["step"]',
+                "",
+                "[verification]",
+                "tests_run = 123",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
 def test_configured_heuristics_can_disable_default_review_trigger(
     git_repo: Path,
     tmp_path: Path,

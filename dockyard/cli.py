@@ -6,6 +6,7 @@ import json
 import tomllib
 import uuid
 from pathlib import Path
+from typing import Any
 
 import click
 import typer
@@ -129,10 +130,13 @@ def _load_template_data(template_path: str | None) -> dict:
     raw = path.read_text(encoding="utf-8")
     suffix = path.suffix.lower()
     try:
+        parsed: dict[str, Any]
         if suffix == ".json":
-            return json.loads(raw)
+            parsed = json.loads(raw)
+            return _validate_template_data(parsed, path=path)
         if suffix in {".toml", ".tml"}:
-            return tomllib.loads(raw)
+            parsed = tomllib.loads(raw)
+            return _validate_template_data(parsed, path=path)
     except (json.JSONDecodeError, tomllib.TOMLDecodeError) as exc:
         raise DockyardError(f"Failed to parse template: {path}") from exc
     raise DockyardError("Template must be .json or .toml")
@@ -141,6 +145,72 @@ def _load_template_data(template_path: str | None) -> dict:
 def _template_or_default(template: dict, key: str, fallback):
     """Return template value by key, otherwise fallback value."""
     return template.get(key, fallback)
+
+
+def _validate_template_data(parsed: Any, path: Path) -> dict[str, Any]:
+    """Validate save template schema and return normalized dictionary.
+
+    Args:
+        parsed: Parsed template payload.
+        path: Template file path (for actionable errors).
+
+    Returns:
+        Validated template mapping.
+
+    Raises:
+        DockyardError: If template shape/types are invalid.
+    """
+    if not isinstance(parsed, dict):
+        raise DockyardError(f"Template must contain an object/table: {path}")
+
+    _ensure_optional_str(parsed, "objective", path)
+    _ensure_optional_str(parsed, "decisions", path)
+    _ensure_optional_str(parsed, "risks_review", path)
+    _ensure_optional_list_of_str(parsed, "next_steps", path)
+    _ensure_optional_list_of_str(parsed, "resume_commands", path)
+    _ensure_optional_list_of_str(parsed, "tags", path)
+    _ensure_optional_list_of_str(parsed, "links", path)
+
+    verification = parsed.get("verification")
+    if verification is not None:
+        if not isinstance(verification, dict):
+            raise DockyardError(f"Template field 'verification' must be a table/object: {path}")
+        _ensure_optional_bool_like(verification, "tests_run", path)
+        _ensure_optional_bool_like(verification, "build_ok", path)
+        _ensure_optional_bool_like(verification, "lint_ok", path)
+        _ensure_optional_bool_like(verification, "smoke_ok", path)
+        _ensure_optional_str(verification, "tests_command", path)
+        _ensure_optional_str(verification, "build_command", path)
+        _ensure_optional_str(verification, "lint_command", path)
+        _ensure_optional_str(verification, "smoke_notes", path)
+    return parsed
+
+
+def _ensure_optional_str(mapping: dict[str, Any], key: str, path: Path) -> None:
+    """Validate optional string field from a mapping."""
+    value = mapping.get(key)
+    if value is not None and not isinstance(value, str):
+        raise DockyardError(f"Template field '{key}' must be a string: {path}")
+
+
+def _ensure_optional_list_of_str(mapping: dict[str, Any], key: str, path: Path) -> None:
+    """Validate optional list-of-string field from a mapping."""
+    value = mapping.get(key)
+    if value is None:
+        return
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise DockyardError(f"Template field '{key}' must be an array of strings: {path}")
+
+
+def _ensure_optional_bool_like(mapping: dict[str, Any], key: str, path: Path) -> None:
+    """Validate optional bool-like field accepted by bool coercion."""
+    value = mapping.get(key)
+    if value is None:
+        return
+    if _coerce_optional_bool(value) is None:
+        raise DockyardError(
+            f"Template field '{key}' must be bool or bool-like string: {path}"
+        )
 
 
 def _coerce_optional_bool(value) -> bool | None:
