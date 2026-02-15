@@ -1981,6 +1981,13 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     )
     assert "feature/filters" in search_repo_name.stdout
 
+    tag_filtered = _run_dock(
+        ["search", "Filter target objective", "--tag", "beta", "--branch", "feature/filters"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "feature/filters" in tag_filtered.stdout
+
 
 def test_ls_json_ordering_prioritizes_open_review_count(
     git_repo: Path,
