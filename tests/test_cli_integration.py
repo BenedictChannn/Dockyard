@@ -1503,6 +1503,98 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     assert "feature/filters" in search_repo_name.stdout
 
 
+def test_ls_json_ordering_prioritizes_open_review_count(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Harbor ordering should place slips with more open reviews first."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Main ordering baseline",
+            "--decisions",
+            "main branch context",
+            "--next-step",
+            "add review debt",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        ["review", "add", "--reason", "ordering_high", "--severity", "high"],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/no-review"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Feature ordering baseline",
+            "--decisions",
+            "feature branch context",
+            "--next-step",
+            "no review debt",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) >= 2
+    assert rows[0]["open_review_count"] >= rows[1]["open_review_count"]
+    assert rows[0]["branch"] == base_branch
+
+
 def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
     """Links should remain scoped by branch across context switches."""
     env = dict(os.environ)
