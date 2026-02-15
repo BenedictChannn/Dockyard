@@ -267,6 +267,47 @@ def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: P
     assert "$ echo second-ok -> exit 0" in result.stdout
 
 
+def test_resume_run_with_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume --run should succeed when no commands were recorded."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume run",
+            "--decisions",
+            "Ensure run path handles empty command list",
+            "--next-step",
+            "resume with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
+    # Should not print any command execution rows when none exist.
+    assert "-> exit" not in result.stdout
+
+
 def test_resume_run_with_berth_executes_in_repo_root(
     git_repo: Path,
     tmp_path: Path,
