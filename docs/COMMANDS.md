@@ -49,6 +49,8 @@ Editor note:
 - If you use `--editor` and leave the scaffold line unchanged
   (`# Decisions / Findings`), Dockyard treats decisions as missing and keeps
   required-field validation intact.
+- If `--decisions` is provided explicitly, Dockyard uses it and does not invoke
+  `$EDITOR`.
 
 ## `resume` (`r`, `undock`)
 
