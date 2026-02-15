@@ -1781,6 +1781,15 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     )
     assert len(rows) == 1
     assert rows[0]["branch"] == "feature/alias-branch-filter"
+    default_rows = json.loads(
+        _run_dock(
+            ["f", "Alias branch filter objective", "--branch", default_branch, "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(default_rows) == 1
+    assert default_rows[0]["branch"] == default_branch
 
 
 def test_search_alias_shows_no_match_message(tmp_path: Path) -> None:
