@@ -119,6 +119,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _run(["python3", "-m", "dockyard", "review"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "review", "list"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "review", "--all"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "review", "list", "--all"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "links"], cwd=git_repo, env=env)
 
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
