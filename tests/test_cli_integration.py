@@ -1310,6 +1310,15 @@ def test_review_done_unknown_id_is_actionable(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_review_all_with_no_items_is_informative(tmp_path: Path) -> None:
+    """Review --all should report no items when ledger is empty."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["review", "--all"], cwd=tmp_path, env=env)
+    assert "No review items." in result.stdout
+
+
 def test_review_add_validates_severity(git_repo: Path, tmp_path: Path) -> None:
     """Review add should reject severities outside low/med/high."""
     env = dict(os.environ)
