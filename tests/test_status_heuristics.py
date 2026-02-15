@@ -56,6 +56,25 @@ def test_status_red_for_high_severity_open_review() -> None:
     assert compute_slip_status(cp, open_review_count=1, has_high_open_review=True) == "red"
 
 
+def test_status_red_for_large_diff_without_review() -> None:
+    """Large diffs with no review debt coverage should be red."""
+    cp = _checkpoint(
+        diff_files_changed=16,
+        diff_insertions=250,
+        diff_deletions=200,
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "red"
+
+
+def test_status_yellow_when_low_review_open_with_good_verification() -> None:
+    """Open low/med review items should keep status yellow."""
+    cp = _checkpoint(
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=1, has_high_open_review=False) == "yellow"
+
+
 def test_review_triggers_detect_risky_paths_and_large_diff() -> None:
     """Review triggers should activate for risky paths and large churn."""
     cp = _checkpoint(
