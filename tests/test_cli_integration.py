@@ -1580,6 +1580,46 @@ def test_invalid_regex_config_produces_actionable_error(
     assert "Traceback" not in output
 
 
+def test_invalid_config_section_type_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Invalid config section type should surface actionable error."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        'review_heuristics = "bad-type"',
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Bad config section type",
+            "--decisions",
+            "should fail",
+            "--next-step",
+            "fix config",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Config section review_heuristics must be a table." in output
+    assert "Traceback" not in output
+
+
 def test_missing_template_path_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,

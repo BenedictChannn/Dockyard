@@ -124,7 +124,7 @@ def load_runtime_config(paths: DockyardPaths | None = None) -> DockyardRuntimeCo
     if not review:
         return config
     if not isinstance(review, dict):
-        raise DockyardError("Config section [review_heuristics] must be a table.")
+        raise DockyardError("Config section review_heuristics must be a table.")
 
     heuristics = config.review_heuristics
     heuristics.risky_path_patterns = _parse_str_list(
