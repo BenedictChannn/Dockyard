@@ -60,7 +60,7 @@ def _comma_or_pipe_values(raw: str) -> list[str]:
 
 def _emit_json(payload: Any) -> None:
     """Emit machine-readable JSON without Rich wrapping effects."""
-    typer.echo(json.dumps(payload, indent=2))
+    typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
 def _normalize_editor_text(raw: str) -> str:

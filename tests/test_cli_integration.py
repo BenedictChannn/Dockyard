@@ -309,6 +309,52 @@ def test_json_outputs_do_not_include_ansi_sequences(git_repo: Path, tmp_path: Pa
         json.loads(output)
 
 
+def test_json_outputs_preserve_unicode_characters(git_repo: Path, tmp_path: Path) -> None:
+    """JSON modes should keep unicode characters unescaped for readability."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    unicode_objective = "Unicode façade objective"
+    unicode_decisions = "Keep naïve check in place"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            unicode_objective,
+            "--decisions",
+            unicode_decisions,
+            "--next-step",
+            "run json commands",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_output = _run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout
+    ls_output = _run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout
+    search_output = _run_dock(["search", "façade", "--json"], cwd=tmp_path, env=env).stdout
+
+    for output in [resume_output, ls_output, search_output]:
+        assert "\\u00e7" not in output
+        assert "façade" in output
+
+
 def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     """Short alias `s` should behave the same as `save`."""
     env = dict(os.environ)
