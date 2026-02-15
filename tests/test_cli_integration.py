@@ -224,6 +224,46 @@ def test_resume_json_handles_long_text_fields(git_repo: Path, tmp_path: Path) ->
     assert payload["risks_review"] == long_risk
 
 
+def test_resume_json_preserves_unicode_text(git_repo: Path, tmp_path: Path) -> None:
+    """Resume JSON output should preserve unicode characters."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    unicode_decisions = "Confirm naïve parser won’t mangle unicode"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Unicode resume objective",
+            "--decisions",
+            unicode_decisions,
+            "--next-step",
+            "run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == unicode_decisions
+
+
 def test_json_outputs_do_not_include_ansi_sequences(git_repo: Path, tmp_path: Path) -> None:
     """JSON output modes should emit plain parseable text without ANSI codes."""
     env = dict(os.environ)
