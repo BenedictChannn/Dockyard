@@ -1823,6 +1823,88 @@ def test_ls_json_ordering_prioritizes_open_review_count(
     assert rows[0]["branch"] == base_branch
 
 
+def test_ls_limit_flag_restricts_result_count(git_repo: Path, tmp_path: Path) -> None:
+    """CLI `ls --limit` should cap number of returned rows."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Limit baseline one",
+            "--decisions",
+            "main branch checkpoint",
+            "--next-step",
+            "create second branch checkpoint",
+            "--risks",
+            "none",
+            "--command",
+            "echo one",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/limit-check"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Limit baseline two",
+            "--decisions",
+            "feature branch checkpoint",
+            "--next-step",
+            "run ls limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--limit", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+
+
 def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
     """Links should remain scoped by branch across context switches."""
     env = dict(os.environ)
