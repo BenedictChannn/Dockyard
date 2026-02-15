@@ -513,6 +513,64 @@ def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path)
     assert "Trigger risky review linkage" in open_result.stdout
 
 
+def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: Path) -> None:
+    """Review open should indicate when checkpoint link is missing."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Missing checkpoint notice baseline",
+            "--decisions",
+            "Create manual review tied to fake checkpoint id",
+            "--next-step",
+            "Open review and inspect message",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "manual_missing_link",
+            "--severity",
+            "low",
+            "--checkpoint-id",
+            "cp_missing_123",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "Associated Checkpoint" in opened.stdout
+    assert "status: missing from index" in opened.stdout
+
+
 def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path) -> None:
     """Slip status should reflect review add/done transitions."""
     env = dict(os.environ)

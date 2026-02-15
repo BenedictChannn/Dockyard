@@ -583,6 +583,14 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
                     border_style="cyan",
                 )
             )
+        else:
+            console.print(
+                Panel.fit(
+                    f"checkpoint_id: {item.checkpoint_id}\nstatus: missing from index",
+                    title="Associated Checkpoint",
+                    border_style="red",
+                )
+            )
 
 
 @app.command("link")
