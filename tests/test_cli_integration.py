@@ -2381,6 +2381,57 @@ def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path
     assert "done" in with_all
 
 
+def test_review_list_subcommand_matches_default_listing(git_repo: Path, tmp_path: Path) -> None:
+    """`review list` should mirror default `review` open-item listing."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review list parity objective",
+            "--decisions",
+            "Validate review list subcommand parity",
+            "--next-step",
+            "compare review outputs",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "list_parity_item", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    default_listing = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    list_listing = _run_dock(["review", "list"], cwd=tmp_path, env=env).stdout
+    assert review_id in default_listing
+    assert review_id in list_listing
+    assert "list_parity_item" in default_listing
+    assert "list_parity_item" in list_listing
+
+
 def test_review_done_unknown_id_is_actionable(tmp_path: Path) -> None:
     """Unknown review id resolution should fail without traceback noise."""
     env = dict(os.environ)
