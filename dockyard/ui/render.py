@@ -42,10 +42,22 @@ def verification_summary(checkpoint: Checkpoint) -> str:
     return f"tests:{tests} build:{build} lint:{lint}"
 
 
-def print_resume(console: Console, checkpoint: Checkpoint, open_reviews: int) -> None:
-    """Render resume output with required top-lines summary."""
+def print_resume(
+    console: Console,
+    checkpoint: Checkpoint,
+    open_reviews: int,
+    project_name: str,
+) -> None:
+    """Render resume output with required top-lines summary.
+
+    Args:
+        console: Rich console instance.
+        checkpoint: Checkpoint being resumed.
+        open_reviews: Open review count for the slip.
+        project_name: Human-readable berth/project label.
+    """
     summary_lines = [
-        f"Project/Branch: {checkpoint.repo_id} / {checkpoint.branch}",
+        f"Project/Branch: {project_name} / {checkpoint.branch}",
         f"Last Checkpoint: {checkpoint.created_at} ({format_age(checkpoint.created_at)} ago)",
         f"Objective: {checkpoint.objective}",
         "Next Steps:",

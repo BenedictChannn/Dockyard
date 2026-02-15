@@ -1,0 +1,181 @@
+"""Integration tests for CLI command flows."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+
+def _run_dock(
+    args: list[str],
+    cwd: Path,
+    env: dict[str, str],
+    expect_code: int = 0,
+) -> subprocess.CompletedProcess[str]:
+    """Run dock CLI command and assert expected return code.
+
+    Args:
+        args: CLI argument list excluding `python3 -m dockyard`.
+        cwd: Working directory for command execution.
+        env: Process environment variables.
+        expect_code: Expected return code.
+
+    Returns:
+        Completed process result.
+    """
+    completed = subprocess.run(
+        ["python3", "-m", "dockyard", *args],
+        cwd=str(cwd),
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == expect_code, (
+        f"Unexpected code {completed.returncode} for args={args}\n"
+        f"stdout:\n{completed.stdout}\n"
+        f"stderr:\n{completed.stderr}"
+    )
+    return completed
+
+
+def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
+    """Validate save/ls/resume/review/link flows including `dock dock` alias."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    save_result = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Implement integration flow",
+            "--decisions",
+            "Keep integration tests light but realistic",
+            "--next-step",
+            "Run command flow checks",
+            "--risks",
+            "Minimal",
+            "--command",
+            "echo resume-one",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "python -m build",
+            "--lint-ok",
+            "--lint-command",
+            "ruff check",
+            "--smoke-fail",
+            "--tag",
+            "mvp",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Saved checkpoint" in save_result.stdout
+
+    ls_json = _run_dock(["ls", "--json"], cwd=tmp_path, env=env)
+    rows = json.loads(ls_json.stdout)
+    assert len(rows) == 1
+    assert rows[0]["berth_name"] == git_repo.name
+
+    _run_dock(
+        ["link", "https://example.com/pr/123"],
+        cwd=git_repo,
+        env=env,
+    )
+    links_result = _run_dock(["links"], cwd=git_repo, env=env)
+    assert "https://example.com/pr/123" in links_result.stdout
+
+    add_review = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "manual_validation",
+            "--severity",
+            "med",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", add_review.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env)
+    assert review_id in review_list.stdout
+
+    _run_dock(["review", "done", review_id], cwd=tmp_path, env=env)
+    review_all = _run_dock(["review", "list", "--all"], cwd=tmp_path, env=env)
+    assert review_id in review_all.stdout
+    assert "done" in review_all.stdout
+
+    resume_json = _run_dock(["resume", "--json"], cwd=git_repo, env=env)
+    payload = json.loads(resume_json.stdout)
+    assert payload["objective"] == "Implement integration flow"
+    assert payload["next_steps"][0] == "Run command flow checks"
+
+
+def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run must stop at first failing command."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Check run ordering",
+            "--decisions",
+            "Run list should stop on first failing command",
+            "--next-step",
+            "Observe command exit sequence",
+            "--risks",
+            "None",
+            "--command",
+            "echo first",
+            "--command",
+            "false",
+            "--command",
+            "echo should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    run_result = _run_dock(["resume", "--run"], cwd=git_repo, env=env, expect_code=1)
+    assert "$ echo first -> exit 0" in run_result.stdout
+    assert "$ false -> exit 1" in run_result.stdout
+    assert "$ echo should-not-run -> exit" not in run_result.stdout
+
+
+def test_error_output_has_no_traceback(tmp_path: Path) -> None:
+    """Dockyard user-facing errors should be actionable without traceback spam."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["resume"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Error:" in output
+    assert "Traceback" not in output

@@ -6,7 +6,7 @@ All commands are available through:
 python3 -m dockyard <command>
 ```
 
-## `save` (`s`)
+## `save` (`s`, `dock`)
 
 Create a new checkpoint for current repo/branch.
 

@@ -30,6 +30,8 @@ Or via console script (`dock`) if your user script directory is on `PATH`.
 
 ```bash
 python3 -m dockyard save
+# alias:
+python3 -m dockyard dock
 ```
 
 Fast non-interactive mode:

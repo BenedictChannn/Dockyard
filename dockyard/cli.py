@@ -245,10 +245,17 @@ def resume_command(
         raise DockyardError("No checkpoint found for the requested context.")
     open_reviews = store.count_open_reviews(checkpoint.repo_id, checkpoint.branch)
 
+    project_name = berth_record.name if berth_record else checkpoint.repo_id
+
     if as_json:
         console.print_json(data=checkpoint_to_jsonable(checkpoint, open_reviews=open_reviews))
     else:
-        print_resume(console, checkpoint, open_reviews=open_reviews)
+        print_resume(
+            console,
+            checkpoint,
+            open_reviews=open_reviews,
+            project_name=project_name,
+        )
 
     if handoff:
         handoff_block = "\n".join(
@@ -276,7 +283,7 @@ def resume_command(
         for cmd, code in results:
             console.print(f"$ {cmd} -> exit {code}")
         if not success:
-            raise typer.Exit(code=1)
+            raise SystemExit(1)
 
 
 @app.command("ls")
@@ -447,17 +454,23 @@ def links_command(
 def main() -> None:
     """CLI process entrypoint."""
     try:
-        app()
+        app(standalone_mode=False)
     except DockyardError as err:
         console.print(f"[red]Error:[/red] {err}")
-        raise typer.Exit(code=2) from err
+        raise SystemExit(2) from err
     except NotGitRepositoryError as err:
         console.print(f"[red]Error:[/red] {err}")
-        raise typer.Exit(code=2) from err
+        raise SystemExit(2) from err
+    except click.ClickException as err:
+        err.show()
+        raise SystemExit(err.exit_code) from err
+    except click.exceptions.Exit as err:
+        raise SystemExit(err.exit_code) from err
 
 
 # Register aliases with identical signatures.
 app.command("s", hidden=True)(save_command)
+app.command("dock", hidden=True)(save_command)
 app.command("r", hidden=True)(resume_command)
 app.command("undock", hidden=True)(resume_command)
 app.command("harbor", hidden=True)(ls_command)

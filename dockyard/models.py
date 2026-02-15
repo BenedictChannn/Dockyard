@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
@@ -177,7 +177,7 @@ def checkpoint_to_jsonable(checkpoint: Checkpoint, open_reviews: int = 0) -> dic
         "diff_deletions": checkpoint.diff_deletions,
         "touched_files": checkpoint.touched_files,
         "diff_stat_text": checkpoint.diff_stat_text,
-        "verification": checkpoint.verification.__dict__,
+        "verification": asdict(checkpoint.verification),
         "tags": checkpoint.tags,
         "open_reviews": open_reviews,
     }
