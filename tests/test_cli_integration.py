@@ -575,6 +575,59 @@ def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path)
     assert after_done_rows[0]["status"] == "green"
 
 
+def test_review_cli_list_prioritizes_high_severity(git_repo: Path, tmp_path: Path) -> None:
+    """Review CLI listing should show high-severity items before lower ones."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review ordering baseline",
+            "--decisions",
+            "Need slip context for manual review items",
+            "--next-step",
+            "Add low then high review items",
+            "--risks",
+            "None",
+            "--command",
+            "echo reviews",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    _run_dock(
+        ["review", "add", "--reason", "low_item", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        ["review", "add", "--reason", "high_item", "--severity", "high"],
+        cwd=git_repo,
+        env=env,
+    )
+
+    review_output = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    lines = [line for line in review_output.splitlines() if line.strip()]
+    assert len(lines) >= 2
+    assert "high_item" in lines[0]
+    assert "low_item" in lines[1]
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)
