@@ -2345,6 +2345,45 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     assert "Traceback" not in search_output
 
 
+def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
+    """Stale threshold of zero days should be valid input."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Stale zero baseline",
+            "--decisions",
+            "Need one slip to query",
+            "--next-step",
+            "run ls stale 0",
+            "--risks",
+            "none",
+            "--command",
+            "echo stale",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    result = _run_dock(["ls", "--stale", "0", "--json"], cwd=tmp_path, env=env)
+    rows = json.loads(result.stdout)
+    assert len(rows) >= 1
+
+
 def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
     """Combined ls filters should still obey limit and tag constraints."""
     env = dict(os.environ)
