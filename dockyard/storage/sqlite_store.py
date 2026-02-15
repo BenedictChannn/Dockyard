@@ -680,8 +680,7 @@ class SQLiteStore:
             if tag and tag not in tags:
                 continue
             objective = row["objective"] or ""
-            decisions = row["decisions"] or ""
-            snippet = objective if query.lower() in objective.lower() else decisions[:140]
+            snippet = self._build_search_snippet(query=query, row=row)
             items.append(
                 {
                     "id": row["id"],
@@ -714,6 +713,7 @@ class SQLiteStore:
                 c.objective,
                 c.decisions,
                 c.next_steps_json,
+                c.risks_review,
                 c.tags_json
             FROM checkpoint_fts f
             JOIN checkpoints c ON c.id = f.checkpoint_id
@@ -751,6 +751,7 @@ class SQLiteStore:
                 c.objective,
                 c.decisions,
                 c.next_steps_json,
+                c.risks_review,
                 c.tags_json
             FROM checkpoints c
             JOIN berths b ON b.repo_id = c.repo_id
@@ -771,6 +772,26 @@ class SQLiteStore:
         base += " ORDER BY c.created_at DESC LIMIT ?"
         params.append(limit)
         return conn.execute(base, tuple(params)).fetchall()
+
+    def _build_search_snippet(self, query: str, row: sqlite3.Row) -> str:
+        """Build snippet prioritizing fields that contain the query."""
+        query_lower = query.lower()
+        next_steps = _from_json(row["next_steps_json"], [])
+        candidates = [
+            row["objective"] or "",
+            row["decisions"] or "",
+            *[step for step in next_steps if isinstance(step, str)],
+            row["risks_review"] or "",
+        ]
+        for candidate in candidates:
+            text = candidate.strip()
+            if text and query_lower in text.lower():
+                return text[:140]
+        for candidate in candidates:
+            text = candidate.strip()
+            if text:
+                return text[:140]
+        return ""
 
     def _has_fts(self, conn: sqlite3.Connection) -> bool:
         """Return whether FTS table is available."""

@@ -123,3 +123,70 @@ def test_search_respects_limit(tmp_path: Path) -> None:
 
     hits = store.search_checkpoints("Limit search", limit=2)
     assert len(hits) == 2
+
+
+def test_search_snippet_prefers_matching_next_steps_and_risks(tmp_path: Path) -> None:
+    """Snippet should reflect matching fields beyond objective/decisions."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_snip", name="Snippet", root_path="/tmp/snip", remote_url=None))
+
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_next",
+            repo_id="repo_snip",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="Generic objective",
+            decisions="",
+            next_steps=["Run hotspot verification"],
+            risks_review="General risk",
+            resume_commands=["echo next"],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_risk",
+            repo_id="repo_snip",
+            branch="main",
+            created_at="2026-01-01T00:00:01+00:00",
+            objective="Another objective",
+            decisions="",
+            next_steps=["Do something else"],
+            risks_review="Need payments review before merge",
+            resume_commands=["echo risk"],
+            git_dirty=False,
+            head_sha="def456",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hotspot_hits = store.search_checkpoints("hotspot")
+    assert len(hotspot_hits) == 1
+    assert hotspot_hits[0]["id"] == "cp_next"
+    assert "hotspot" in hotspot_hits[0]["snippet"].lower()
+
+    risk_hits = store.search_checkpoints("payments")
+    assert len(risk_hits) == 1
+    assert risk_hits[0]["id"] == "cp_risk"
+    assert "payments" in risk_hits[0]["snippet"].lower()
