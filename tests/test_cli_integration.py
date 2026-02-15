@@ -1695,6 +1695,50 @@ def test_search_alias_repo_filter_accepts_berth_name(git_repo: Path, tmp_path: P
     assert rows[0]["berth_name"] == git_repo.name
 
 
+def test_search_alias_repo_filter_no_match_returns_empty_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias repo filter should return [] when berth does not match."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias repo filter no-match objective",
+            "--decisions",
+            "Alias repo filter no-match decision",
+            "--next-step",
+            "run alias repo filter miss",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    assert json.loads(
+        _run_dock(
+            ["f", "Alias repo filter no-match objective", "--repo", "missing-berth", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    ) == []
+
+
 def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> None:
     """Search alias should honor --branch filtering semantics."""
     env = dict(os.environ)
