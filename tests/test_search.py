@@ -298,3 +298,39 @@ def test_search_snippet_normalizes_objective_spacing(tmp_path: Path) -> None:
     hits = store.search_checkpoints("token")
     assert len(hits) == 1
     assert hits[0]["snippet"] == "token with space"
+
+
+def test_search_snippet_preserves_unicode_characters(tmp_path: Path) -> None:
+    """Snippet normalization should preserve unicode characters."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_unicode", name="Unicode", root_path="/tmp/u", remote_url=None))
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_unicode",
+            repo_id="repo_unicode",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="Unicode objective",
+            decisions="",
+            next_steps=["step"],
+            risks_review="Need façade validation",
+            resume_commands=[],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hits = store.search_checkpoints("façade")
+    assert len(hits) == 1
+    assert "façade" in hits[0]["snippet"]
