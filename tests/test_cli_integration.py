@@ -1546,6 +1546,17 @@ def test_search_alias_repo_filter_accepts_berth_name(git_repo: Path, tmp_path: P
     assert rows[0]["berth_name"] == git_repo.name
 
 
+def test_search_alias_shows_no_match_message(tmp_path: Path) -> None:
+    """Search alias should show empty-result guidance in non-JSON mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["f", "no-match-query"], cwd=tmp_path, env=env)
+    assert result.returncode == 0
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
 def test_undock_alias_matches_resume_behavior(git_repo: Path, tmp_path: Path) -> None:
     """`undock` alias should resolve to the same resume behavior."""
     env = dict(os.environ)
