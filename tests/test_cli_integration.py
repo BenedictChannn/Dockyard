@@ -2185,6 +2185,57 @@ def test_negative_threshold_config_is_actionable(
     assert "Traceback" not in output
 
 
+def test_unknown_config_sections_do_not_block_save(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Unknown config sections should be ignored in save flow."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[other_section]",
+                'foo = "bar"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Unknown section config",
+            "--decisions",
+            "save should succeed",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Saved checkpoint" in result.stdout
+
+
 def test_missing_template_path_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,
