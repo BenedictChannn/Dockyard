@@ -1022,6 +1022,62 @@ def test_review_open_displays_file_list(git_repo: Path, tmp_path: Path) -> None:
     assert "files: src/a.py, src/b.py" in opened.stdout
 
 
+def test_review_open_displays_notes(git_repo: Path, tmp_path: Path) -> None:
+    """Review open output should include optional notes text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review notes baseline",
+            "--decisions",
+            "Create review with notes",
+            "--next-step",
+            "Open review details",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "notes_display",
+            "--severity",
+            "low",
+            "--notes",
+            "needs careful review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "notes: needs careful review" in opened.stdout
+
+
 def test_review_add_outside_repo_requires_explicit_context(tmp_path: Path) -> None:
     """Review add should fail outside git repo when repo/branch are omitted."""
     env = dict(os.environ)
