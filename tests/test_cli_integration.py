@@ -140,6 +140,46 @@ def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     assert payload["open_reviews"] == 0
 
 
+def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
+    """Short alias `s` should behave the same as `save`."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    saved = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias s objective",
+            "--decisions",
+            "Alias s decisions",
+            "--next-step",
+            "Alias s next step",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-s",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Saved checkpoint" in saved.stdout
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == "Alias s objective"
+
+
 def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run must stop at first failing command."""
     env = dict(os.environ)
