@@ -775,6 +775,59 @@ def test_review_add_outside_repo_requires_explicit_context(tmp_path: Path) -> No
     assert "Traceback" not in output
 
 
+def test_review_add_outside_repo_with_explicit_context_succeeds(tmp_path: Path) -> None:
+    """Review add should work outside repo when repo and branch are provided."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "manual_outside_repo",
+            "--severity",
+            "med",
+            "--repo",
+            "manual_repo",
+            "--branch",
+            "manual_branch",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Created review" in created.stdout
+
+    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "manual_repo/manual_branch" in listed
+    assert "manual_outside_repo" in listed
+
+
+def test_review_add_partial_override_requires_both_repo_and_branch(tmp_path: Path) -> None:
+    """Partial context overrides should fail with actionable guidance."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "partial_override",
+            "--severity",
+            "low",
+            "--repo",
+            "manual_repo_only",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Provide both --repo and --branch when overriding context." in output
+    assert "Traceback" not in output
+
+
 def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path) -> None:
     """Slip status should reflect review add/done transitions."""
     env = dict(os.environ)

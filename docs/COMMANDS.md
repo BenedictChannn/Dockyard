@@ -106,6 +106,8 @@ python3 -m dockyard review --all
 
 ```bash
 python3 -m dockyard review add --reason "manual validation" --severity med
+# outside repo, provide both:
+python3 -m dockyard review add --reason "manual" --severity low --repo my_repo --branch my_branch
 ```
 
 ### Mark done

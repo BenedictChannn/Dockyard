@@ -600,6 +600,8 @@ def review_add(
     """Create a manual review item."""
     store, _ = _store()
     normalized_severity = _validate_review_severity(severity)
+    if (repo and not branch) or (branch and not repo):
+        raise DockyardError("Provide both --repo and --branch when overriding context.")
     if not repo or not branch:
         snapshot = inspect_repository()
         repo = repo or snapshot.repo_id
