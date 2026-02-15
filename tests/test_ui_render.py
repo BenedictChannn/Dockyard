@@ -61,6 +61,13 @@ def test_verification_summary_uses_yes_no_markers() -> None:
     assert verification_summary(_checkpoint()) == "tests:yes build:no lint:yes"
 
 
+def test_verification_summary_all_false_flags() -> None:
+    """Verification summary should remain explicit when all checks are false."""
+    checkpoint = _checkpoint()
+    checkpoint.verification = VerificationState(tests_run=False, build_ok=False, lint_ok=False)
+    assert verification_summary(checkpoint) == "tests:no build:no lint:no"
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)
