@@ -42,3 +42,17 @@ def test_detached_head_uses_expected_naming(git_repo: Path) -> None:
     subprocess.run(["git", "checkout", "--detach"], cwd=str(git_repo), check=True, capture_output=True)
     snapshot = inspect_repository(root_override=str(git_repo))
     assert snapshot.branch == f"DETACHED@{sha}"
+
+
+def test_repo_id_falls_back_to_path_hash_without_remote(git_repo: Path) -> None:
+    """Repo id should remain stable when origin remote is missing."""
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    first = inspect_repository(root_override=str(git_repo))
+    second = inspect_repository(root_override=str(git_repo))
+    assert first.remote_url is None
+    assert first.repo_id == second.repo_id
