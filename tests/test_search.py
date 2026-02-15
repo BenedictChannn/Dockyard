@@ -190,3 +190,39 @@ def test_search_snippet_prefers_matching_next_steps_and_risks(tmp_path: Path) ->
     assert len(risk_hits) == 1
     assert risk_hits[0]["id"] == "cp_risk"
     assert "payments" in risk_hits[0]["snippet"].lower()
+
+
+def test_search_snippet_prefers_objective_when_multiple_fields_match(tmp_path: Path) -> None:
+    """Objective text should win when query appears in multiple fields."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_priority", name="Priority", root_path="/tmp/p", remote_url=None))
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_priority",
+            repo_id="repo_priority",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="priority token in objective",
+            decisions="priority token in decisions",
+            next_steps=["priority token in next steps"],
+            risks_review="priority token in risk",
+            resume_commands=["echo priority"],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hits = store.search_checkpoints("priority token")
+    assert len(hits) == 1
+    assert hits[0]["snippet"] == "priority token in objective"
