@@ -331,3 +331,94 @@ def test_resume_by_berth_from_outside_repo_with_handoff(
     assert "Project/Branch: repo / " in result.stdout
     assert "Cross-repo resume lookup" in result.stdout
     assert "### Dockyard Handoff" in result.stdout
+
+
+def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
+    """Hidden aliases should mirror primary command behavior."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias coverage objective",
+            "--decisions",
+            "Verify harbor/f/r aliases route correctly",
+            "--next-step",
+            "Use alias commands",
+            "--risks",
+            "None",
+            "--command",
+            "echo alias",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    harbor_result = _run_dock(["harbor"], cwd=tmp_path, env=env)
+    assert "Dockyard Harbor" in harbor_result.stdout
+
+    search_alias = _run_dock(["f", "Alias coverage"], cwd=tmp_path, env=env)
+    assert "Dockyard Search Results" in search_alias.stdout
+    assert "master" in search_alias.stdout or "main" in search_alias.stdout
+
+    resume_alias = _run_dock(["r"], cwd=git_repo, env=env)
+    assert "Objective: Alias coverage objective" in resume_alias.stdout
+
+
+def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path) -> None:
+    """Auto-created review should link back to associated checkpoint details."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trigger risky review linkage",
+            "--decisions",
+            "Touch security path to create heuristic review",
+            "--next-step",
+            "Inspect review open output",
+            "--risks",
+            "Security review required",
+            "--command",
+            "echo review",
+            "--no-tests-run",
+            "--build-fail",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    list_result = _run_dock(["review"], cwd=tmp_path, env=env)
+    review_match = re.search(r"rev_[a-f0-9]+", list_result.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    open_result = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "Review Item" in open_result.stdout
+    assert "Associated Checkpoint" in open_result.stdout
+    assert "Trigger risky review linkage" in open_result.stdout
