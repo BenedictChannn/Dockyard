@@ -476,6 +476,47 @@ def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> Non
     assert "Dockyard Harbor" in result.stdout
 
 
+def test_no_subcommand_defaults_to_harbor_inside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Default no-subcommand path should work when invoked inside repo."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default command in-repo baseline",
+            "--decisions",
+            "Ensure callback path is stable in repo cwd",
+            "--next-step",
+            "run bare dock command",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    result = _run_dock([], cwd=git_repo, env=env)
+    assert "Dockyard Harbor" in result.stdout
+
+
 def test_resume_output_includes_required_summary_fields(
     git_repo: Path,
     tmp_path: Path,
