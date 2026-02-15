@@ -43,6 +43,18 @@ def _run_dock(
     return completed
 
 
+def _git_current_branch(repo: Path) -> str:
+    """Return current branch name for test repo."""
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=str(repo),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
 def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     """Validate save/ls/resume/review/link flows including `dock dock` alias."""
     env = dict(os.environ)
@@ -1397,3 +1409,35 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
         env=env,
     )
     assert "feature/filters" in search_repo_name.stdout
+
+
+def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
+    """Links should remain scoped by branch across context switches."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    main_branch = _git_current_branch(git_repo)
+    _run_dock(["link", "https://example.com/main-link"], cwd=git_repo, env=env)
+    main_links = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/main-link" in main_links
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/links-scope"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(["link", "https://example.com/feature-link"], cwd=git_repo, env=env)
+    feature_links = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/feature-link" in feature_links
+    assert "https://example.com/main-link" not in feature_links
+
+    subprocess.run(
+        ["git", "checkout", main_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    main_links_again = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/main-link" in main_links_again
+    assert "https://example.com/feature-link" not in main_links_again
