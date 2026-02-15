@@ -93,3 +93,24 @@ def test_print_harbor_renders_title_for_empty_rows() -> None:
     print_harbor(console, [])
     output = console.export_text()
     assert "Dockyard Harbor" in output
+
+
+def test_print_harbor_falls_back_to_raw_status_for_unknown_value() -> None:
+    """Unknown status values should be rendered verbatim."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-x",
+                "branch": "main",
+                "status": "blue",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "blue" in output
