@@ -88,7 +88,7 @@ Validation:
 
 ## `search` (`f`)
 
-Search checkpoint objectives/decisions/next steps.
+Search checkpoint objectives, decisions, next steps, and risks.
 
 ### Usage
 
