@@ -123,6 +123,9 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
 
 def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
     """Render search result table."""
+    if not rows:
+        console.print("No checkpoint matches found.")
+        return
     table = Table(title="Dockyard Search Results")
     table.add_column("Berth")
     table.add_column("Branch")

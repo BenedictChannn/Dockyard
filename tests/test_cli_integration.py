@@ -2484,6 +2484,15 @@ def test_search_rejects_blank_query(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_search_no_matches_is_informative(tmp_path: Path) -> None:
+    """Search should display explicit no-match message when empty."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["search", "nothing-will-match"], cwd=tmp_path, env=env)
+    assert "No checkpoint matches found." in result.stdout
+
+
 def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
     """Links should remain scoped by branch across context switches."""
     env = dict(os.environ)
