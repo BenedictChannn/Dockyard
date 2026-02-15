@@ -705,6 +705,8 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
                     f"id: {item.id}",
                     f"repo: {item.repo_id}",
                     f"branch: {item.branch}",
+                    f"created_at: {item.created_at}",
+                    f"checkpoint_id: {item.checkpoint_id or ''}",
                     f"severity: {item.severity}",
                     f"status: {item.status}",
                     f"reason: {item.reason}",

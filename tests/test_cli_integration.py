@@ -1266,6 +1266,8 @@ def test_review_open_displays_notes(git_repo: Path, tmp_path: Path) -> None:
     review_id = review_match.group(0)
 
     opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "created_at:" in opened.stdout
+    assert "checkpoint_id:" in opened.stdout
     assert "notes: needs careful review" in opened.stdout
 
 
