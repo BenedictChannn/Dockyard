@@ -218,3 +218,68 @@ def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> Non
 
     result = _run_dock([], cwd=tmp_path, env=env)
     assert "Dockyard Harbor" in result.stdout
+
+
+def test_resume_output_includes_required_summary_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume output should include required summary fields in top lines."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Validate summary contract",
+            "--decisions",
+            "Ensure first lines are actionable",
+            "--next-step",
+            "Read first lines only",
+            "--next-step",
+            "Run next command",
+            "--risks",
+            "None",
+            "--command",
+            "echo go",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-ok",
+            "--lint-command",
+            "ruff check",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume"], cwd=git_repo, env=env)
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    top = lines[:15]
+
+    required_markers = [
+        "Project/Branch:",
+        "Last Checkpoint:",
+        "Objective:",
+        "Next Steps:",
+        "  1. ",
+        "Open Reviews:",
+        "Verification:",
+    ]
+    positions: list[int] = []
+    for marker in required_markers:
+        index = next((i for i, line in enumerate(top) if marker in line), -1)
+        assert index >= 0, f"Missing marker in top lines: {marker}\nTop lines: {top}"
+        positions.append(index)
+
+    # Ensure ordering remains scannable and consistent for quick resume.
+    assert positions == sorted(positions)
