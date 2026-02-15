@@ -123,6 +123,9 @@ python3 -m dockyard review done <review_id>
 python3 -m dockyard review open <review_id>
 ```
 
+`review open` displays review metadata plus associated checkpoint details (if
+available), including any attached file paths.
+
 ## `link` / `links`
 
 Attach and list URLs for current slip.
