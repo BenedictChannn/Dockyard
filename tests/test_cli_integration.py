@@ -274,6 +274,46 @@ def test_save_editor_populates_decisions(git_repo: Path, tmp_path: Path) -> None
     assert payload["decisions"] == "Decisions captured in editor"
 
 
+def test_save_editor_with_explicit_decisions_skips_editor(git_repo: Path, tmp_path: Path) -> None:
+    """Explicit decisions should take precedence over editor invocation."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env["EDITOR"] = str(tmp_path / "missing-editor-command")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Editor precedence objective",
+            "--decisions",
+            "Use explicit decisions value",
+            "--next-step",
+            "Run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == "Use explicit decisions value"
+
+
 def test_save_editor_ignores_placeholder_only_content(
     git_repo: Path,
     tmp_path: Path,
