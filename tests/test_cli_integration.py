@@ -2709,3 +2709,12 @@ def test_links_outside_repo_without_root_is_actionable(tmp_path: Path) -> None:
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "not inside a git repository" in output
     assert "Traceback" not in output
+
+
+def test_links_in_repo_with_no_items_is_informative(git_repo: Path, tmp_path: Path) -> None:
+    """Links command should print informative message when none are attached."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    output = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "No links for current slip." in output
