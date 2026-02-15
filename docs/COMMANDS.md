@@ -93,6 +93,7 @@ python3 -m dockyard search "<query>"
 ```
 
 When no results match, Dockyard prints: `No checkpoint matches found.`
+With `--json`, no-match output is `[]`.
 
 ### Options
 
