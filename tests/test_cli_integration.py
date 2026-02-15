@@ -3551,6 +3551,47 @@ def test_search_json_multiline_snippet_remains_parseable(
     assert "multilinetoken" in rows[0]["snippet"]
 
 
+def test_search_json_preserves_unicode_snippets(git_repo: Path, tmp_path: Path) -> None:
+    """Search JSON output should preserve unicode text in snippets."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    unicode_risk = "Needs façade review before merge"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Unicode snippet objective",
+            "--decisions",
+            "generic decisions",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            unicode_risk,
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["search", "façade", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "façade" in rows[0]["snippet"]
+
+
 def test_search_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
     """Search JSON mode should honor --limit constraint."""
     env = dict(os.environ)
