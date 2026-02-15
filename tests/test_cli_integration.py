@@ -1460,6 +1460,46 @@ def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path)
     assert "Objective: Alias coverage objective" in resume_alias.stdout
 
 
+def test_search_alias_json_handles_unicode_query(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should handle unicode query strings in JSON mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Unicode façade objective",
+            "--decisions",
+            "unicode alias search coverage",
+            "--next-step",
+            "run alias json search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["f", "façade", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "façade" in rows[0]["objective"]
+
+
 def test_undock_alias_matches_resume_behavior(git_repo: Path, tmp_path: Path) -> None:
     """`undock` alias should resolve to the same resume behavior."""
     env = dict(os.environ)
