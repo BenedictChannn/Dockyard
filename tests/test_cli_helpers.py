@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dockyard.cli import _normalize_editor_text
+from dockyard.cli import _comma_or_pipe_values, _normalize_editor_text
 
 
 def test_normalize_editor_text_drops_scaffold_line() -> None:
@@ -27,3 +27,13 @@ def test_normalize_editor_text_trims_outer_blank_lines() -> None:
     """Leading and trailing blank lines should be dropped."""
     raw = "# Decisions / Findings\n\n\nCore line\n\n"
     assert _normalize_editor_text(raw) == "Core line"
+
+
+def test_comma_or_pipe_values_supports_commas() -> None:
+    """Comma-separated input should parse into stripped values."""
+    assert _comma_or_pipe_values("alpha, beta , ,gamma") == ["alpha", "beta", "gamma"]
+
+
+def test_comma_or_pipe_values_prioritizes_pipe_separator() -> None:
+    """Pipe-separated input should parse as pipe-delimited when present."""
+    assert _comma_or_pipe_values("alpha| beta |gamma") == ["alpha", "beta", "gamma"]
