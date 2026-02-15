@@ -123,7 +123,7 @@ def _resolve_repo_context(
 def root_callback(ctx: typer.Context) -> None:
     """Default to `dock ls` when no explicit subcommand is provided."""
     if ctx.invoked_subcommand is None:
-        ls_command()
+        ctx.invoke(ls_command, stale=None, tag=None, limit=None, as_json=False)
 
 
 @app.command("save")

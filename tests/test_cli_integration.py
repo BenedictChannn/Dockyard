@@ -179,3 +179,42 @@ def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     output = f"{result.stdout}\n{result.stderr}"
     assert "Error:" in output
     assert "Traceback" not in output
+
+
+def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
+    """Invoking dockyard without subcommand should run harbor listing."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Seed default listing",
+            "--decisions",
+            "Need default command behavior",
+            "--next-step",
+            "Run bare dock command",
+            "--risks",
+            "None",
+            "--command",
+            "echo ok",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock([], cwd=tmp_path, env=env)
+    assert "Dockyard Harbor" in result.stdout
