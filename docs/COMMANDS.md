@@ -6,6 +6,9 @@ All commands are available through:
 python3 -m dockyard <command>
 ```
 
+JSON flags (`--json`) emit raw machine-parseable JSON suitable for piping to
+tools like `jq`.
+
 ## `save` (`s`, `dock`)
 
 Create a new checkpoint for current repo/branch.
