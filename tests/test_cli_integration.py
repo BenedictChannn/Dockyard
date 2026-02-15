@@ -3298,6 +3298,46 @@ def test_search_json_snippet_includes_decisions_match(git_repo: Path, tmp_path: 
     assert "decisiontoken" in rows[0]["snippet"].lower()
 
 
+def test_search_json_snippet_includes_objective_match(git_repo: Path, tmp_path: Path) -> None:
+    """Search snippets should surface matches from objective text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Objectivetoken milestone",
+            "--decisions",
+            "generic decisions",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            "generic risks",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["search", "objectivetoken", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "objectivetoken" in rows[0]["snippet"].lower()
+
+
 def test_search_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
     """Search JSON mode should honor --limit constraint."""
     env = dict(os.environ)
