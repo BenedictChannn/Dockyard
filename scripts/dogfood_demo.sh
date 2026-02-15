@@ -82,9 +82,24 @@ echo
 echo "=== Open Reviews ==="
 python3 -m dockyard review
 
+FIRST_REVIEW_ID="$(python3 -m dockyard review | awk 'NR==1{print $1}')"
+if [[ -n "${FIRST_REVIEW_ID}" ]]; then
+  echo
+  echo "=== Review Details (${FIRST_REVIEW_ID}) ==="
+  python3 -m dockyard review open "${FIRST_REVIEW_ID}"
+
+  echo
+  echo "=== Resolve Review (${FIRST_REVIEW_ID}) ==="
+  python3 -m dockyard review done "${FIRST_REVIEW_ID}"
+fi
+
 echo
 echo "=== Resume + Handoff (Repo A hotfix) ==="
 (cd "${REPO_A}" && python3 -m dockyard resume --branch hotfix/security-patch --handoff)
+
+echo
+echo "=== Harbor After Review Resolution ==="
+python3 -m dockyard ls
 
 echo
 echo "Demo complete."
