@@ -224,6 +224,56 @@ def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     assert payload["objective"] == "Alias s objective"
 
 
+def test_save_editor_populates_decisions(git_repo: Path, tmp_path: Path) -> None:
+    """Save should capture decisions from the configured editor."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    editor_script = tmp_path / "fake_editor.sh"
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "printf 'Decisions captured in editor\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Editor decisions objective",
+            "--next-step",
+            "Run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == "Decisions captured in editor"
+
+
 def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run must stop at first failing command."""
     env = dict(os.environ)
