@@ -3258,6 +3258,46 @@ def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: 
     assert "nexttoken" in rows[0]["snippet"].lower()
 
 
+def test_search_json_snippet_includes_decisions_match(git_repo: Path, tmp_path: Path) -> None:
+    """Search snippets should surface matches from decisions text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Decisions snippet objective",
+            "--decisions",
+            "Need decisiontoken guardrails before merge",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            "generic risks",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["search", "decisiontoken", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert "decisiontoken" in rows[0]["snippet"].lower()
+
+
 def test_search_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
     """Search JSON mode should honor --limit constraint."""
     env = dict(os.environ)
