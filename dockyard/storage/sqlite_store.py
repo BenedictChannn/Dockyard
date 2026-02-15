@@ -15,6 +15,7 @@ from dockyard.models import (
     ReviewItem,
     Slip,
     VerificationState,
+    utc_now_iso,
 )
 
 SCHEMA_VERSION = 1
@@ -359,6 +360,50 @@ class SQLiteStore:
                     _to_json(item.files),
                 ),
             )
+
+    def recompute_slip_status(self, repo_id: str, branch: str) -> str | None:
+        """Recompute and persist slip status from latest checkpoint + review state.
+
+        Args:
+            repo_id: Repository identifier.
+            branch: Branch name.
+
+        Returns:
+            Updated status string when checkpoint exists, otherwise `None`.
+        """
+        checkpoint = self.get_latest_checkpoint(repo_id=repo_id, branch=branch)
+        if not checkpoint:
+            return None
+
+        from dockyard.services.status import compute_slip_status
+
+        open_review_count = self.count_open_reviews(repo_id=repo_id, branch=branch)
+        has_high_open_review = self.has_high_open_review(repo_id=repo_id, branch=branch)
+        status = compute_slip_status(
+            checkpoint=checkpoint,
+            open_review_count=open_review_count,
+            has_high_open_review=has_high_open_review,
+        )
+
+        now = utc_now_iso()
+        with self.connect() as conn:
+            updated = conn.execute(
+                """
+                UPDATE slips
+                SET status = ?, updated_at = ?, last_checkpoint_id = ?
+                WHERE repo_id = ? AND branch = ?
+                """,
+                (status, now, checkpoint.id, repo_id, branch),
+            )
+            if updated.rowcount == 0:
+                conn.execute(
+                    """
+                    INSERT INTO slips(repo_id, branch, last_checkpoint_id, status, tags_json, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (repo_id, branch, checkpoint.id, status, _to_json(checkpoint.tags), now),
+                )
+        return status
 
     def mark_review_done(self, review_id: str) -> bool:
         """Mark review as done and return whether it existed."""

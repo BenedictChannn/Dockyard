@@ -369,6 +369,7 @@ def review_add(
         files=file or [],
     )
     store.add_review_item(item)
+    store.recompute_slip_status(repo_id=repo, branch=branch)
     console.print(f"[green]Created review[/green] {item.id}")
 
 
@@ -376,8 +377,12 @@ def review_add(
 def review_done(review_id: str = typer.Argument(..., help="Review item ID.")) -> None:
     """Mark review item as done."""
     store, _ = _store()
+    review = store.get_review(review_id)
+    if not review:
+        raise DockyardError(f"Review item not found: {review_id}")
     if not store.mark_review_done(review_id):
         raise DockyardError(f"Review item not found: {review_id}")
+    store.recompute_slip_status(repo_id=review.repo_id, branch=review.branch)
     console.print(f"[green]Resolved review[/green] {review_id}")
 
 

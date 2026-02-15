@@ -422,3 +422,65 @@ def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path)
     assert "Review Item" in open_result.stdout
     assert "Associated Checkpoint" in open_result.stdout
     assert "Trigger risky review linkage" in open_result.stdout
+
+
+def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path) -> None:
+    """Slip status should reflect review add/done transitions."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Status recompute baseline",
+            "--decisions",
+            "Start with verified checkpoint so status is green",
+            "--next-step",
+            "Add high review then resolve it",
+            "--risks",
+            "None",
+            "--command",
+            "echo status",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    initial_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert initial_rows[0]["status"] == "green"
+
+    review_added = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "critical_validation",
+            "--severity",
+            "high",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", review_added.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    after_add_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert after_add_rows[0]["status"] == "red"
+
+    _run_dock(["review", "done", review_id], cwd=tmp_path, env=env)
+    after_done_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert after_done_rows[0]["status"] == "green"
