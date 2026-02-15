@@ -50,3 +50,21 @@ def test_print_search_empty_state_message() -> None:
     print_search(console, [])
     output = console.export_text()
     assert "No checkpoint matches found." in output
+
+
+def test_print_search_falls_back_to_repo_id_without_berth_name() -> None:
+    """Search rendering should fallback to repo_id when berth name missing."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_fallback",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_fallback" in output
