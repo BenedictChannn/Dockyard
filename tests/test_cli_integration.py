@@ -426,6 +426,17 @@ def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_resume_unknown_berth_is_actionable(tmp_path: Path) -> None:
+    """Unknown berth resume should fail cleanly with guidance."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["resume", "missing-berth"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Unknown berth: missing-berth" in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
     """Invoking dockyard without subcommand should run harbor listing."""
     env = dict(os.environ)
@@ -1179,6 +1190,17 @@ def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path
     with_all = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
     assert "all_flag_item" in with_all
     assert "done" in with_all
+
+
+def test_review_done_unknown_id_is_actionable(tmp_path: Path) -> None:
+    """Unknown review id resolution should fail without traceback noise."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["review", "done", "rev_missing"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Review item not found: rev_missing" in output
+    assert "Traceback" not in output
 
 
 def test_review_add_validates_severity(git_repo: Path, tmp_path: Path) -> None:
