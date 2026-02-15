@@ -682,6 +682,60 @@ def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path
     assert "done" in with_all
 
 
+def test_review_add_validates_severity(git_repo: Path, tmp_path: Path) -> None:
+    """Review add should reject severities outside low/med/high."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Severity validation baseline",
+            "--decisions",
+            "Need repo context for review add",
+            "--next-step",
+            "Try invalid severity",
+            "--risks",
+            "None",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    bad = _run_dock(
+        ["review", "add", "--reason", "invalid", "--severity", "critical"],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{bad.stdout}\n{bad.stderr}"
+    assert "Invalid severity" in output
+    assert "Traceback" not in output
+
+    # Upper-case values should normalize successfully.
+    good = _run_dock(
+        ["review", "add", "--reason", "valid", "--severity", "HIGH"],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Created review" in good.stdout
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)

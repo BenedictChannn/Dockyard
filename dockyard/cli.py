@@ -37,6 +37,7 @@ app = typer.Typer(
 review_app = typer.Typer(help="Review queue commands.", invoke_without_command=True)
 app.add_typer(review_app, name="review")
 console = Console()
+VALID_REVIEW_SEVERITIES = {"low", "med", "high"}
 
 
 def _store() -> tuple[SQLiteStore, Path]:
@@ -160,6 +161,25 @@ def _coerce_optional_bool(value) -> bool | None:
         if lowered in {"0", "false", "no", "n"}:
             return False
     return None
+
+
+def _validate_review_severity(raw: str) -> str:
+    """Validate review severity option value.
+
+    Args:
+        raw: Raw severity string provided by user.
+
+    Returns:
+        Normalized lower-case severity value.
+
+    Raises:
+        DockyardError: If severity is not one of low/med/high.
+    """
+    normalized = raw.strip().lower()
+    if normalized not in VALID_REVIEW_SEVERITIES:
+        allowed = ", ".join(sorted(VALID_REVIEW_SEVERITIES))
+        raise DockyardError(f"Invalid severity '{raw}'. Use one of: {allowed}.")
+    return normalized
 
 
 def _resolve_repo_context(
@@ -494,6 +514,7 @@ def review_add(
 ) -> None:
     """Create a manual review item."""
     store, _ = _store()
+    normalized_severity = _validate_review_severity(severity)
     if not repo or not branch:
         snapshot = inspect_repository()
         repo = repo or snapshot.repo_id
@@ -505,7 +526,7 @@ def review_add(
         checkpoint_id=checkpoint_id,
         created_at=utc_now_iso(),
         reason=reason,
-        severity=severity,
+        severity=normalized_severity,
         status="open",
         notes=notes,
         files=file or [],
