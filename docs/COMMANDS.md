@@ -45,6 +45,11 @@ python3 -m dockyard save \
   --no-prompt
 ```
 
+Editor note:
+- If you use `--editor` and leave the scaffold line unchanged
+  (`# Decisions / Findings`), Dockyard treats decisions as missing and keeps
+  required-field validation intact.
+
 ## `resume` (`r`, `undock`)
 
 Show latest checkpoint for current repo (or selected berth).
