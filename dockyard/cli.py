@@ -587,7 +587,7 @@ def search_command(
     limit: int = typer.Option(20, "--limit", help="Max results."),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON."),
 ) -> None:
-    """Search checkpoint objectives/decisions/next steps."""
+    """Search checkpoint objectives, decisions, next steps, and risks."""
     store, _ = _store()
     cleaned_query = query.strip()
     if not cleaned_query:
