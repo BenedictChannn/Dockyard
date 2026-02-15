@@ -3118,6 +3118,7 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
         ).stdout
     )
     assert len(search_repo_json) >= 1
+    assert {row["berth_name"] for row in search_repo_json} == {git_repo.name}
     assert "berth_name" in search_repo_json[0]
     assert {"id", "repo_id", "berth_name", "branch", "created_at", "snippet", "objective"} <= set(
         search_repo_json[0].keys()
