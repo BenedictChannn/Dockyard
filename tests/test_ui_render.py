@@ -5,7 +5,7 @@ from __future__ import annotations
 from rich.console import Console
 
 from dockyard.models import Checkpoint, VerificationState
-from dockyard.ui.render import format_age, print_search, verification_summary
+from dockyard.ui.render import format_age, print_harbor, print_search, verification_summary
 
 
 def _checkpoint() -> Checkpoint:
@@ -80,3 +80,11 @@ def test_print_search_falls_back_to_repo_id_without_berth_name() -> None:
     )
     output = console.export_text()
     assert "repo_fallback" in output
+
+
+def test_print_harbor_renders_title_for_empty_rows() -> None:
+    """Harbor renderer should still render a titled table when empty."""
+    console = Console(record=True, width=120)
+    print_harbor(console, [])
+    output = console.export_text()
+    assert "Dockyard Harbor" in output
