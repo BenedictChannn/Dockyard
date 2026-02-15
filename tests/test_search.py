@@ -68,3 +68,32 @@ def test_search_returns_matches_and_honors_filters(tmp_path: Path) -> None:
     assert len(tag_hits) == 1
     filtered_out = store.search_checkpoints("indexing", tag="docs")
     assert filtered_out == []
+
+
+def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
+    """Search should succeed when query contains FTS-special syntax."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(
+        Berth(
+            repo_id="repo_special",
+            name="Special",
+            root_path="/tmp/special",
+            remote_url=None,
+        )
+    )
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_special",
+            "repo_special",
+            "main",
+            "Inspect security/path handling",
+            ["mvp"],
+        )
+    )
+
+    # "/" can trigger FTS parser errors in MATCH mode; fallback should keep search working.
+    hits = store.search_checkpoints("security/path")
+    assert len(hits) == 1
+    assert hits[0]["id"] == "cp_special"

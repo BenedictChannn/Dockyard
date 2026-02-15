@@ -587,34 +587,38 @@ class SQLiteStore:
         branch: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
-        """Search checkpoints by textual content with optional filters."""
+        """Search checkpoints by textual content with optional filters.
+
+        When FTS5 is available, this method uses `MATCH` for speed. If the query
+        contains FTS syntax that causes parser errors, the method falls back to a
+        `LIKE` query instead of failing.
+        """
         with self.connect() as conn:
             if self._has_fts(conn):
-                base = """
-                    SELECT c.id, c.repo_id, c.branch, c.created_at, c.objective, c.decisions, c.next_steps_json, c.tags_json
-                    FROM checkpoint_fts f
-                    JOIN checkpoints c ON c.id = f.checkpoint_id
-                    WHERE checkpoint_fts MATCH ?
-                """
-                params: list[Any] = [query]
+                try:
+                    rows = self._search_rows_fts(
+                        conn=conn,
+                        query=query,
+                        repo_id=repo_id,
+                        branch=branch,
+                        limit=limit,
+                    )
+                except sqlite3.OperationalError:
+                    rows = self._search_rows_like(
+                        conn=conn,
+                        query=query,
+                        repo_id=repo_id,
+                        branch=branch,
+                        limit=limit,
+                    )
             else:
-                like = f"%{query}%"
-                base = """
-                    SELECT id, repo_id, branch, created_at, objective, decisions, next_steps_json, tags_json
-                    FROM checkpoints
-                    WHERE objective LIKE ? OR decisions LIKE ? OR next_steps_json LIKE ? OR risks_review LIKE ?
-                """
-                params = [like, like, like, like]
-
-            if repo_id:
-                base += " AND c.repo_id = ?" if " c." in base else " AND repo_id = ?"
-                params.append(repo_id)
-            if branch:
-                base += " AND c.branch = ?" if " c." in base else " AND branch = ?"
-                params.append(branch)
-            base += " ORDER BY created_at DESC LIMIT ?"
-            params.append(limit)
-            rows = conn.execute(base, tuple(params)).fetchall()
+                rows = self._search_rows_like(
+                    conn=conn,
+                    query=query,
+                    repo_id=repo_id,
+                    branch=branch,
+                    limit=limit,
+                )
 
         items: list[dict[str, Any]] = []
         for row in rows:
@@ -635,6 +639,77 @@ class SQLiteStore:
                 }
             )
         return items[:limit]
+
+    def _search_rows_fts(
+        self,
+        conn: sqlite3.Connection,
+        query: str,
+        repo_id: str | None,
+        branch: str | None,
+        limit: int,
+    ) -> list[sqlite3.Row]:
+        """Run FTS-backed checkpoint search query."""
+        base = """
+            SELECT
+                c.id,
+                c.repo_id,
+                c.branch,
+                c.created_at,
+                c.objective,
+                c.decisions,
+                c.next_steps_json,
+                c.tags_json
+            FROM checkpoint_fts f
+            JOIN checkpoints c ON c.id = f.checkpoint_id
+            WHERE checkpoint_fts MATCH ?
+        """
+        params: list[Any] = [query]
+        if repo_id:
+            base += " AND c.repo_id = ?"
+            params.append(repo_id)
+        if branch:
+            base += " AND c.branch = ?"
+            params.append(branch)
+        base += " ORDER BY c.created_at DESC LIMIT ?"
+        params.append(limit)
+        return conn.execute(base, tuple(params)).fetchall()
+
+    def _search_rows_like(
+        self,
+        conn: sqlite3.Connection,
+        query: str,
+        repo_id: str | None,
+        branch: str | None,
+        limit: int,
+    ) -> list[sqlite3.Row]:
+        """Run LIKE-backed checkpoint search query."""
+        like = f"%{query}%"
+        base = """
+            SELECT
+                id,
+                repo_id,
+                branch,
+                created_at,
+                objective,
+                decisions,
+                next_steps_json,
+                tags_json
+            FROM checkpoints
+            WHERE objective LIKE ?
+               OR decisions LIKE ?
+               OR next_steps_json LIKE ?
+               OR risks_review LIKE ?
+        """
+        params: list[Any] = [like, like, like, like]
+        if repo_id:
+            base += " AND repo_id = ?"
+            params.append(repo_id)
+        if branch:
+            base += " AND branch = ?"
+            params.append(branch)
+        base += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        return conn.execute(base, tuple(params)).fetchall()
 
     def _has_fts(self, conn: sqlite3.Connection) -> bool:
         """Return whether FTS table is available."""
