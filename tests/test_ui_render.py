@@ -44,6 +44,13 @@ def test_format_age_clamps_future_timestamps_to_zero_seconds() -> None:
     assert format_age("2999-01-01T00:00:00+00:00") == "0s"
 
 
+def test_format_age_accepts_naive_iso_timestamps() -> None:
+    """Naive ISO timestamps should be interpreted safely as UTC."""
+    age = format_age("2020-01-01T00:00:00")
+    assert age != "unknown"
+    assert age[-1] in {"s", "m", "h", "d"}
+
+
 def test_verification_summary_uses_yes_no_markers() -> None:
     """Verification summary should map booleans to yes/no values."""
     assert verification_summary(_checkpoint()) == "tests:yes build:no lint:yes"

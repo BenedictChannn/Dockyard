@@ -18,6 +18,8 @@ def format_age(timestamp_iso: str) -> str:
         then = datetime.fromisoformat(timestamp_iso)
     except ValueError:
         return "unknown"
+    if then.tzinfo is None:
+        then = then.replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     delta = now - then
     seconds = max(0, int(delta.total_seconds()))
