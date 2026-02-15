@@ -1155,6 +1155,7 @@ def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: P
 
     opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
     assert "Associated Checkpoint" in opened.stdout
+    assert "checkpoint_id: cp_missing_123" in opened.stdout
     assert "status: missing from index" in opened.stdout
 
 
