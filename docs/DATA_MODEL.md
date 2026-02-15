@@ -1,0 +1,117 @@
+# Dockyard Data Model (MVP)
+
+Dockyard uses SQLite as an index and Markdown files for checkpoint payload
+persistence.
+
+## Entities
+
+## Berth
+
+Repository identity.
+
+| Field | Type | Notes |
+|---|---|---|
+| `repo_id` | text (pk) | stable hash (remote URL preferred, path fallback) |
+| `name` | text | inferred from repo root dir |
+| `root_path` | text | absolute path |
+| `remote_url` | text nullable | optional |
+| `created_at` | text | ISO timestamp |
+| `updated_at` | text | ISO timestamp |
+
+## Slip
+
+Branch/workstream under a berth.
+
+| Field | Type | Notes |
+|---|---|---|
+| `repo_id` | text | fk -> berths |
+| `branch` | text | branch key |
+| `last_checkpoint_id` | text nullable | newest checkpoint |
+| `status` | text | `green`/`yellow`/`red` |
+| `tags_json` | text | serialized tag list |
+| `updated_at` | text | ISO timestamp |
+
+Primary key: `(repo_id, branch)`
+
+## Checkpoint
+
+Core captured checkpoint payload.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text (pk) | checkpoint id |
+| `repo_id` | text | fk -> berths |
+| `branch` | text | branch |
+| `created_at` | text | ISO timestamp |
+| `objective` | text | required |
+| `decisions` | text | required |
+| `next_steps_json` | text | array (1-3 intended) |
+| `risks_review` | text | required |
+| `resume_commands_json` | text | array (0-5 intended) |
+| `git_dirty` | int | 0/1 |
+| `head_sha` | text | commit sha |
+| `head_subject` | text | commit subject |
+| `recent_commits_json` | text | recent commit summaries |
+| `diff_files_changed` | int | aggregate |
+| `diff_insertions` | int | aggregate |
+| `diff_deletions` | int | aggregate |
+| `touched_files_json` | text | array |
+| `diff_stat_text` | text | raw `git diff --stat HEAD` |
+| `tests_run` | int | 0/1 |
+| `tests_command` | text nullable | optional |
+| `tests_timestamp` | text nullable | optional |
+| `build_ok` | int | 0/1 |
+| `build_command` | text nullable | optional |
+| `build_timestamp` | text nullable | optional |
+| `lint_ok` | int | 0/1 |
+| `lint_command` | text nullable | optional |
+| `lint_timestamp` | text nullable | optional |
+| `smoke_ok` | int | 0/1 |
+| `smoke_notes` | text nullable | optional |
+| `smoke_timestamp` | text nullable | optional |
+| `tags_json` | text | serialized tags |
+
+## Review Item
+
+Cross-repo review ledger item.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text (pk) | review id |
+| `repo_id` | text | fk -> berths |
+| `branch` | text | branch |
+| `checkpoint_id` | text nullable | associated checkpoint |
+| `created_at` | text | ISO timestamp |
+| `reason` | text | enum-ish + free text |
+| `severity` | text | `low`/`med`/`high` |
+| `status` | text | `open`/`done` |
+| `notes` | text nullable | optional |
+| `files_json` | text | related files |
+
+## Link
+
+URL attached to branch context.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text (pk) | link id |
+| `repo_id` | text | fk -> berths |
+| `branch` | text | branch |
+| `url` | text | attached URL |
+| `created_at` | text | ISO timestamp |
+
+## Markdown storage
+
+Path format:
+
+`checkpoints/<repo_id>/<branch>/<checkpoint_id>.md`
+
+Contains:
+
+- objective
+- decisions/findings
+- next steps
+- risks/review notes
+- resume commands
+- git evidence snapshot
+- verification block

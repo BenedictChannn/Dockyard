@@ -1,0 +1,69 @@
+"""Tests for status and review heuristic rules."""
+
+from __future__ import annotations
+
+from dockyard.models import Checkpoint, VerificationState
+from dockyard.services.reviews import review_triggers
+from dockyard.services.status import compute_slip_status
+
+
+def _checkpoint(**overrides) -> Checkpoint:
+    """Build a minimal checkpoint model for heuristic testing."""
+    checkpoint = Checkpoint(
+        id="cp_x",
+        repo_id="repo",
+        branch="feature/test",
+        created_at="2026-01-01T00:00:00+00:00",
+        objective="obj",
+        decisions="decisions",
+        next_steps=["next"],
+        risks_review="risk",
+        resume_commands=[],
+        git_dirty=True,
+        head_sha="abc",
+        head_subject="subj",
+        recent_commits=["abc subj"],
+        diff_files_changed=1,
+        diff_insertions=10,
+        diff_deletions=5,
+        touched_files=["src/app.py"],
+        diff_stat_text="1 file changed",
+        verification=VerificationState(
+            tests_run=False,
+            build_ok=False,
+            lint_ok=False,
+            smoke_ok=False,
+        ),
+        tags=[],
+    )
+    for key, value in overrides.items():
+        setattr(checkpoint, key, value)
+    return checkpoint
+
+
+def test_status_green_requires_tests_build_and_no_high_reviews() -> None:
+    """Green status requires strong verification and no serious review debt."""
+    cp = _checkpoint(
+        verification=VerificationState(tests_run=True, build_ok=True, lint_ok=False, smoke_ok=False)
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "green"
+
+
+def test_status_red_for_high_severity_open_review() -> None:
+    """High-severity open review should force red state."""
+    cp = _checkpoint(verification=VerificationState(tests_run=True, build_ok=True))
+    assert compute_slip_status(cp, open_review_count=1, has_high_open_review=True) == "red"
+
+
+def test_review_triggers_detect_risky_paths_and_large_diff() -> None:
+    """Review triggers should activate for risky paths and large churn."""
+    cp = _checkpoint(
+        touched_files=["security/token.py", "infra/deploy.tf"],
+        diff_files_changed=20,
+        diff_insertions=300,
+        diff_deletions=200,
+    )
+    triggers = review_triggers(cp)
+    assert "risky_paths_touched" in triggers
+    assert "many_files_changed" in triggers
+    assert "large_diff_churn" in triggers

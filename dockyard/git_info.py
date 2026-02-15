@@ -112,13 +112,31 @@ def inspect_repository(root_override: str | None = None, recent_commit_count: in
     head_info = _run_git(["log", "-1", "--pretty=%H%n%s"], cwd=repo_root).splitlines()
     head_sha = head_info[0] if head_info else ""
     head_subject = head_info[1] if len(head_info) > 1 else ""
-    dirty = bool(_run_git(["status", "--porcelain"], cwd=repo_root))
+    status_porcelain = _run_git(["status", "--porcelain", "--untracked-files=all"], cwd=repo_root)
+    dirty = bool(status_porcelain)
 
     # Compare working tree + index against HEAD to capture in-progress work.
     numstat = _run_git(["diff", "--numstat", "HEAD"], cwd=repo_root)
     files_changed, insertions, deletions = _parse_numstat(numstat)
     touched_files = _run_git(["diff", "--name-only", "HEAD"], cwd=repo_root).splitlines()
+    untracked_files: list[str] = []
+    for line in status_porcelain.splitlines():
+        if line.startswith("?? "):
+            untracked_files.append(line[3:])
+
+    # Include untracked files because they represent real in-progress work context.
+    for path in untracked_files:
+        if path not in touched_files:
+            touched_files.append(path)
+    files_changed += len([path for path in untracked_files if path])
+
     diff_stat_text = _run_git(["diff", "--stat", "HEAD"], cwd=repo_root)
+    if untracked_files:
+        untracked_block = "\n".join(f" {path} | untracked" for path in untracked_files)
+        if diff_stat_text:
+            diff_stat_text = f"{diff_stat_text}\n{untracked_block}"
+        else:
+            diff_stat_text = untracked_block
     recent_commits = _run_git(
         ["log", f"-{recent_commit_count}", "--pretty=%h %s"],
         cwd=repo_root,

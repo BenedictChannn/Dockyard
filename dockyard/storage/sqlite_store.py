@@ -36,6 +36,11 @@ class SQLiteStore:
     """Provides CRUD operations and query helpers over SQLite index."""
 
     def __init__(self, db_path: Path) -> None:
+        """Initialize store bound to a database path.
+
+        Args:
+            db_path: SQLite database file path.
+        """
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -179,8 +184,7 @@ class SQLiteStore:
                     objective,
                     decisions,
                     next_steps,
-                    risks_review,
-                    content=''
+                    risks_review
                 )
                 """
             )
