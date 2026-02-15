@@ -114,6 +114,7 @@ python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --ta
 
 ```bash
 python3 -m dockyard review            # list open
+python3 -m dockyard review --all      # include resolved
 python3 -m dockyard review add --reason "manual check" --severity med
 python3 -m dockyard review open <id>
 python3 -m dockyard review done <id>
