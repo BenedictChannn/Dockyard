@@ -109,3 +109,17 @@ def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     hits = store.search_checkpoints("security/path")
     assert len(hits) == 1
     assert hits[0]["id"] == "cp_special"
+
+
+def test_search_respects_limit(tmp_path: Path) -> None:
+    """Search should truncate result set to requested limit."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_limit", name="Limit", root_path="/tmp/l", remote_url=None))
+    store.add_checkpoint(_checkpoint("cp_l1", "repo_limit", "main", "Limit search one", ["mvp"]))
+    store.add_checkpoint(_checkpoint("cp_l2", "repo_limit", "main", "Limit search two", ["mvp"]))
+    store.add_checkpoint(_checkpoint("cp_l3", "repo_limit", "main", "Limit search three", ["mvp"]))
+
+    hits = store.search_checkpoints("Limit search", limit=2)
+    assert len(hits) == 2
