@@ -675,6 +675,58 @@ def test_save_editor_preserves_intentional_blank_lines(
     assert payload["decisions"] == "First paragraph\n\nSecond paragraph"
 
 
+def test_save_editor_trims_outer_blank_lines(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Editor normalization should trim leading/trailing empty lines."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    editor_script = tmp_path / "trim_editor.sh"
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "printf '# Decisions / Findings\\n\\n\\nCore decision line\\n\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Editor trimming objective",
+            "--next-step",
+            "Run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == "Core decision line"
+
+
 def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run must stop at first failing command."""
     env = dict(os.environ)
