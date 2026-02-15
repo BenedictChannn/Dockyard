@@ -1806,6 +1806,9 @@ def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
 
     links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
     assert "https://example.com/template-doc" in links_output
+    tagged_rows = json.loads(_run_dock(["ls", "--tag", "template", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
 
 
 def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
