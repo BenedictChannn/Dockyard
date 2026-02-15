@@ -617,6 +617,45 @@ def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path)
     assert "Objective: Alias coverage objective" in resume_alias.stdout
 
 
+def test_undock_alias_matches_resume_behavior(git_repo: Path, tmp_path: Path) -> None:
+    """`undock` alias should resolve to the same resume behavior."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock alias objective",
+            "--decisions",
+            "Undock should mirror resume command output",
+            "--next-step",
+            "Run undock alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(["undock"], cwd=git_repo, env=env).stdout
+    assert "Objective: Undock alias objective" in output
+
+
 def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path) -> None:
     """Auto-created review should link back to associated checkpoint details."""
     env = dict(os.environ)
@@ -718,6 +757,22 @@ def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: P
     opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
     assert "Associated Checkpoint" in opened.stdout
     assert "status: missing from index" in opened.stdout
+
+
+def test_review_add_outside_repo_requires_explicit_context(tmp_path: Path) -> None:
+    """Review add should fail outside git repo when repo/branch are omitted."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        ["review", "add", "--reason", "no_context", "--severity", "low"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "not inside a git repository" in output
+    assert "Traceback" not in output
 
 
 def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path) -> None:
