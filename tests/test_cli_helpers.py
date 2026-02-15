@@ -81,3 +81,16 @@ def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.Monkey
     assert "\\u00e7" not in captured[0]
     assert json.loads(captured[0])["text"] == "façade"
     assert captured[0].startswith("{\n  ")
+
+
+def test_emit_json_handles_list_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    """JSON emitter should support list payloads for empty-state outputs."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json([])
+
+    assert captured == ["[]"]
