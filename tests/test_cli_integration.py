@@ -1695,6 +1695,94 @@ def test_search_alias_repo_filter_accepts_berth_name(git_repo: Path, tmp_path: P
     assert rows[0]["berth_name"] == git_repo.name
 
 
+def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should honor --branch filtering semantics."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias branch filter objective default",
+            "--decisions",
+            "default branch checkpoint",
+            "--next-step",
+            "run alias branch filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/alias-branch-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias branch filter objective feature",
+            "--decisions",
+            "feature branch checkpoint",
+            "--next-step",
+            "run feature alias branch filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["f", "Alias branch filter objective", "--branch", "feature/alias-branch-filter", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["branch"] == "feature/alias-branch-filter"
+
+
 def test_search_alias_shows_no_match_message(tmp_path: Path) -> None:
     """Search alias should show empty-result guidance in non-JSON mode."""
     env = dict(os.environ)
