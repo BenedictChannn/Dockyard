@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -238,6 +239,50 @@ def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -
             "echo build",
             "--lint-fail",
             "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
+def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Template-driven save flow should not alter project working tree/index."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "save_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Template non-interference objective",
+                "decisions": "Template decisions",
+                "next_steps": ["Run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo noop"],
+                "verification": {"tests_run": True, "build_ok": True},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
             "--no-auto-review",
         ],
         cwd=git_repo,
