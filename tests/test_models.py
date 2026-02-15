@@ -47,3 +47,32 @@ def test_checkpoint_to_jsonable_includes_project_name_and_verification() -> None
     assert payload["open_reviews"] == 2
     assert payload["verification"]["tests_run"] is True
     assert payload["verification"]["build_ok"] is True
+
+
+def test_checkpoint_to_jsonable_project_name_optional() -> None:
+    """Project name should remain optional in JSON projection output."""
+    checkpoint = Checkpoint(
+        id="cp_model_2",
+        repo_id="repo_id",
+        branch="main",
+        created_at="2026-01-01T00:00:00+00:00",
+        objective="Objective",
+        decisions="Decisions",
+        next_steps=["step1"],
+        risks_review="Risk",
+        resume_commands=[],
+        git_dirty=False,
+        head_sha="abc123",
+        head_subject="subject",
+        recent_commits=[],
+        diff_files_changed=0,
+        diff_insertions=0,
+        diff_deletions=0,
+        touched_files=[],
+        diff_stat_text="",
+        verification=VerificationState(),
+        tags=[],
+    )
+    payload = checkpoint_to_jsonable(checkpoint=checkpoint)
+    assert payload["project_name"] is None
+    assert payload["open_reviews"] == 0
