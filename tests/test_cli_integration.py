@@ -283,3 +283,51 @@ def test_resume_output_includes_required_summary_fields(
 
     # Ensure ordering remains scannable and consistent for quick resume.
     assert positions == sorted(positions)
+
+
+def test_resume_by_berth_from_outside_repo_with_handoff(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume should work outside repo when berth is provided explicitly."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Cross-repo resume lookup",
+            "--decisions",
+            "Use berth argument from outside repo context",
+            "--next-step",
+            "Resume by berth",
+            "--risks",
+            "None",
+            "--command",
+            "echo continue",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["resume", git_repo.name, "--handoff"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Project/Branch: repo / " in result.stdout
+    assert "Cross-repo resume lookup" in result.stdout
+    assert "### Dockyard Handoff" in result.stdout
