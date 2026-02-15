@@ -715,6 +715,81 @@ def test_invalid_regex_config_produces_actionable_error(
     assert "Traceback" not in output
 
 
+def test_missing_template_path_produces_actionable_error(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Missing save template path should fail with actionable error."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    missing_path = tmp_path / "not-there.json"
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(missing_path),
+            "--no-prompt",
+            "--objective",
+            "Missing template",
+            "--decisions",
+            "should not save",
+            "--next-step",
+            "fix path",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template not found" in output
+    assert "Traceback" not in output
+
+
+def test_invalid_template_content_produces_actionable_error(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Malformed template should fail cleanly with parse error message."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_template.toml"
+    bad_template.write_text("[broken\nvalue = 1", encoding="utf-8")
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Invalid template",
+            "--decisions",
+            "should not save",
+            "--next-step",
+            "fix template",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Failed to parse template" in output
+    assert "Traceback" not in output
+
+
 def test_configured_heuristics_can_disable_default_review_trigger(
     git_repo: Path,
     tmp_path: Path,
