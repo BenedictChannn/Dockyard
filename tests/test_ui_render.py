@@ -51,6 +51,11 @@ def test_format_age_accepts_naive_iso_timestamps() -> None:
     assert age[-1] in {"s", "m", "h", "d"}
 
 
+def test_format_age_supports_day_scale_output() -> None:
+    """Past timestamps should support compact day-scale output."""
+    assert format_age("2000-01-01T00:00:00+00:00").endswith("d")
+
+
 def test_verification_summary_uses_yes_no_markers() -> None:
     """Verification summary should map booleans to yes/no values."""
     assert verification_summary(_checkpoint()) == "tests:yes build:no lint:yes"
