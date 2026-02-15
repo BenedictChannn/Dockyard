@@ -2140,6 +2140,51 @@ def test_invalid_config_section_type_is_actionable(
     assert "Traceback" not in output
 
 
+def test_negative_threshold_config_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Negative heuristic thresholds should fail with actionable guidance."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "churn_threshold = -5",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Negative threshold config",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix config",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Config field review_heuristics.churn_threshold must be >= 0." in output
+    assert "Traceback" not in output
+
+
 def test_missing_template_path_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,
