@@ -87,6 +87,26 @@ def test_print_search_falls_back_to_repo_id_without_berth_name() -> None:
     assert "repo_fallback" in output
 
 
+def test_print_search_truncates_long_snippets() -> None:
+    """Rendered search table should not print full unbounded snippets."""
+    long_snippet = "x" * 200
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_fallback",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": long_snippet,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert long_snippet not in output
+    assert "…" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
