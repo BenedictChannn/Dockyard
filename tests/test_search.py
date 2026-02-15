@@ -262,3 +262,39 @@ def test_search_snippet_normalizes_multiline_whitespace(tmp_path: Path) -> None:
     hits = store.search_checkpoints("line two")
     assert len(hits) == 1
     assert hits[0]["snippet"] == "line one line two line three"
+
+
+def test_search_snippet_normalizes_objective_spacing(tmp_path: Path) -> None:
+    """Objective snippet text should collapse repeated whitespace."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_obj_ws", name="ObjWS", root_path="/tmp/ows", remote_url=None))
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_obj_ws",
+            repo_id="repo_obj_ws",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="token   with\t\tspace",
+            decisions="none",
+            next_steps=["step"],
+            risks_review="risk",
+            resume_commands=[],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hits = store.search_checkpoints("token")
+    assert len(hits) == 1
+    assert hits[0]["snippet"] == "token with space"
