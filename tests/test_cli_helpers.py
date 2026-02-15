@@ -80,3 +80,4 @@ def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.Monkey
     assert "\x1b[" not in captured[0]
     assert "\\u00e7" not in captured[0]
     assert json.loads(captured[0])["text"] == "façade"
+    assert captured[0].startswith("{\n  ")
