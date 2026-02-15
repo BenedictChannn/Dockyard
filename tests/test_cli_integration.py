@@ -184,6 +184,46 @@ def test_resume_json_reports_open_review_count(git_repo: Path, tmp_path: Path) -
     assert payload["open_reviews"] == 1
 
 
+def test_resume_json_handles_long_text_fields(git_repo: Path, tmp_path: Path) -> None:
+    """Resume JSON should remain parseable with long text payloads."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    long_risk = "risktoken " + ("x" * 500)
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Long JSON objective",
+            "--decisions",
+            "long payload regression test",
+            "--next-step",
+            "run resume json",
+            "--risks",
+            long_risk,
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["risks_review"] == long_risk
+
+
 def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     """Short alias `s` should behave the same as `save`."""
     env = dict(os.environ)
