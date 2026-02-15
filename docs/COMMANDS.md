@@ -52,6 +52,8 @@ Editor note:
 - If you use `--editor` and leave the scaffold line unchanged
   (`# Decisions / Findings`), Dockyard treats decisions as missing and keeps
   required-field validation intact.
+- Dockyard trims only leading/trailing empty lines from editor text; intentional
+  internal blank lines are preserved.
 - If `--decisions` is provided explicitly, Dockyard uses it and does not invoke
   `$EDITOR`.
 

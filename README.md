@@ -60,6 +60,7 @@ Optional editor capture for decisions:
 ```bash
 python3 -m dockyard save --editor
 # if --decisions is provided, it takes precedence and $EDITOR is not invoked
+# the scaffold heading is ignored, but intentional blank lines are preserved
 ```
 
 Example template:
