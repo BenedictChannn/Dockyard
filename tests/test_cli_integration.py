@@ -1419,6 +1419,53 @@ def test_review_add_requires_non_empty_reason(git_repo: Path, tmp_path: Path) ->
     assert "Traceback" not in output
 
 
+def test_review_add_trims_reason_whitespace(git_repo: Path, tmp_path: Path) -> None:
+    """Review reason should be trimmed before persistence."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Reason trimming baseline",
+            "--decisions",
+            "Need context for manual review add",
+            "--next-step",
+            "create review with padded reason",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "   padded_reason   ", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "reason: padded_reason" in opened.stdout
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)
