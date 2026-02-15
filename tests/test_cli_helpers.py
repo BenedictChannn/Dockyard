@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from dockyard.cli import _comma_or_pipe_values, _normalize_editor_text
+import json
+
+import pytest
+
+import dockyard.cli as cli_module
+from dockyard.cli import _comma_or_pipe_values, _emit_json, _normalize_editor_text
 
 
 def test_normalize_editor_text_drops_scaffold_line() -> None:
@@ -37,3 +42,18 @@ def test_comma_or_pipe_values_supports_commas() -> None:
 def test_comma_or_pipe_values_prioritizes_pipe_separator() -> None:
     """Pipe-separated input should parse as pipe-delimited when present."""
     assert _comma_or_pipe_values("alpha| beta |gamma") == ["alpha", "beta", "gamma"]
+
+
+def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    """JSON emitter should output parseable text without unicode escaping."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json({"text": "façade"})
+
+    assert len(captured) == 1
+    assert "\\u00e7" not in captured[0]
+    assert json.loads(captured[0])["text"] == "façade"
