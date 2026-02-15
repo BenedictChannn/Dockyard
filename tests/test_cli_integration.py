@@ -571,6 +571,51 @@ def test_save_editor_ignores_placeholder_only_content(
     assert "Traceback" not in output
 
 
+def test_save_editor_ignores_indented_placeholder_only_content(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Indented scaffold-only editor text should still be treated as missing."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    editor_script = tmp_path / "indented_placeholder_editor.sh"
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "printf '   # Decisions / Findings\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Editor indented placeholder objective",
+            "--next-step",
+            "Run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--no-prompt requires --objective, --decisions, and at least one --next-step." in output
+    assert "Traceback" not in output
+
+
 def test_save_editor_preserves_non_scaffold_hash_lines(
     git_repo: Path,
     tmp_path: Path,
