@@ -348,9 +348,10 @@ def test_json_outputs_preserve_unicode_characters(git_repo: Path, tmp_path: Path
 
     resume_output = _run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout
     ls_output = _run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout
+    harbor_output = _run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout
     search_output = _run_dock(["search", "façade", "--json"], cwd=tmp_path, env=env).stdout
 
-    for output in [resume_output, ls_output, search_output]:
+    for output in [resume_output, ls_output, harbor_output, search_output]:
         assert "\\u00e7" not in output
         assert "façade" in output
 
