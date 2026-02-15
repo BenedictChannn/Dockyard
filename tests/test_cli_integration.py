@@ -2835,6 +2835,17 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     assert "Traceback" not in search_output
 
 
+def test_harbor_alias_validates_limit_argument(tmp_path: Path) -> None:
+    """Harbor alias should enforce the same limit validation as ls."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["harbor", "--limit", "0"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--limit must be >= 1." in output
+    assert "Traceback" not in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
