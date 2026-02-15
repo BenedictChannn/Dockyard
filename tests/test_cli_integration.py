@@ -2379,6 +2379,9 @@ def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path
     with_all = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
     assert "all_flag_item" in with_all
     assert "done" in with_all
+    with_all_subcommand = _run_dock(["review", "list", "--all"], cwd=tmp_path, env=env).stdout
+    assert "all_flag_item" in with_all_subcommand
+    assert "done" in with_all_subcommand
 
 
 def test_review_list_subcommand_matches_default_listing(git_repo: Path, tmp_path: Path) -> None:
