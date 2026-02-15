@@ -1112,6 +1112,10 @@ def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path)
     assert len(search_alias_json) >= 1
     assert "branch" in search_alias_json[0]
     assert json.loads(_run_dock(["f", "definitely-no-match", "--json"], cwd=tmp_path, env=env).stdout) == []
+    filtered_alias_json = json.loads(
+        _run_dock(["f", "Alias coverage", "--tag", "missing-tag", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert filtered_alias_json == []
 
     resume_alias = _run_dock(["r"], cwd=git_repo, env=env)
     assert "Objective: Alias coverage objective" in resume_alias.stdout
