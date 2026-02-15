@@ -291,3 +291,17 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
 
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert status_after == ""
+
+
+def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock command (harbor view) should not alter repo state."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(["python3", "-m", "dockyard"], cwd=git_repo, env=env)
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
