@@ -132,6 +132,7 @@ python3 -m dockyard review
 python3 -m dockyard review list
 # include resolved:
 python3 -m dockyard review --all
+python3 -m dockyard review list --all
 ```
 
 ### Add
