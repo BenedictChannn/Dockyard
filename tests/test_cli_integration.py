@@ -628,6 +628,60 @@ def test_review_cli_list_prioritizes_high_severity(git_repo: Path, tmp_path: Pat
     assert "low_item" in lines[1]
 
 
+def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path) -> None:
+    """`dock review --all` should include resolved items without subcommand."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review all flag baseline",
+            "--decisions",
+            "Need context for manual review lifecycle",
+            "--next-step",
+            "Create and resolve review",
+            "--risks",
+            "None",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    created = _run_dock(
+        ["review", "add", "--reason", "all_flag_item", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    _run_dock(["review", "done", review_id], cwd=tmp_path, env=env)
+
+    open_only = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "all_flag_item" not in open_only
+
+    with_all = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
+    assert "all_flag_item" in with_all
+    assert "done" in with_all
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)

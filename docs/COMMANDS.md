@@ -98,6 +98,8 @@ Review queue management.
 
 ```bash
 python3 -m dockyard review
+# include resolved:
+python3 -m dockyard review --all
 ```
 
 ### Add

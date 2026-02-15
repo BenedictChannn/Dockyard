@@ -452,10 +452,17 @@ def search_command(
 
 
 @review_app.callback()
-def review_callback(ctx: typer.Context) -> None:
-    """Default `dock review` behavior: list open review items."""
+def review_callback(
+    ctx: typer.Context,
+    all_items: bool = typer.Option(
+        False,
+        "--all",
+        help="Include resolved review items in default listing.",
+    ),
+) -> None:
+    """Default `dock review` behavior: list review items."""
     if ctx.invoked_subcommand is None:
-        review_list()
+        review_list(all_items=all_items)
 
 
 @review_app.command("list", hidden=True)
