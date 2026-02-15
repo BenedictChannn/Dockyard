@@ -827,6 +827,25 @@ def test_review_add_partial_override_requires_both_repo_and_branch(tmp_path: Pat
     assert "Provide both --repo and --branch when overriding context." in output
     assert "Traceback" not in output
 
+    failed_branch_only = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "partial_override_branch_only",
+            "--severity",
+            "low",
+            "--branch",
+            "manual_branch_only",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output_branch_only = f"{failed_branch_only.stdout}\n{failed_branch_only.stderr}"
+    assert "Provide both --repo and --branch when overriding context." in output_branch_only
+    assert "Traceback" not in output_branch_only
+
 
 def test_review_add_accepts_berth_name_override(
     git_repo: Path,
