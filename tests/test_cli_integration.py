@@ -2580,6 +2580,10 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     )
     assert len(search_repo_json) >= 1
     assert "berth_name" in search_repo_json[0]
+    assert {"id", "repo_id", "berth_name", "branch", "created_at", "snippet", "objective"} <= set(
+        search_repo_json[0].keys()
+    )
+    assert search_repo_json[0]["snippet"]
     assert json.loads(
         _run_dock(
             ["search", "no-such-query", "--repo", git_repo.name, "--json"],
