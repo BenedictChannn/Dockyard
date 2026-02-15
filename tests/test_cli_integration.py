@@ -2182,6 +2182,17 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     assert "Traceback" not in search_output
 
 
+def test_search_rejects_blank_query(tmp_path: Path) -> None:
+    """Search should reject whitespace-only query strings."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["search", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Query must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_links_are_branch_scoped_and_persist(git_repo: Path, tmp_path: Path) -> None:
     """Links should remain scoped by branch across context switches."""
     env = dict(os.environ)

@@ -563,6 +563,9 @@ def search_command(
 ) -> None:
     """Search checkpoint objectives/decisions/next steps."""
     store, _ = _store()
+    cleaned_query = query.strip()
+    if not cleaned_query:
+        raise typer.BadParameter("Query must be a non-empty string.")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
     repo_filter = repo
     if repo:
@@ -571,7 +574,7 @@ def search_command(
             repo_filter = berth.repo_id
     rows = search_service(
         store,
-        query=query,
+        query=cleaned_query,
         tag=tag,
         repo=repo_filter,
         branch=branch,
