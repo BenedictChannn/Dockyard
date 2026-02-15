@@ -58,6 +58,19 @@ def _comma_or_pipe_values(raw: str) -> list[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
+def _normalize_editor_text(raw: str) -> str:
+    """Normalize editor text by dropping comment-only scaffold lines.
+
+    Args:
+        raw: Raw text returned by click editor integration.
+
+    Returns:
+        Cleaned text content suitable for persistence.
+    """
+    lines = [line for line in raw.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+    return "\n".join(lines).strip()
+
+
 def _verification_from_inputs(
     no_prompt: bool,
     tests_run: bool | None,
@@ -379,7 +392,7 @@ def save_command(
     if editor and not decisions:
         edited = click.edit("# Decisions / Findings\n")
         if edited:
-            decisions = edited.strip()
+            decisions = _normalize_editor_text(edited)
 
     if not no_prompt:
         if not objective:
