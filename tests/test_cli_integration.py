@@ -686,6 +686,55 @@ def test_resume_branch_flag_selects_requested_branch(
     assert selected["objective"] == "Feature branch objective"
 
 
+def test_resume_unknown_branch_for_known_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume should fail cleanly when requested branch has no checkpoint."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Known repo checkpoint",
+            "--decisions",
+            "Used to validate unknown branch handling",
+            "--next-step",
+            "resume missing branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    failed = _run_dock(
+        ["resume", "--branch", "missing/branch"],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "No checkpoint found for the requested context." in output
+    assert "Traceback" not in output
+
+
 def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
     """Hidden aliases should mirror primary command behavior."""
     env = dict(os.environ)
