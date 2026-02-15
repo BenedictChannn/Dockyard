@@ -1337,6 +1337,50 @@ def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> No
     assert resume_payload["verification"]["build_ok"] is True
 
 
+def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) -> None:
+    """Template bool-like strings should coerce to verification booleans."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "bool_like_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Bool-like objective",
+                "decisions": "Use string booleans in template",
+                "next_steps": ["Run resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "build_ok": "1",
+                    "lint_ok": "no",
+                    "smoke_ok": "false",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+
+
 def test_invalid_config_produces_actionable_error(git_repo: Path, tmp_path: Path) -> None:
     """Invalid config TOML should fail with concise actionable message."""
     env = dict(os.environ)
