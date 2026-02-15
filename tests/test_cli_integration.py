@@ -170,6 +170,48 @@ def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
     assert "$ echo should-not-run -> exit" not in run_result.stdout
 
 
+def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run should execute all commands when none fail."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Run success path",
+            "--decisions",
+            "Verify all commands execute when successful",
+            "--next-step",
+            "Run resume --run",
+            "--risks",
+            "None",
+            "--command",
+            "echo first-ok",
+            "--command",
+            "echo second-ok",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
+    assert "$ echo first-ok -> exit 0" in result.stdout
+    assert "$ echo second-ok -> exit 0" in result.stdout
+
+
 def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     """Dockyard user-facing errors should be actionable without traceback spam."""
     env = dict(os.environ)
