@@ -215,6 +215,50 @@ def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: P
     assert "$ echo second-ok -> exit 0" in result.stdout
 
 
+def test_resume_run_with_berth_executes_in_repo_root(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume --run with berth arg should execute commands in repo root."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Run from berth context",
+            "--decisions",
+            "Ensure execution cwd resolves from berth root path",
+            "--next-step",
+            "Run resume with berth outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "pwd > run_pwd.txt",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    _run_dock(["resume", git_repo.name, "--run"], cwd=tmp_path, env=env)
+    marker = git_repo / "run_pwd.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
+
+
 def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     """Dockyard user-facing errors should be actionable without traceback spam."""
     env = dict(os.environ)
