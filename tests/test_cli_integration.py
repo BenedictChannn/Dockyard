@@ -1022,6 +1022,46 @@ def test_ls_json_preserves_unicode_objective(git_repo: Path, tmp_path: Path) -> 
     assert unicode_objective in [row["objective"] for row in harbor_rows]
 
 
+def test_ls_json_preserves_multiline_objective(git_repo: Path, tmp_path: Path) -> None:
+    """Ls JSON should preserve multiline objective text without parse issues."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_objective = "line one\nline two"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            multiline_objective,
+            "--decisions",
+            "multiline objective regression",
+            "--next-step",
+            "run ls json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert multiline_objective in [row["objective"] for row in rows]
+
+
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should honor tag filtering like ls."""
     env = dict(os.environ)
