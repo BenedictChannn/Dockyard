@@ -3255,6 +3255,87 @@ def test_search_alias_rejects_blank_query(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_search_alias_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias JSON mode should honor --limit."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias limit objective one",
+            "--decisions",
+            "alias limit baseline one",
+            "--next-step",
+            "record first",
+            "--risks",
+            "none",
+            "--command",
+            "echo one",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/alias-limit"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias limit objective two",
+            "--decisions",
+            "alias limit baseline two",
+            "--next-step",
+            "record second",
+            "--risks",
+            "none",
+            "--command",
+            "echo two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(_run_dock(["f", "Alias limit objective", "--limit", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+
+
 def test_harbor_alias_validates_limit_argument(tmp_path: Path) -> None:
     """Harbor alias should enforce the same limit validation as ls."""
     env = dict(os.environ)
