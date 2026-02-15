@@ -94,3 +94,19 @@ def test_load_runtime_config_rejects_invalid_regex_patterns(tmp_path: Path) -> N
     )
     with pytest.raises(DockyardError):
         load_runtime_config(paths)
+
+
+def test_load_runtime_config_rejects_boolean_for_int_field(tmp_path: Path) -> None:
+    """Boolean values should be rejected for integer threshold fields."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "files_changed_threshold = true",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(DockyardError):
+        load_runtime_config(paths)
