@@ -45,3 +45,31 @@ def test_markdown_round_trip_sections() -> None:
     assert parsed["next_steps"] == checkpoint.next_steps
     assert parsed["risks_review"] == checkpoint.risks_review
     assert parsed["resume_commands"] == checkpoint.resume_commands
+
+
+def test_markdown_parser_handles_empty_resume_commands() -> None:
+    """Parser should return empty command list when section has no items."""
+    checkpoint = Checkpoint(
+        id="cp_empty_cmds",
+        repo_id="repo_a",
+        branch="main",
+        created_at="2026-02-15T00:00:00+00:00",
+        objective="Objective",
+        decisions="Decisions",
+        next_steps=["Single step"],
+        risks_review="Risk notes",
+        resume_commands=[],
+        git_dirty=False,
+        head_sha="abc",
+        head_subject="subject",
+        recent_commits=[],
+        diff_files_changed=0,
+        diff_insertions=0,
+        diff_deletions=0,
+        touched_files=[],
+        diff_stat_text="",
+        verification=VerificationState(),
+        tags=[],
+    )
+    parsed = parse_checkpoint_markdown(render_checkpoint_markdown(checkpoint))
+    assert parsed["resume_commands"] == []
