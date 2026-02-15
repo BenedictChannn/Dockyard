@@ -538,3 +538,51 @@ def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
 
     links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
     assert "https://example.com/template-doc" in links_output
+
+
+def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """TOML template should be accepted by save --template."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "save_template.toml"
+    template_path.write_text(
+        "\n".join(
+            [
+                'objective = "TOML objective"',
+                'decisions = "TOML decisions"',
+                'risks_review = "TOML risk"',
+                'next_steps = ["TOML next"]',
+                'resume_commands = ["echo toml"]',
+                'tags = ["toml"]',
+                "",
+                "[verification]",
+                "tests_run = true",
+                'tests_command = "pytest -q"',
+                "build_ok = true",
+                'build_command = "echo build"',
+                "lint_ok = false",
+                "smoke_ok = false",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert resume_payload["objective"] == "TOML objective"
+    assert resume_payload["verification"]["tests_run"] is True
+    assert resume_payload["verification"]["build_ok"] is True
