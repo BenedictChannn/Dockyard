@@ -1844,6 +1844,23 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
         )
         == []
     )
+    combo_rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "Alias branch filter objective",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                "feature/alias-branch-filter",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(combo_rows) == 1
+    assert combo_rows[0]["branch"] == "feature/alias-branch-filter"
 
 
 def test_search_alias_shows_no_match_message(tmp_path: Path) -> None:
