@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dockyard.config import ReviewHeuristicsConfig
 from dockyard.models import Checkpoint, VerificationState
 from dockyard.services.reviews import review_triggers
 from dockyard.services.status import compute_slip_status
@@ -67,3 +68,27 @@ def test_review_triggers_detect_risky_paths_and_large_diff() -> None:
     assert "risky_paths_touched" in triggers
     assert "many_files_changed" in triggers
     assert "large_diff_churn" in triggers
+
+
+def test_review_triggers_honor_custom_config_thresholds() -> None:
+    """Review trigger logic should use provided configuration overrides."""
+    cp = _checkpoint(
+        branch="urgent/security-fix",
+        touched_files=["critical/module.py"],
+        diff_files_changed=2,
+        diff_insertions=30,
+        diff_deletions=10,
+    )
+    config = ReviewHeuristicsConfig(
+        risky_path_patterns=[r"(^|/)critical/"],
+        files_changed_threshold=2,
+        churn_threshold=35,
+        non_trivial_files_threshold=1,
+        non_trivial_churn_threshold=10,
+        branch_prefixes=["urgent/"],
+    )
+    triggers = review_triggers(cp, heuristics=config)
+    assert "risky_paths_touched" in triggers
+    assert "many_files_changed" in triggers
+    assert "large_diff_churn" in triggers
+    assert "release_or_hotfix_branch" in triggers

@@ -12,7 +12,7 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from dockyard.config import resolve_paths
+from dockyard.config import load_runtime_config, resolve_paths
 from dockyard.errors import DockyardError, NotGitRepositoryError
 from dockyard.git_info import inspect_repository
 from dockyard.models import (
@@ -211,6 +211,8 @@ def save_command(
 ) -> None:
     """Create a new checkpoint for the current repo and branch."""
     store, _ = _store()
+    paths = resolve_paths()
+    runtime_config = load_runtime_config(paths)
     snapshot = _resolve_repo_context(root=root, require_git=True)
     assert snapshot is not None
     template_data = _load_template_data(template)
@@ -311,11 +313,12 @@ def save_command(
     )
     checkpoint, triggers, review_id = create_checkpoint(
         store=store,
-        paths=resolve_paths(),
+        paths=paths,
         git=snapshot,
         user_input=save_input,
         verification=verification,
         create_review_on_trigger=auto_review,
+        review_heuristics=runtime_config.review_heuristics,
     )
     console.print(f"[green]Saved checkpoint[/green] {checkpoint.id} for {checkpoint.branch}")
     if triggers:

@@ -144,6 +144,9 @@ Override base path with:
 export DOCKYARD_HOME=/path/to/custom/store
 ```
 
+Optional `config.toml` can override review heuristic thresholds/patterns (see
+`docs/HEURISTICS.md`).
+
 ## Safety boundary
 
 Dockyard is intended to be non-invasive:

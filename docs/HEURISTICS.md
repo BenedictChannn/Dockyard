@@ -60,3 +60,24 @@ Any of:
 
 This model biases toward review safety while remaining simple and transparent.
 All status outcomes are explainable from stored fields without model inference.
+
+## Configuration
+
+Heuristic thresholds and patterns can be overridden via `config.toml` in the
+Dockyard data directory.
+
+Example:
+
+```toml
+[review_heuristics]
+files_changed_threshold = 12
+churn_threshold = 300
+non_trivial_files_threshold = 2
+non_trivial_churn_threshold = 50
+branch_prefixes = ["release/", "hotfix/", "urgent/"]
+risky_path_patterns = [
+  "(^|/)auth/",
+  "(^|/)security/",
+  "(^|/)critical/"
+]
+```

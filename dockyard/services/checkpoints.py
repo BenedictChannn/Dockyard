@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
+from dockyard.config import ReviewHeuristicsConfig
 from dockyard.models import (
     Berth,
     Checkpoint,
@@ -33,6 +34,7 @@ def create_checkpoint(
     user_input: SaveInput,
     verification: VerificationState,
     create_review_on_trigger: bool = True,
+    review_heuristics: ReviewHeuristicsConfig | None = None,
 ) -> tuple[Checkpoint, list[str], str | None]:
     """Create and persist checkpoint plus optional review item.
 
@@ -43,6 +45,7 @@ def create_checkpoint(
         user_input: Prompt- or flag-collected user checkpoint inputs.
         verification: Structured verification state.
         create_review_on_trigger: Whether to auto-create review item if triggered.
+        review_heuristics: Optional review trigger config overrides.
 
     Returns:
         Tuple containing checkpoint, trigger list, and optional created review id.
@@ -92,7 +95,7 @@ def create_checkpoint(
             )
         )
 
-    triggers = review_triggers(checkpoint)
+    triggers = review_triggers(checkpoint, heuristics=review_heuristics)
     created_review_id: str | None = None
     if triggers and create_review_on_trigger:
         review = build_review_item(checkpoint, triggers)
