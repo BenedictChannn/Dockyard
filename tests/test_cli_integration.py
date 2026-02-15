@@ -804,6 +804,8 @@ def test_ls_json_handles_long_objective_text(git_repo: Path, tmp_path: Path) -> 
     rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) >= 1
     assert long_objective in [row["objective"] for row in rows]
+    harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    assert long_objective in [row["objective"] for row in harbor_rows]
 
 
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
