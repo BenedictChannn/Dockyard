@@ -923,6 +923,64 @@ def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: P
     assert "status: missing from index" in opened.stdout
 
 
+def test_review_open_displays_file_list(git_repo: Path, tmp_path: Path) -> None:
+    """Review open output should include associated file paths."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review file display baseline",
+            "--decisions",
+            "Create review with file metadata",
+            "--next-step",
+            "Open review details",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "file_display",
+            "--severity",
+            "low",
+            "--file",
+            "src/a.py",
+            "--file",
+            "src/b.py",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
+    assert "files: src/a.py, src/b.py" in opened.stdout
+
+
 def test_review_add_outside_repo_requires_explicit_context(tmp_path: Path) -> None:
     """Review add should fail outside git repo when repo/branch are omitted."""
     env = dict(os.environ)

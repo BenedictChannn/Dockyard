@@ -689,6 +689,7 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
                     f"status: {item.status}",
                     f"reason: {item.reason}",
                     f"notes: {item.notes or ''}",
+                    f"files: {', '.join(item.files) if item.files else ''}",
                 ]
             ),
             title="Review Item",
