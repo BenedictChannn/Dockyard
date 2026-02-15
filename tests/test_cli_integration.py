@@ -893,6 +893,46 @@ def test_ls_json_handles_long_objective_text(git_repo: Path, tmp_path: Path) -> 
     assert long_objective in [row["objective"] for row in harbor_rows]
 
 
+def test_ls_json_preserves_unicode_objective(git_repo: Path, tmp_path: Path) -> None:
+    """Ls JSON output should preserve unicode objective text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    unicode_objective = "Unicode objective: façade safety"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            unicode_objective,
+            "--decisions",
+            "unicode ls regression",
+            "--next-step",
+            "run ls json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert unicode_objective in [row["objective"] for row in rows]
+
+
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should honor tag filtering like ls."""
     env = dict(os.environ)
