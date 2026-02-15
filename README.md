@@ -109,7 +109,7 @@ Filters:
 python3 -m dockyard ls --stale 3 --tag mvp --limit 20
 ```
 
-### 4) Search decisions/findings
+### 4) Search objectives, decisions, next steps, and risks
 
 ```bash
 python3 -m dockyard search "migration"
