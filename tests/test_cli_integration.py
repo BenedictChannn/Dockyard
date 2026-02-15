@@ -1097,6 +1097,7 @@ def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path)
 
     open_result = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
     assert "Review Item" in open_result.stdout
+    assert "checkpoint_id: cp_" in open_result.stdout
     assert "Associated Checkpoint" in open_result.stdout
     assert "Trigger risky review linkage" in open_result.stdout
 
