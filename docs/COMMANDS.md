@@ -83,6 +83,8 @@ Search checkpoint objectives/decisions/next steps.
 python3 -m dockyard search "<query>"
 ```
 
+When no results match, Dockyard prints: `No checkpoint matches found.`
+
 ### Options
 
 - `--tag <tag>`
