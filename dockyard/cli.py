@@ -381,6 +381,21 @@ def save_command(
                 "--no-prompt requires --objective, --decisions, and at least one --next-step."
             )
 
+    cleaned_objective = (objective or "").strip()
+    cleaned_decisions = (decisions or "").strip()
+    cleaned_risks = (risks or "").strip()
+    cleaned_next_steps = [step.strip() for step in (next_step or []) if step.strip()]
+    cleaned_resume_commands = [item.strip() for item in (command or []) if item.strip()]
+
+    if not cleaned_objective:
+        raise typer.BadParameter("Objective is required.")
+    if not cleaned_decisions:
+        raise typer.BadParameter("Decisions / Findings is required.")
+    if not cleaned_next_steps:
+        raise typer.BadParameter("At least one next step is required.")
+    if not cleaned_risks:
+        raise typer.BadParameter("Risks / Review Needed is required.")
+
     verification = _verification_from_inputs(
         no_prompt=no_prompt,
         tests_run=tests_run,
@@ -393,11 +408,11 @@ def save_command(
         smoke_notes=smoke_notes,
     )
     save_input = SaveInput(
-        objective=objective or "",
-        decisions=decisions or "",
-        next_steps=(next_step or [])[:3],
-        risks_review=risks or "",
-        resume_commands=(command or [])[:5],
+        objective=cleaned_objective,
+        decisions=cleaned_decisions,
+        next_steps=cleaned_next_steps[:3],
+        risks_review=cleaned_risks,
+        resume_commands=cleaned_resume_commands[:5],
         tags=tag or [],
         links=link or [],
     )
