@@ -765,6 +765,47 @@ def test_ls_json_empty_store_returns_array(tmp_path: Path) -> None:
     assert payload == []
 
 
+def test_ls_json_handles_long_objective_text(git_repo: Path, tmp_path: Path) -> None:
+    """Ls JSON output should remain parseable with long objective text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    long_objective = "objtoken " + ("y" * 500)
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            long_objective,
+            "--decisions",
+            "long objective regression",
+            "--next-step",
+            "run ls json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) >= 1
+    assert long_objective in [row["objective"] for row in rows]
+
+
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should honor tag filtering like ls."""
     env = dict(os.environ)
