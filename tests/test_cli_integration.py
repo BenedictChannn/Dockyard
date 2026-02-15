@@ -3677,6 +3677,7 @@ def test_search_json_multiline_snippet_remains_parseable(
     rows = json.loads(_run_dock(["search", "multilinetoken", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert "multilinetoken" in rows[0]["snippet"]
+    assert "\n" not in rows[0]["snippet"]
 
 
 def test_search_json_preserves_unicode_snippets(git_repo: Path, tmp_path: Path) -> None:
