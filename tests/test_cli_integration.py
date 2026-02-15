@@ -628,3 +628,40 @@ def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> No
     assert resume_payload["objective"] == "TOML objective"
     assert resume_payload["verification"]["tests_run"] is True
     assert resume_payload["verification"]["build_ok"] is True
+
+
+def test_invalid_config_produces_actionable_error(git_repo: Path, tmp_path: Path) -> None:
+    """Invalid config TOML should fail with concise actionable message."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "[review_heuristics\nfiles_changed_threshold = 4",
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Config parse failure case",
+            "--decisions",
+            "should fail before saving",
+            "--next-step",
+            "fix config",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Invalid config TOML" in output
+    assert "Traceback" not in output
