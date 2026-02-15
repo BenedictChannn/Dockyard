@@ -84,6 +84,8 @@ Validation:
 - `--stale` must be `>= 0`
 - `--limit` must be `>= 1`
 
+`ls --json` returns `[]` when no slips are indexed.
+
 ## `search` (`f`)
 
 Search checkpoint objectives/decisions/next steps.
