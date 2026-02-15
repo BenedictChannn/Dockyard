@@ -164,12 +164,14 @@ def load_runtime_config(paths: DockyardPaths | None = None) -> DockyardRuntimeCo
     return config
 
 
-def _parse_int(value, default: int, field_name: str) -> int:
+def _parse_int(value, default: int, field_name: str, minimum: int = 0) -> int:
     """Parse optional integer config value with validation."""
     if value is None:
         return default
     if isinstance(value, bool) or not isinstance(value, int):
         raise DockyardError(f"Config field {field_name} must be an integer.")
+    if value < minimum:
+        raise DockyardError(f"Config field {field_name} must be >= {minimum}.")
     return value
 
 

@@ -128,6 +128,22 @@ def test_load_runtime_config_rejects_non_string_list_entries(tmp_path: Path) -> 
         load_runtime_config(paths)
 
 
+def test_load_runtime_config_rejects_negative_thresholds(tmp_path: Path) -> None:
+    """Threshold values should not accept negatives."""
+    paths = _paths(tmp_path)
+    paths.config_path.write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "churn_threshold = -1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(DockyardError):
+        load_runtime_config(paths)
+
+
 def test_load_runtime_config_empty_review_section_uses_defaults(tmp_path: Path) -> None:
     """Empty review_heuristics table should preserve default values."""
     paths = _paths(tmp_path)
