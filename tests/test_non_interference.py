@@ -27,7 +27,8 @@ SAVE_COMMAND_CASES: list[SaveCommandCase] = [
 SAVE_COMMAND_IDS = [case[2] for case in SAVE_COMMAND_CASES]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
-RUN_SCOPE_COMMAND_ORDER = {"resume": 0, "r": 1, "undock": 2}
+RUN_SCOPE_COMMANDS = ["resume", "r", "undock"]
+RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 
 
 def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, int]:
