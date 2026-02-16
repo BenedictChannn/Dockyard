@@ -1119,6 +1119,54 @@ def test_undock_alias_run_without_commands_keeps_repo_clean(
     )
 
 
+def test_resume_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`resume <berth> --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "resume", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        objective="Resume berth run no-commands baseline",
+        decisions="Verify resume <berth> --run no-op path remains non-mutating",
+        next_step="run resume <berth> --run",
+    )
+
+
+def test_resume_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`r <berth> --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "r", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        objective="Resume alias berth run no-commands baseline",
+        decisions="Verify r <berth> --run no-op path remains non-mutating",
+        next_step="run r <berth> --run",
+    )
+
+
+def test_undock_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`undock <berth> --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "undock", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        objective="Undock alias berth run no-commands baseline",
+        decisions="Verify undock <berth> --run no-op path remains non-mutating",
+        next_step="run undock <berth> --run",
+    )
+
+
 def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run is explicit opt-in and may mutate repository files."""
     _assert_opt_in_run_mutates_repo(
