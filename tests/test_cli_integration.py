@@ -2812,6 +2812,168 @@ def test_undock_alias_run_with_branch_stops_on_failure(
     assert "$ echo undock-branch-should-not-run -> exit" not in output
 
 
+def test_resume_run_with_berth_and_branch_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`resume <berth> --branch <name> --run` should stop on first failure."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume berth+branch run failure objective",
+            "--decisions",
+            "Validate berth+branch stop-on-failure behavior",
+            "--next-step",
+            "run resume berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo resume-berth-branch-first",
+            "--command",
+            "false",
+            "--command",
+            "echo resume-berth-branch-should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=1,
+    ).stdout
+    assert "$ echo resume-berth-branch-first -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert "$ echo resume-berth-branch-should-not-run -> exit" not in output
+
+
+def test_resume_alias_run_with_berth_and_branch_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`r <berth> --branch <name> --run` should stop on first failure."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume alias berth+branch run failure objective",
+            "--decisions",
+            "Validate alias berth+branch stop-on-failure behavior",
+            "--next-step",
+            "run r berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-berth-branch-first",
+            "--command",
+            "false",
+            "--command",
+            "echo alias-berth-branch-should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=1,
+    ).stdout
+    assert "$ echo alias-berth-branch-first -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert "$ echo alias-berth-branch-should-not-run -> exit" not in output
+
+
+def test_undock_alias_run_with_berth_and_branch_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`undock <berth> --branch <name> --run` should stop on first failure."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock alias berth+branch run failure objective",
+            "--decisions",
+            "Validate undock berth+branch stop-on-failure behavior",
+            "--next-step",
+            "run undock berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock-berth-branch-first",
+            "--command",
+            "false",
+            "--command",
+            "echo undock-berth-branch-should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=1,
+    ).stdout
+    assert "$ echo undock-berth-branch-first -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert "$ echo undock-berth-branch-should-not-run -> exit" not in output
+
+
 def test_resume_alias_run_stops_on_failure(
     git_repo: Path,
     tmp_path: Path,
