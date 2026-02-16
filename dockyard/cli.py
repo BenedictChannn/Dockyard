@@ -575,6 +575,7 @@ def resume_command(
     """Resume latest checkpoint for current repo or selected berth."""
     store, _ = _store()
     normalized_berth = _normalize_optional_text(berth)
+    normalized_branch = _normalize_non_empty_option(branch, "--branch")
 
     repo_id: str | None = None
     berth_record = None
@@ -593,7 +594,7 @@ def resume_command(
         except NotGitRepositoryError:
             raise DockyardError("Not in a git repo. Provide a berth argument.")
 
-    checkpoint = store.get_latest_checkpoint(repo_id=repo_id, branch=branch)
+    checkpoint = store.get_latest_checkpoint(repo_id=repo_id, branch=normalized_branch)
     if not checkpoint:
         raise DockyardError("No checkpoint found for the requested context.")
     open_reviews = store.count_open_reviews(checkpoint.repo_id, checkpoint.branch)
@@ -686,6 +687,7 @@ def search_command(
         raise typer.BadParameter("Query must be a non-empty string.")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
     repo_filter = _normalize_optional_text(repo)
+    normalized_branch = _normalize_non_empty_option(branch, "--branch")
     if repo and repo_filter is None:
         raise typer.BadParameter("--repo must be a non-empty string.")
     if repo_filter:
@@ -697,7 +699,7 @@ def search_command(
         query=cleaned_query,
         tag=tag,
         repo=repo_filter,
-        branch=branch,
+        branch=normalized_branch,
         limit=limit,
     )
     if as_json:
@@ -762,8 +764,8 @@ def review_add(
         raise typer.BadParameter("--reason must be a non-empty string.")
     normalized_notes = _normalize_optional_text(notes)
     normalized_checkpoint_id = _normalize_optional_text(checkpoint_id)
-    normalized_repo = _normalize_optional_text(repo)
-    normalized_branch = _normalize_optional_text(branch)
+    normalized_repo = _normalize_non_empty_option(repo, "--repo")
+    normalized_branch = _normalize_non_empty_option(branch, "--branch")
     if (normalized_repo and not normalized_branch) or (normalized_branch and not normalized_repo):
         raise DockyardError("Provide both --repo and --branch when overriding context.")
     if normalized_repo and normalized_branch:

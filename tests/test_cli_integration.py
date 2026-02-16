@@ -1381,6 +1381,17 @@ def test_resume_rejects_blank_berth_argument(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_resume_rejects_blank_branch_option(git_repo: Path, tmp_path: Path) -> None:
+    """Resume should reject blank --branch option values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["resume", "--branch", "   "], cwd=git_repo, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--branch must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
     """Invoking dockyard without subcommand should run harbor listing."""
     env = dict(os.environ)
@@ -2408,6 +2419,52 @@ def test_resume_branch_flag_selects_requested_branch(
     )
     assert selected["branch"] == "feature/resume-target"
     assert selected["objective"] == "Feature branch objective"
+
+
+def test_resume_branch_flag_accepts_trimmed_value(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume --branch should resolve values after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trimmed branch resume objective",
+            "--decisions",
+            "Validate trimmed branch filter handling",
+            "--next-step",
+            "resume with padded branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo branch",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    selected = json.loads(
+        _run_dock(["resume", "--branch", f"  {branch}  ", "--json"], cwd=git_repo, env=env).stdout
+    )
+    assert selected["branch"] == branch
+    assert selected["objective"] == "Trimmed branch resume objective"
 
 
 def test_resume_unknown_branch_for_known_repo_is_actionable(
@@ -3545,6 +3602,54 @@ def test_review_add_partial_override_requires_both_repo_and_branch(tmp_path: Pat
     output_branch_only = f"{failed_branch_only.stdout}\n{failed_branch_only.stderr}"
     assert "Provide both --repo and --branch when overriding context." in output_branch_only
     assert "Traceback" not in output_branch_only
+
+
+def test_review_add_rejects_blank_repo_or_branch_override(tmp_path: Path) -> None:
+    """Review add should reject blank repo/branch override values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    blank_repo = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "blank_repo",
+            "--severity",
+            "low",
+            "--repo",
+            "   ",
+            "--branch",
+            "main",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    blank_repo_output = f"{blank_repo.stdout}\n{blank_repo.stderr}"
+    assert "--repo must be a non-empty string." in blank_repo_output
+    assert "Traceback" not in blank_repo_output
+
+    blank_branch = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "blank_branch",
+            "--severity",
+            "low",
+            "--repo",
+            "manual_repo",
+            "--branch",
+            "   ",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    blank_branch_output = f"{blank_branch.stdout}\n{blank_branch.stderr}"
+    assert "--branch must be a non-empty string." in blank_branch_output
+    assert "Traceback" not in blank_branch_output
 
 
 def test_review_add_accepts_berth_name_override(
@@ -5963,6 +6068,99 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     search_output = f"{search_bad.stdout}\n{search_bad.stderr}"
     assert "--limit must be >= 1." in search_output
     assert "Traceback" not in search_output
+
+
+def test_search_rejects_blank_branch_filter(git_repo: Path, tmp_path: Path) -> None:
+    """Search should reject blank branch filter values when provided."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Blank branch filter objective",
+            "--decisions",
+            "Need search context",
+            "--next-step",
+            "run invalid branch search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    failed = _run_dock(
+        ["search", "Blank branch filter objective", "--branch", "   "],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--branch must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_search_branch_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
+    """Search should resolve branch filters after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trimmed branch filter objective",
+            "--decisions",
+            "Search should match trimmed branch filters",
+            "--next-step",
+            "run branch search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["search", "Trimmed branch filter objective", "--branch", f"  {branch}  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["branch"] for row in rows} == {branch}
 
 
 def test_search_alias_validates_limit_argument(tmp_path: Path) -> None:

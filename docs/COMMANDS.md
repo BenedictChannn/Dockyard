@@ -94,6 +94,7 @@ Notes:
 - `--run` command labels in output are compacted to one-line previews.
 - `--run` ignores blank command entries after payload normalization.
 - BERTH argument must be non-empty when provided.
+- `--branch` must be non-empty when provided.
 
 ## `ls` (`harbor`)
 
@@ -151,6 +152,7 @@ Validation:
 - query must be non-empty
 - `--limit` must be `>= 1`
 - `--repo` must be non-empty when provided
+- `--branch` must be non-empty when provided
 
 ## `review`
 
@@ -184,6 +186,7 @@ python3 -m dockyard review add --reason "manual" --severity low --repo my_repo -
 Optional `--notes` and `--checkpoint-id` values are trimmed; blank values are
 treated as missing.
 Override values passed to `--repo/--branch` are also trimmed before lookup.
+`--repo` and `--branch` must be non-empty when provided.
 
 ### Mark done
 

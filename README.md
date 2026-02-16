@@ -110,6 +110,7 @@ Useful flags:
 - Handoff renders blank objective/risks values as `(none)`, and `--run`
   ignores blank command entries after normalization.
 - BERTH argument values are trimmed; blank BERTH values are rejected.
+- `--branch` values are trimmed; blank values are rejected.
 
 ### 3) Harbor dashboard across projects
 
@@ -141,6 +142,7 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
 # --repo must be non-empty when provided
+# --branch must be non-empty when provided
 # in --json mode, no matches are returned as []
 # snippets are compacted to single-line text for scanability
 # unicode characters are emitted as-is in --json output
@@ -166,6 +168,7 @@ explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
 Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
 treated as missing.
 `--repo` / `--branch` override values are trimmed before lookup.
+`--repo` / `--branch` must be non-empty when provided.
 `review open` / `review done` IDs are trimmed; blank IDs are rejected.
 
 ### 6) Link URLs to a branch context
