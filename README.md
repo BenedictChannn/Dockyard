@@ -52,6 +52,7 @@ python3 -m dockyard save \
 `save` trims `--tag` / `--link` values, ignores blank entries, and de-duplicates
 exact repeats.
 `--root` override values are trimmed; blank values are rejected.
+`--template` path values are trimmed; blank values are rejected.
 
 Template-powered non-interactive mode:
 

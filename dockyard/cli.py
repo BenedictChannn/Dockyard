@@ -432,7 +432,8 @@ def save_command(
     runtime_config = load_runtime_config(paths)
     snapshot = _resolve_repo_context(root=root, require_git=True)
     assert snapshot is not None
-    template_data = _load_template_data(template)
+    normalized_template = _normalize_non_empty_option(template, "--template")
+    template_data = _load_template_data(normalized_template)
 
     objective = objective or _template_or_default(template_data, "objective", None)
     decisions = decisions or _template_or_default(template_data, "decisions", None)

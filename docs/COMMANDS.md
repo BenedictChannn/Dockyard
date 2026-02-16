@@ -64,6 +64,7 @@ Editor note:
 - `--tag` / `--link` values are trimmed, blank entries are ignored, and exact
   duplicates are de-duplicated.
 - `--root` must be non-empty when provided.
+- `--template` path values are trimmed and must be non-empty when provided.
 
 ## `resume` (`r`, `undock`)
 
