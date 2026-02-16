@@ -1344,6 +1344,99 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
     assert "$ echo run-one echo run-two -> exit 0" in run_result.stdout
 
 
+def test_resume_alias_run_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias should execute all commands on successful run."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume alias run success objective",
+            "--decisions",
+            "Validate run alias success-path parity",
+            "--next-step",
+            "run alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-run-one",
+            "--command",
+            "echo alias-run-two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(["r", "--run"], cwd=git_repo, env=env).stdout
+    assert "$ echo alias-run-one -> exit 0" in output
+    assert "$ echo alias-run-two -> exit 0" in output
+
+
+def test_resume_alias_run_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias should stop on first failing command."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume alias run failure objective",
+            "--decisions",
+            "Validate run alias stop-on-failure parity",
+            "--next-step",
+            "run alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-first",
+            "--command",
+            "false",
+            "--command",
+            "echo alias-should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(["r", "--run"], cwd=git_repo, env=env, expect_code=1).stdout
+    assert "$ echo alias-first -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert "$ echo alias-should-not-run -> exit" not in output
+
+
 def test_resume_handles_scalar_list_payload_fields(git_repo: Path, tmp_path: Path) -> None:
     """Resume handoff/run should coerce scalar list payloads safely."""
     env = dict(os.environ)
@@ -2755,6 +2848,53 @@ def test_resume_alias_accepts_trimmed_berth_lookup_value(
 
     result = _run_dock(["r", f"  {git_repo.name}  "], cwd=tmp_path, env=env)
     assert "Alias trimmed berth objective" in result.stdout
+
+
+def test_resume_alias_supports_handoff_and_json_for_explicit_berth(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias should support handoff/json output with explicit berth."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume alias handoff/json objective",
+            "--decisions",
+            "Validate resume alias handoff and json parity",
+            "--next-step",
+            "run alias outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-resume",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    handoff = _run_dock(["r", f"  {git_repo.name}  ", "--handoff"], cwd=tmp_path, env=env).stdout
+    assert "Resume alias handoff/json objective" in handoff
+    assert "### Dockyard Handoff" in handoff
+
+    payload = json.loads(_run_dock(["r", f"  {git_repo.name}  ", "--json"], cwd=tmp_path, env=env).stdout)
+    assert payload["project_name"] == git_repo.name
+    assert payload["objective"] == "Resume alias handoff/json objective"
 
 
 def test_resume_branch_flag_selects_requested_branch(
