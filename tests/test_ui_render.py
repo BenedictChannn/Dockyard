@@ -191,6 +191,25 @@ def test_print_search_uses_unknown_berth_when_identifier_values_none() -> None:
     assert "(unknown)" in output
 
 
+def test_print_search_uses_repo_id_when_berth_name_is_blank() -> None:
+    """Search renderer should fallback when berth_name is whitespace-only."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "   ",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_from_id" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -281,6 +300,28 @@ def test_print_harbor_uses_unknown_berth_when_identifier_values_none() -> None:
     )
     output = console.export_text()
     assert "(unknown)" in output
+
+
+def test_print_harbor_uses_repo_id_when_berth_name_is_blank() -> None:
+    """Harbor renderer should fallback when berth_name is whitespace-only."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "   ",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_from_id" in output
 
 
 def test_print_harbor_handles_non_string_updated_at() -> None:
