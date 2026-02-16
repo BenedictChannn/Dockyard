@@ -1927,6 +1927,25 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_feature_rows) == 1
     assert beta_feature_rows[0]["branch"] == "feature/alias-tag-filter"
+    beta_repo_branch_rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "Alias tag filter objective",
+                "--tag",
+                "beta",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                "feature/alias-tag-filter",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(beta_repo_branch_rows) == 1
+    assert beta_repo_branch_rows[0]["branch"] == "feature/alias-tag-filter"
     assert (
         json.loads(
             _run_dock(
@@ -4060,6 +4079,25 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     )
     assert len(tag_filtered_json) == 1
     assert tag_filtered_json[0]["branch"] == "feature/filters"
+    tag_repo_branch_json = json.loads(
+        _run_dock(
+            [
+                "search",
+                "Filter target objective",
+                "--tag",
+                "beta",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                "feature/filters",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(tag_repo_branch_json) == 1
+    assert tag_repo_branch_json[0]["branch"] == "feature/filters"
 
 
 def test_ls_json_ordering_prioritizes_open_review_count(
