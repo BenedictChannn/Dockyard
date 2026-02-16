@@ -2472,44 +2472,16 @@ def test_resume_alias_run_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """Resume alias should execute all commands on successful run."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias run success objective",
-            "--decisions",
-            "Validate run alias success-path parity",
-            "--next-step",
-            "run alias",
-            "--risks",
-            "none",
-            "--command",
-            "echo alias-run-one",
-            "--command",
-            "echo alias-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias run success objective",
+        decisions="Validate run alias success-path parity",
+        next_step="run alias",
+        resume_commands=["echo alias-run-one", "echo alias-run-two"],
+        run_args=["r", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(["r", "--run"], cwd=git_repo, env=env).stdout
-    assert "$ echo alias-run-one -> exit 0" in output
-    assert "$ echo alias-run-two -> exit 0" in output
 
 
 def test_resume_run_with_branch_executes_commands_on_success(
@@ -2517,45 +2489,17 @@ def test_resume_run_with_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """Resume run with branch filter should execute all successful commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume run branch success objective",
-            "--decisions",
-            "Validate branch-scoped run success-path behavior",
-            "--next-step",
-            "run resume branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo resume-branch-run-one",
-            "--command",
-            "echo resume-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume run branch success objective",
+        decisions="Validate branch-scoped run success-path behavior",
+        next_step="run resume branch",
+        resume_commands=["echo resume-branch-run-one", "echo resume-branch-run-two"],
+        run_args=["resume", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(["resume", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env).stdout
-    assert "$ echo resume-branch-run-one -> exit 0" in output
-    assert "$ echo resume-branch-run-two -> exit 0" in output
 
 
 def test_resume_alias_run_with_branch_executes_commands_on_success(
@@ -2563,45 +2507,17 @@ def test_resume_alias_run_with_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """Resume alias run with branch filter should execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias run branch success objective",
-            "--decisions",
-            "Validate alias branch-scoped run success-path behavior",
-            "--next-step",
-            "run alias branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo alias-branch-run-one",
-            "--command",
-            "echo alias-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias run branch success objective",
+        decisions="Validate alias branch-scoped run success-path behavior",
+        next_step="run alias branch",
+        resume_commands=["echo alias-branch-run-one", "echo alias-branch-run-two"],
+        run_args=["r", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(["r", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env).stdout
-    assert "$ echo alias-branch-run-one -> exit 0" in output
-    assert "$ echo alias-branch-run-two -> exit 0" in output
 
 
 def test_undock_alias_run_with_branch_executes_commands_on_success(
@@ -2609,45 +2525,17 @@ def test_undock_alias_run_with_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """Undock alias run with branch filter should execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Undock alias run branch success objective",
-            "--decisions",
-            "Validate undock branch-scoped run success-path behavior",
-            "--next-step",
-            "run undock branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo undock-branch-run-one",
-            "--command",
-            "echo undock-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Undock alias run branch success objective",
+        decisions="Validate undock branch-scoped run success-path behavior",
+        next_step="run undock branch",
+        resume_commands=["echo undock-branch-run-one", "echo undock-branch-run-two"],
+        run_args=["undock", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(["undock", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env).stdout
-    assert "$ echo undock-branch-run-one -> exit 0" in output
-    assert "$ echo undock-branch-run-two -> exit 0" in output
 
 
 def test_resume_run_with_berth_and_branch_executes_commands_on_success(
@@ -2655,49 +2543,20 @@ def test_resume_run_with_berth_and_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """`resume <berth> --branch <name> --run` should execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume berth+branch run success objective",
-            "--decisions",
-            "Validate berth+branch run success-path behavior",
-            "--next-step",
-            "run resume berth+branch",
-            "--risks",
-            "none",
-            "--command",
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume berth+branch run success objective",
+        decisions="Validate berth+branch run success-path behavior",
+        next_step="run resume berth+branch",
+        resume_commands=[
             "echo resume-berth-branch-run-one",
-            "--command",
             "echo resume-berth-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
         ],
-        cwd=git_repo,
-        env=env,
+        run_args=["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    ).stdout
-    assert "$ echo resume-berth-branch-run-one -> exit 0" in output
-    assert "$ echo resume-berth-branch-run-two -> exit 0" in output
 
 
 def test_resume_alias_run_with_berth_and_branch_executes_commands_on_success(
@@ -2705,49 +2564,20 @@ def test_resume_alias_run_with_berth_and_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """`r <berth> --branch <name> --run` should execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias berth+branch run success objective",
-            "--decisions",
-            "Validate alias berth+branch run success-path behavior",
-            "--next-step",
-            "run r berth+branch",
-            "--risks",
-            "none",
-            "--command",
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias berth+branch run success objective",
+        decisions="Validate alias berth+branch run success-path behavior",
+        next_step="run r berth+branch",
+        resume_commands=[
             "echo alias-berth-branch-run-one",
-            "--command",
             "echo alias-berth-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
         ],
-        cwd=git_repo,
-        env=env,
+        run_args=["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    ).stdout
-    assert "$ echo alias-berth-branch-run-one -> exit 0" in output
-    assert "$ echo alias-berth-branch-run-two -> exit 0" in output
 
 
 def test_undock_alias_run_with_berth_and_branch_executes_commands_on_success(
@@ -2755,49 +2585,20 @@ def test_undock_alias_run_with_berth_and_branch_executes_commands_on_success(
     tmp_path: Path,
 ) -> None:
     """`undock <berth> --branch <name> --run` should execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Undock alias berth+branch run success objective",
-            "--decisions",
-            "Validate undock berth+branch run success-path behavior",
-            "--next-step",
-            "run undock berth+branch",
-            "--risks",
-            "none",
-            "--command",
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Undock alias berth+branch run success objective",
+        decisions="Validate undock berth+branch run success-path behavior",
+        next_step="run undock berth+branch",
+        resume_commands=[
             "echo undock-berth-branch-run-one",
-            "--command",
             "echo undock-berth-branch-run-two",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
         ],
-        cwd=git_repo,
-        env=env,
+        run_args=["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    ).stdout
-    assert "$ echo undock-berth-branch-run-one -> exit 0" in output
-    assert "$ echo undock-berth-branch-run-two -> exit 0" in output
 
 
 def test_resume_run_with_branch_stops_on_failure(
@@ -2805,53 +2606,18 @@ def test_resume_run_with_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """Resume run with branch filter should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume run branch failure objective",
-            "--decisions",
-            "Validate branch-scoped stop-on-failure behavior",
-            "--next-step",
-            "run resume branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo resume-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo resume-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume run branch failure objective",
+        decisions="Validate branch-scoped stop-on-failure behavior",
+        next_step="run resume branch",
+        first_command="echo resume-branch-first",
+        skipped_command="echo resume-branch-should-not-run",
+        run_args=["resume", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(
-        ["resume", "--branch", f"  {branch}  ", "--run"],
-        cwd=git_repo,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo resume-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo resume-branch-should-not-run -> exit" not in output
 
 
 def test_resume_alias_run_with_branch_stops_on_failure(
@@ -2859,53 +2625,18 @@ def test_resume_alias_run_with_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """Resume alias run with branch filter should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias run branch failure objective",
-            "--decisions",
-            "Validate alias branch-scoped stop-on-failure behavior",
-            "--next-step",
-            "run alias branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo alias-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo alias-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias run branch failure objective",
+        decisions="Validate alias branch-scoped stop-on-failure behavior",
+        next_step="run alias branch",
+        first_command="echo alias-branch-first",
+        skipped_command="echo alias-branch-should-not-run",
+        run_args=["r", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(
-        ["r", "--branch", f"  {branch}  ", "--run"],
-        cwd=git_repo,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo alias-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo alias-branch-should-not-run -> exit" not in output
 
 
 def test_undock_alias_run_with_branch_stops_on_failure(
@@ -2913,53 +2644,18 @@ def test_undock_alias_run_with_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """Undock alias run with branch filter should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Undock alias run branch failure objective",
-            "--decisions",
-            "Validate undock branch-scoped stop-on-failure behavior",
-            "--next-step",
-            "run undock branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo undock-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo undock-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Undock alias run branch failure objective",
+        decisions="Validate undock branch-scoped stop-on-failure behavior",
+        next_step="run undock branch",
+        first_command="echo undock-branch-first",
+        skipped_command="echo undock-branch-should-not-run",
+        run_args=["undock", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(
-        ["undock", "--branch", f"  {branch}  ", "--run"],
-        cwd=git_repo,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo undock-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo undock-branch-should-not-run -> exit" not in output
 
 
 def test_resume_run_with_berth_and_branch_stops_on_failure(
@@ -2967,53 +2663,18 @@ def test_resume_run_with_berth_and_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """`resume <berth> --branch <name> --run` should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume berth+branch run failure objective",
-            "--decisions",
-            "Validate berth+branch stop-on-failure behavior",
-            "--next-step",
-            "run resume berth+branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo resume-berth-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo resume-berth-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume berth+branch run failure objective",
+        decisions="Validate berth+branch stop-on-failure behavior",
+        next_step="run resume berth+branch",
+        first_command="echo resume-berth-branch-first",
+        skipped_command="echo resume-berth-branch-should-not-run",
+        run_args=["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo resume-berth-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo resume-berth-branch-should-not-run -> exit" not in output
 
 
 def test_resume_alias_run_with_berth_and_branch_stops_on_failure(
@@ -3021,53 +2682,18 @@ def test_resume_alias_run_with_berth_and_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """`r <berth> --branch <name> --run` should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias berth+branch run failure objective",
-            "--decisions",
-            "Validate alias berth+branch stop-on-failure behavior",
-            "--next-step",
-            "run r berth+branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo alias-berth-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo alias-berth-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias berth+branch run failure objective",
+        decisions="Validate alias berth+branch stop-on-failure behavior",
+        next_step="run r berth+branch",
+        first_command="echo alias-berth-branch-first",
+        skipped_command="echo alias-berth-branch-should-not-run",
+        run_args=["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo alias-berth-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo alias-berth-branch-should-not-run -> exit" not in output
 
 
 def test_undock_alias_run_with_berth_and_branch_stops_on_failure(
@@ -3075,53 +2701,18 @@ def test_undock_alias_run_with_berth_and_branch_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """`undock <berth> --branch <name> --run` should stop on first failure."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     branch = _git_current_branch(git_repo)
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Undock alias berth+branch run failure objective",
-            "--decisions",
-            "Validate undock berth+branch stop-on-failure behavior",
-            "--next-step",
-            "run undock berth+branch",
-            "--risks",
-            "none",
-            "--command",
-            "echo undock-berth-branch-first",
-            "--command",
-            "false",
-            "--command",
-            "echo undock-berth-branch-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Undock alias berth+branch run failure objective",
+        decisions="Validate undock berth+branch stop-on-failure behavior",
+        next_step="run undock berth+branch",
+        first_command="echo undock-berth-branch-first",
+        skipped_command="echo undock-berth-branch-should-not-run",
+        run_args=["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_cwd=tmp_path,
     )
-
-    output = _run_dock(
-        ["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-        expect_code=1,
-    ).stdout
-    assert "$ echo undock-berth-branch-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo undock-berth-branch-should-not-run -> exit" not in output
 
 
 def test_resume_alias_run_stops_on_failure(
@@ -3129,47 +2720,17 @@ def test_resume_alias_run_stops_on_failure(
     tmp_path: Path,
 ) -> None:
     """Resume alias should stop on first failing command."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume alias run failure objective",
-            "--decisions",
-            "Validate run alias stop-on-failure parity",
-            "--next-step",
-            "run alias",
-            "--risks",
-            "none",
-            "--command",
-            "echo alias-first",
-            "--command",
-            "false",
-            "--command",
-            "echo alias-should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Resume alias run failure objective",
+        decisions="Validate run alias stop-on-failure parity",
+        next_step="run alias",
+        first_command="echo alias-first",
+        skipped_command="echo alias-should-not-run",
+        run_args=["r", "--run"],
+        run_cwd=git_repo,
     )
-
-    output = _run_dock(["r", "--run"], cwd=git_repo, env=env, expect_code=1).stdout
-    assert "$ echo alias-first -> exit 0" in output
-    assert "$ false -> exit 1" in output
-    assert "$ echo alias-should-not-run -> exit" not in output
 
 
 def test_resume_handles_scalar_list_payload_fields(git_repo: Path, tmp_path: Path) -> None:
@@ -3225,17 +2786,16 @@ def test_resume_handles_scalar_list_payload_fields(git_repo: Path, tmp_path: Pat
     assert "$ e -> exit" not in run_output
 
 
-def _assert_run_no_commands_noop(
+def _seed_checkpoint_for_run(
     *,
     git_repo: Path,
     tmp_path: Path,
     objective: str,
     decisions: str,
     next_step: str,
-    run_args: list[str],
-    run_cwd: Path,
-) -> None:
-    """Seed checkpoint without commands and assert run path is no-op.
+    resume_commands: list[str],
+) -> dict[str, str]:
+    """Save a checkpoint with optional resume commands.
 
     Args:
         git_repo: Repository path for save command context.
@@ -3243,26 +2803,32 @@ def _assert_run_no_commands_noop(
         objective: Save objective text.
         decisions: Save decisions text.
         next_step: Save next-step text.
-        run_args: Dockyard command arguments to execute.
-        run_cwd: Working directory for run command execution.
+        resume_commands: Resume commands to persist with checkpoint.
+
+    Returns:
+        Environment mapping configured with Dockyard home.
     """
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    _run_dock(
+    save_args = [
+        "save",
+        "--root",
+        str(git_repo),
+        "--no-prompt",
+        "--objective",
+        objective,
+        "--decisions",
+        decisions,
+        "--next-step",
+        next_step,
+        "--risks",
+        "none",
+    ]
+    for command in resume_commands:
+        save_args.extend(["--command", command])
+    save_args.extend(
         [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            objective,
-            "--decisions",
-            decisions,
-            "--next-step",
-            next_step,
-            "--risks",
-            "none",
             "--tests-run",
             "--tests-command",
             "pytest -q",
@@ -3273,10 +2839,83 @@ def _assert_run_no_commands_noop(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
-        env=env,
     )
 
+    _run_dock(save_args, cwd=git_repo, env=env)
+    return env
+
+
+def _assert_run_executes_commands_on_success(
+    *,
+    git_repo: Path,
+    tmp_path: Path,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    resume_commands: list[str],
+    run_args: list[str],
+    run_cwd: Path,
+) -> None:
+    """Assert that run mode executes each recorded command successfully."""
+    env = _seed_checkpoint_for_run(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=resume_commands,
+    )
+    output = _run_dock(run_args, cwd=run_cwd, env=env).stdout
+    for command in resume_commands:
+        assert f"$ {command} -> exit 0" in output
+
+
+def _assert_run_stops_on_first_failure(
+    *,
+    git_repo: Path,
+    tmp_path: Path,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    first_command: str,
+    skipped_command: str,
+    run_args: list[str],
+    run_cwd: Path,
+) -> None:
+    """Assert that run mode stops executing commands at first failure."""
+    env = _seed_checkpoint_for_run(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=[first_command, "false", skipped_command],
+    )
+    output = _run_dock(run_args, cwd=run_cwd, env=env, expect_code=1).stdout
+    assert f"$ {first_command} -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert f"$ {skipped_command} -> exit" not in output
+
+
+def _assert_run_no_commands_noop(
+    *,
+    git_repo: Path,
+    tmp_path: Path,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    run_args: list[str],
+    run_cwd: Path,
+) -> None:
+    """Seed checkpoint without commands and assert run path is no-op."""
+    env = _seed_checkpoint_for_run(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=[],
+    )
     result = _run_dock(run_args, cwd=run_cwd, env=env)
     assert "-> exit" not in result.stdout
 
