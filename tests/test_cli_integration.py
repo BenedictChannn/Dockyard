@@ -3290,7 +3290,7 @@ def test_run_scopes_with_no_commands_are_noop_success(
 
 
 def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run should ignore blank command entries after coercion."""
+    """Resume --run should ignore blank entries and normalize command spacing."""
     env = dict(os.environ)
     dock_home = tmp_path / ".dockyard_data"
     env["DOCKYARD_HOME"] = str(dock_home)
@@ -3329,13 +3329,14 @@ def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) 
     conn = sqlite3.connect(db_path)
     conn.execute(
         "UPDATE checkpoints SET resume_commands_json = ?",
-        (json.dumps(["   ", "\n\t", "echo keep-me"]),),
+        (json.dumps(["   ", "\n\t", "  echo keep-me  "]),),
     )
     conn.commit()
     conn.close()
 
     output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
     assert "$ echo keep-me -> exit 0" in output
+    assert "$   echo keep-me   -> exit" not in output
     assert "$  -> exit" not in output
 
 
