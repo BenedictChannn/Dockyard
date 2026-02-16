@@ -114,7 +114,6 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
         "Objective": "objective",
         "Decisions/Findings": "decisions",
         "Next Steps": "next_steps",
-        "Risks / Review Needed": "risks_review",
         "Risks/Review Needed": "risks_review",
         "Resume Commands": "resume_commands",
     }
@@ -133,7 +132,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
         section_match = re.match(r"^##\s+(.+)$", raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
-            mapped_title = sections.get(title)
+            mapped_title = sections.get(_normalize_section_heading(title))
             if mapped_title:
                 current_title = mapped_title
                 continue
@@ -152,6 +151,12 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
     parsed["next_steps"] = _normalize_numbered(bucket["next_steps"])
     parsed["resume_commands"] = _normalize_commands(bucket["resume_commands"])
     return parsed
+
+
+def _normalize_section_heading(title: str) -> str:
+    """Normalize markdown section heading text for key lookups."""
+    collapsed = " ".join(title.split())
+    return re.sub(r"\s*/\s*", "/", collapsed)
 
 
 def _normalize_block(lines: list[str]) -> str:
