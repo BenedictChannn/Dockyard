@@ -30,6 +30,7 @@ class RunScopeCaseMeta:
     include_berth: bool
     include_branch: bool
     run_cwd_kind: RunCwdKind
+    variant_id: str
     case_id: str
 
 
@@ -95,11 +96,17 @@ RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (variant.include_berth, variant.include_branch): variant.slug
     for variant in RUN_SCOPE_VARIANTS
 }
+RUN_SCOPE_VARIANT_INDEX: dict[str, int] = {
+    variant.variant_id: index for index, variant in enumerate(RUN_SCOPE_VARIANTS)
+}
 
 
-def _run_scope_case_command_sort_key(case: RunScopeCaseMeta) -> int:
-    """Return sort key for command ordering across run-scope cases."""
-    return RUN_SCOPE_COMMAND_INDEX[case.command_name]
+def _run_scope_case_branch_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:
+    """Return sort key for branch-enabled run-scope case ordering."""
+    return (
+        RUN_SCOPE_VARIANT_INDEX[case.variant_id],
+        RUN_SCOPE_COMMAND_INDEX[case.command_name],
+    )
 
 
 def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
@@ -113,6 +120,7 @@ RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
         include_berth=variant.include_berth,
         include_branch=variant.include_branch,
         run_cwd_kind=variant.run_cwd_kind,
+        variant_id=variant.variant_id,
         case_id=f"{command_name}_{variant.variant_id}",
     )
     for variant in RUN_SCOPE_VARIANTS
@@ -121,7 +129,7 @@ RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     sorted(
         (case for case in RUN_SCOPE_CASES if case.include_branch),
-        key=_run_scope_case_command_sort_key,
+        key=_run_scope_case_branch_sort_key,
     )
 )
 RunDefaultSuccessScenario = tuple[RunCommandName, str, str, str, RunCommands]
