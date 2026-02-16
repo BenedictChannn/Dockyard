@@ -134,6 +134,9 @@ Parser normalization notes:
   plain text when manually edited.
 - Resume command bullets accept optional spacing after bullet delimiters
   (for example, both `- cmd` and `-cmd` parse correctly).
+- Resume command parser strips checklist prefixes only when they include
+  separator spacing (for example, `- [x] cmd` -> `cmd`; `- [x]cmd` remains
+  literal).
 - Section heading lookup normalizes spacing and slash variants (for example,
   `Decisions / Findings`, `Risks/Review Needed`, and `Resume   Commands`).
 - Section heading lookup is case-insensitive for known Dockyard sections.
