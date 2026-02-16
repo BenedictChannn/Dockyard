@@ -98,3 +98,16 @@ def test_pair_scope_cases_with_context_uses_scope_fields() -> None:
 def test_pair_scope_cases_with_context_returns_empty_tuple_for_empty_input() -> None:
     """pair_scope_cases_with_context should return empty tuple for empty input."""
     assert pair_scope_cases_with_context((), context_builder=lambda *_: "unused") == ()
+
+
+def test_pair_scope_cases_with_context_does_not_call_builder_for_empty_input() -> None:
+    """Empty scope-case input should not invoke context builder."""
+    call_count = 0
+
+    def _builder(*_args: object) -> str:
+        nonlocal call_count
+        call_count += 1
+        return "unused"
+
+    assert pair_scope_cases_with_context((), context_builder=_builder) == ()
+    assert call_count == 0
