@@ -379,6 +379,24 @@ def test_print_search_compacts_multiline_branch_and_timestamp() -> None:
     assert "2026-01-01 T00:00:00+00:00" in output
 
 
+def test_print_search_uses_unknown_branch_when_blank() -> None:
+    """Search renderer should fallback to unknown when branch is blank."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "repo",
+                "branch": "   ",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "(unknown)" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -558,6 +576,28 @@ def test_print_harbor_compacts_multiline_branch() -> None:
     )
     output = console.export_text()
     assert "feature/ workstream" in output
+
+
+def test_print_harbor_uses_unknown_branch_when_blank() -> None:
+    """Harbor renderer should fallback to unknown when branch is blank."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo",
+                "repo_id": "repo_from_id",
+                "branch": "   ",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "(unknown)" in output
 
 
 def test_print_harbor_handles_non_string_updated_at() -> None:
