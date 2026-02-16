@@ -1625,6 +1625,94 @@ def test_resume_run_with_berth_executes_in_repo_root(
     assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
 
 
+def test_resume_alias_run_with_berth_executes_in_repo_root(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias `r` with berth should execute commands in repo root."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias run from berth context",
+            "--decisions",
+            "Ensure alias execution cwd resolves from berth root path",
+            "--next-step",
+            "Run alias with berth outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "pwd > run_pwd_alias_r.txt",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    _run_dock(["r", f"  {git_repo.name}  ", "--run"], cwd=tmp_path, env=env)
+    marker = git_repo / "run_pwd_alias_r.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
+
+
+def test_undock_alias_run_with_berth_executes_in_repo_root(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Undock alias with berth should execute commands in repo root."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock run from berth context",
+            "--decisions",
+            "Ensure undock execution cwd resolves from berth root path",
+            "--next-step",
+            "Run undock with berth outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "pwd > run_pwd_alias_undock.txt",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    _run_dock(["undock", f"  {git_repo.name}  ", "--run"], cwd=tmp_path, env=env)
+    marker = git_repo / "run_pwd_alias_undock.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
+
+
 def test_save_truncates_next_steps_and_commands_to_mvp_limits(
     git_repo: Path,
     tmp_path: Path,
