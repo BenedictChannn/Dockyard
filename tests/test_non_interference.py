@@ -989,6 +989,22 @@ def _dockyard_command(*args: str) -> list[str]:
     return [*DOCKYARD_COMMAND_PREFIX, *args]
 
 
+def test_dockyard_command_includes_shared_prefix() -> None:
+    """Dockyard command helper should prepend shared Python module prefix."""
+    assert _dockyard_command("review", "list") == [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "list",
+    ]
+
+
+def test_dockyard_command_supports_empty_suffix() -> None:
+    """Dockyard command helper should support empty command suffix."""
+    assert _dockyard_command() == ["python3", "-m", "dockyard"]
+
+
 def _build_link_command(url: str, *, root: Path | None = None) -> RunCommand:
     """Build link command with optional explicit root override."""
     command = _dockyard_command("link", url)
