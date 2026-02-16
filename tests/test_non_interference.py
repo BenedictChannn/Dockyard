@@ -652,6 +652,101 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
     assert status_after == ""
 
 
+def test_review_and_link_root_override_commands_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Root/override metadata mutations must not alter repository tree/index."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Root override mutation baseline",
+            "--decisions",
+            "Validate root override review/link non-interference",
+            "--next-step",
+            "Run root override metadata commands",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "link",
+            "https://example.com/non-interference-root-override",
+            "--root",
+            str(git_repo),
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(
+        ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
+        cwd=tmp_path,
+        env=env,
+    )
+
+    review_output = _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "review",
+            "add",
+            "--reason",
+            "manual-root-override",
+            "--severity",
+            "low",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            base_branch,
+            "--notes",
+            "outside repo invocation",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", review_output)
+    assert review_match is not None
+    review_id = review_match.group(0)
+    _run(["python3", "-m", "dockyard", "review", "open", review_id], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "review", "done", review_id], cwd=tmp_path, env=env)
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
 def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Editor-assisted save flow should not alter project working tree/index."""
     env = dict(os.environ)
