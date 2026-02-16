@@ -239,7 +239,7 @@ def _load_template_data(template_path: str | None) -> dict:
 
     try:
         raw = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         raise DockyardError(f"Failed to read template: {path}") from exc
     suffix = path.suffix.lower()
     try:

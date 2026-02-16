@@ -6083,6 +6083,42 @@ def test_save_template_directory_path_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_template_non_utf8_file_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Non-UTF8 template files should fail with actionable read error."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "non_utf8_template.json"
+    bad_template.write_bytes(b"\xff\xfe\x00")
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "fallback objective",
+            "--decisions",
+            "fallback decisions",
+            "--next-step",
+            "fallback step",
+            "--risks",
+            "none",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
 def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) -> None:
     """Template bool-like strings should coerce to verification booleans."""
     env = dict(os.environ)
