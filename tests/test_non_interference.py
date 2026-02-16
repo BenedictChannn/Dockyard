@@ -626,6 +626,50 @@ def _assert_resume_read_paths_do_not_execute_saved_commands(
     _assert_repo_clean(git_repo)
 
 
+def _assert_review_link_commands_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    run_cwd: Path,
+    metadata_commands: list[list[str]],
+    review_add_command: list[str],
+) -> None:
+    """Assert review/link metadata commands keep project repo unchanged.
+
+    Args:
+        git_repo: Repository under test.
+        tmp_path: Temporary path used for Dockyard home.
+        objective: Checkpoint objective text.
+        decisions: Checkpoint decisions text.
+        next_step: Checkpoint next-step text.
+        run_cwd: Working directory for metadata command execution.
+        metadata_commands: Metadata commands to run before review creation.
+        review_add_command: Review-add command used to create a review item.
+    """
+    env = _dockyard_env(tmp_path)
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        risks="none",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run_commands(metadata_commands, cwd=run_cwd, env=env)
+    review_output = _run(review_add_command, cwd=run_cwd, env=env)
+    review_match = re.search(r"rev_[a-f0-9]+", review_output)
+    assert review_match is not None
+    review_id = review_match.group(0)
+    _run(["python3", "-m", "dockyard", "review", "open", review_id], cwd=run_cwd, env=env)
+    _run(["python3", "-m", "dockyard", "review", "done", review_id], cwd=run_cwd, env=env)
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     (
         "command_name",
@@ -923,26 +967,17 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
 
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Dockyard metadata mutations must not alter repository working tree."""
-    env = _dockyard_env(tmp_path)
-
-    _save_checkpoint(
+    _assert_review_link_commands_do_not_modify_repo(
         git_repo,
-        env,
+        tmp_path,
         objective="Mutation command baseline",
         decisions="Validate review/link non-interference",
         next_step="Run link and review commands",
-        risks="none",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        ["python3", "-m", "dockyard", "link", "https://example.com/non-interference"],
-        cwd=git_repo,
-        env=env,
-    )
-    review_output = _run(
-        [
+        run_cwd=git_repo,
+        metadata_commands=[
+            ["python3", "-m", "dockyard", "link", "https://example.com/non-interference"],
+        ],
+        review_add_command=[
             "python3",
             "-m",
             "dockyard",
@@ -953,23 +988,7 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
             "--severity",
             "low",
         ],
-        cwd=git_repo,
-        env=env,
     )
-    review_match = re.search(r"rev_[a-f0-9]+", review_output)
-    assert review_match is not None
-    _run(
-        ["python3", "-m", "dockyard", "review", "open", review_match.group(0)],
-        cwd=git_repo,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "review", "done", review_match.group(0)],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
 
 
 def test_review_and_link_root_override_commands_do_not_modify_repo(
@@ -977,41 +996,27 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     tmp_path: Path,
 ) -> None:
     """Root/override metadata mutations must not alter repository tree/index."""
-    env = _dockyard_env(tmp_path)
     base_branch = _current_branch(git_repo)
-
-    _save_checkpoint(
+    _assert_review_link_commands_do_not_modify_repo(
         git_repo,
-        env,
+        tmp_path,
         objective="Root override mutation baseline",
         decisions="Validate root override review/link non-interference",
         next_step="Run root override metadata commands",
-        risks="none",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "link",
-            "https://example.com/non-interference-root-override",
-            "--root",
-            str(git_repo),
+        run_cwd=tmp_path,
+        metadata_commands=[
+            [
+                "python3",
+                "-m",
+                "dockyard",
+                "link",
+                "https://example.com/non-interference-root-override",
+                "--root",
+                str(git_repo),
+            ],
+            ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
         ],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    review_output = _run(
-        [
+        review_add_command=[
             "python3",
             "-m",
             "dockyard",
@@ -1028,16 +1033,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
             "--notes",
             "outside repo invocation",
         ],
-        cwd=tmp_path,
-        env=env,
     )
-    review_match = re.search(r"rev_[a-f0-9]+", review_output)
-    assert review_match is not None
-    review_id = review_match.group(0)
-    _run(["python3", "-m", "dockyard", "review", "open", review_id], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "review", "done", review_id], cwd=tmp_path, env=env)
-
-    _assert_repo_clean(git_repo)
 
 
 @pytest.mark.parametrize(
