@@ -14,19 +14,22 @@ import pytest
 
 CommandMatrix = list[list[str]]
 RunCommand = list[str]
+ResumeReadCommandBuilder = Callable[[Path], CommandMatrix]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 SaveCommandCase = tuple[str, str, str]
+ResumeReadPathCase = tuple[str, str, ResumeReadCommandBuilder, RunCwdKind]
+MetadataScopeCase = tuple[str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
+ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
+MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
     ("save", "save", "save"),
     ("s", "alias_s", "s_alias"),
     ("dock", "alias_dock", "dock_alias"),
 )
 SAVE_COMMAND_IDS = [case[2] for case in SAVE_COMMAND_CASES]
-RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
-METADATA_SCOPE_IDS = ["in_repo", "root_override"]
 RUN_SCOPE_COMMANDS = ["resume", "r", "undock"]
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 
@@ -775,6 +778,83 @@ def _build_review_add_command_root_override(git_repo: Path, base_branch: str) ->
     ]
 
 
+def _build_resume_read_path_scenarios(
+    cases: Sequence[ResumeReadPathCase],
+) -> list[ResumeReadPathScenario]:
+    """Build resume-read non-interference scenarios from shared case metadata.
+
+    Args:
+        cases: Resume-read case metadata tuples.
+
+    Returns:
+        Parameter tuples for resume-read non-interference test coverage.
+    """
+    scenarios: list[ResumeReadPathScenario] = []
+    for case_id, marker_name, commands_builder, run_cwd_kind in cases:
+        scope_label = _scope_label(case_id)
+        scenarios.append(
+            (
+                marker_name,
+                f"{scope_label} command safety baseline",
+                f"Ensure {scope_label} read paths do not execute stored commands",
+                f"Inspect {scope_label} resume output",
+                commands_builder,
+                run_cwd_kind,
+            ),
+        )
+    return scenarios
+
+
+def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeCase]) -> list[MetadataScopeScenario]:
+    """Build metadata-scope non-interference scenarios from shared cases.
+
+    Args:
+        cases: Metadata-scope case metadata tuples.
+
+    Returns:
+        Parameter tuples for metadata-scope non-interference tests.
+    """
+    scenarios: list[MetadataScopeScenario] = []
+    for case_id, run_cwd_kind, metadata_builder, review_add_builder in cases:
+        scope_label = _scope_label(case_id)
+        scenarios.append(
+            (
+                f"{scope_label} mutation command baseline",
+                f"Validate {scope_label} review/link non-interference",
+                f"Run {scope_label} metadata commands",
+                run_cwd_kind,
+                metadata_builder,
+                review_add_builder,
+            ),
+        )
+    return scenarios
+
+
+RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
+    ("in_repo_default", "dockyard_resume_should_not_run.txt", _build_resume_read_commands_in_repo, "repo"),
+    ("alias_berth", "dockyard_alias_berth_resume_should_not_run.txt", _build_resume_read_commands_alias_berth, "tmp"),
+    (
+        "alias_trimmed_berth",
+        "dockyard_alias_trimmed_resume_should_not_run.txt",
+        _build_resume_read_commands_alias_trimmed_berth,
+        "tmp",
+    ),
+    (
+        "primary_trimmed_berth",
+        "dockyard_primary_trimmed_resume_should_not_run.txt",
+        _build_resume_read_commands_primary_trimmed_berth,
+        "tmp",
+    ),
+)
+RESUME_READ_PATH_IDS = [case[0] for case in RESUME_READ_PATH_CASES]
+
+METADATA_SCOPE_CASES: tuple[MetadataScopeCase, ...] = (
+    ("in_repo", "repo", _build_metadata_commands_in_repo, _build_review_add_command_in_repo),
+    ("root_override", "tmp", _build_metadata_commands_root_override, _build_review_add_command_root_override),
+)
+METADATA_SCOPE_IDS = [case[0] for case in METADATA_SCOPE_CASES]
+
+
 @pytest.mark.parametrize(
     (
         "command_name",
@@ -1044,40 +1124,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 @pytest.mark.parametrize(
     ("marker_name", "objective", "decisions", "next_step", "commands_builder", "run_cwd_kind"),
-    [
-        (
-            "dockyard_resume_should_not_run.txt",
-            "Resume command safety baseline",
-            "Ensure resume read paths do not execute stored commands",
-            "Inspect resume output",
-            _build_resume_read_commands_in_repo,
-            "repo",
-        ),
-        (
-            "dockyard_alias_berth_resume_should_not_run.txt",
-            "Alias berth command safety baseline",
-            "Ensure alias berth read paths do not execute stored commands",
-            "Inspect alias berth resume output",
-            _build_resume_read_commands_alias_berth,
-            "tmp",
-        ),
-        (
-            "dockyard_alias_trimmed_resume_should_not_run.txt",
-            "Alias trimmed berth command safety baseline",
-            "Ensure trimmed alias berth read paths do not execute stored commands",
-            "Inspect trimmed alias berth resume output",
-            _build_resume_read_commands_alias_trimmed_berth,
-            "tmp",
-        ),
-        (
-            "dockyard_primary_trimmed_resume_should_not_run.txt",
-            "Primary trimmed berth command safety baseline",
-            "Ensure trimmed primary berth read paths do not execute commands",
-            "Inspect trimmed primary berth resume output",
-            _build_resume_read_commands_primary_trimmed_berth,
-            "tmp",
-        ),
-    ],
+    _build_resume_read_path_scenarios(RESUME_READ_PATH_CASES),
     ids=RESUME_READ_PATH_IDS,
 )
 def test_resume_read_paths_do_not_execute_saved_commands(
@@ -1087,7 +1134,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(
     objective: str,
     decisions: str,
     next_step: str,
-    commands_builder: Callable[[Path], CommandMatrix],
+    commands_builder: ResumeReadCommandBuilder,
     run_cwd_kind: RunCwdKind,
 ) -> None:
     """Resume read-only path variants must never execute stored commands."""
@@ -1112,24 +1159,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(
         "metadata_builder",
         "review_add_builder",
     ),
-    [
-        (
-            "Mutation command baseline",
-            "Validate review/link non-interference",
-            "Run link and review commands",
-            "repo",
-            _build_metadata_commands_in_repo,
-            _build_review_add_command_in_repo,
-        ),
-        (
-            "Root override mutation baseline",
-            "Validate root override review/link non-interference",
-            "Run root override metadata commands",
-            "tmp",
-            _build_metadata_commands_root_override,
-            _build_review_add_command_root_override,
-        ),
-    ],
+    _build_metadata_scope_scenarios(METADATA_SCOPE_CASES),
     ids=METADATA_SCOPE_IDS,
 )
 def test_review_and_link_commands_do_not_modify_repo(
