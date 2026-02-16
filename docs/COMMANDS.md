@@ -61,6 +61,8 @@ Editor note:
   internal blank lines are preserved.
 - If `--decisions` is provided explicitly, Dockyard uses it and does not invoke
   `$EDITOR`.
+- `--tag` / `--link` values are trimmed, blank entries are ignored, and exact
+  duplicates are de-duplicated.
 
 ## `resume` (`r`, `undock`)
 

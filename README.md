@@ -49,6 +49,9 @@ python3 -m dockyard save \
   --build-ok --build-command "python -m build"
 ```
 
+`save` trims `--tag` / `--link` values, ignores blank entries, and de-duplicates
+exact repeats.
+
 Template-powered non-interactive mode:
 
 ```bash

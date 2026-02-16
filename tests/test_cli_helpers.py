@@ -13,6 +13,7 @@ from dockyard.cli import (
     _emit_json,
     _normalize_editor_text,
     _normalize_optional_text,
+    _normalize_text_values,
     _safe_preview,
     _safe_text,
 )
@@ -218,3 +219,15 @@ def test_normalize_optional_text_returns_none_for_blank_input() -> None:
     """Optional text normalizer should collapse blank values to None."""
     assert _normalize_optional_text("   ") is None
     assert _normalize_optional_text(None) is None
+
+
+def test_normalize_text_values_trims_and_filters_blank_entries() -> None:
+    """List-value normalizer should trim entries and drop blanks."""
+    values = [" alpha ", "   ", "beta", "\n", "gamma "]
+    assert _normalize_text_values(values) == ["alpha", "beta", "gamma"]
+
+
+def test_normalize_text_values_optionally_deduplicates() -> None:
+    """List-value normalizer should support de-duplication mode."""
+    values = ["alpha", " alpha ", "beta", "alpha", "beta", "gamma"]
+    assert _normalize_text_values(values, dedupe=True) == ["alpha", "beta", "gamma"]

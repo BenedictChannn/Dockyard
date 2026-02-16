@@ -112,6 +112,22 @@ def _normalize_optional_text(value: str | None) -> str | None:
     return cleaned or None
 
 
+def _normalize_text_values(values: list[str] | None, dedupe: bool = False) -> list[str]:
+    """Normalize list-style text inputs by trimming and dropping blanks."""
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw in values or []:
+        cleaned = str(raw).strip()
+        if not cleaned:
+            continue
+        if dedupe:
+            if cleaned in seen:
+                continue
+            seen.add(cleaned)
+        normalized.append(cleaned)
+    return normalized
+
+
 def _normalize_editor_text(raw: str) -> str:
     """Normalize editor text by dropping scaffold comments and outer blanks.
 
@@ -484,8 +500,10 @@ def save_command(
     cleaned_objective = (objective or "").strip()
     cleaned_decisions = (decisions or "").strip()
     cleaned_risks = (risks or "").strip()
-    cleaned_next_steps = [step.strip() for step in (next_step or []) if step.strip()]
-    cleaned_resume_commands = [item.strip() for item in (command or []) if item.strip()]
+    cleaned_next_steps = _normalize_text_values(next_step)
+    cleaned_resume_commands = _normalize_text_values(command)
+    cleaned_tags = _normalize_text_values(tag, dedupe=True)
+    cleaned_links = _normalize_text_values(link, dedupe=True)
 
     if not cleaned_objective:
         raise typer.BadParameter("Objective is required.")
@@ -513,8 +531,8 @@ def save_command(
         next_steps=cleaned_next_steps[:3],
         risks_review=cleaned_risks,
         resume_commands=cleaned_resume_commands[:5],
-        tags=tag or [],
-        links=link or [],
+        tags=cleaned_tags,
+        links=cleaned_links,
     )
     checkpoint, triggers, review_id = create_checkpoint(
         store=store,

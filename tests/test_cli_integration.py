@@ -1211,6 +1211,66 @@ def test_save_truncates_next_steps_and_commands_to_mvp_limits(
     assert payload["resume_commands"] == ["cmd-1", "cmd-2", "cmd-3", "cmd-4", "cmd-5"]
 
 
+def test_save_normalizes_tag_and_link_values(git_repo: Path, tmp_path: Path) -> None:
+    """Save should trim and de-duplicate tag/link values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tag/link normalization objective",
+            "--decisions",
+            "Trim and de-duplicate save tag/link values",
+            "--next-step",
+            "run normalized filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo normalized",
+            "--tag",
+            " alpha ",
+            "--tag",
+            "alpha",
+            "--tag",
+            "   ",
+            "--tag",
+            "beta",
+            "--link",
+            " https://example.com/trimmed ",
+            "--link",
+            "https://example.com/trimmed",
+            "--link",
+            "   ",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    alpha_rows = json.loads(_run_dock(["ls", "--tag", "alpha", "--json"], cwd=tmp_path, env=env).stdout)
+    beta_rows = json.loads(_run_dock(["ls", "--tag", "beta", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(alpha_rows) == 1
+    assert len(beta_rows) == 1
+    assert "alpha " not in json.dumps(alpha_rows, ensure_ascii=False)
+
+    links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert links_output.count("https://example.com/trimmed") == 1
+    assert " https://example.com/trimmed " not in links_output
+
+
 def test_error_output_has_no_traceback(tmp_path: Path) -> None:
     """Dockyard user-facing errors should be actionable without traceback spam."""
     env = dict(os.environ)
