@@ -19,7 +19,7 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
-RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
+RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str]
 RunScopeCommandCase = tuple[str, str]
 SaveCommandCase = tuple[str, str, str]
 ResumeReadPathCase = tuple[str, str, str, ResumeReadCommandBuilder, RunCwdKind]
@@ -42,18 +42,16 @@ RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_CO
 RUN_SCOPE_COMMAND_LABELS: dict[str, str] = {
     command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES
 }
-RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (False, False): "default",
-    (True, False): "berth",
-    (False, True): "branch",
-    (True, True): "berth+branch",
-}
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
-    ("default", False, False, "repo"),
-    ("berth", True, False, "tmp"),
-    ("branch", False, True, "repo"),
-    ("berth_branch", True, True, "tmp"),
+    ("default", False, False, "repo", "default"),
+    ("berth", True, False, "tmp", "berth"),
+    ("branch", False, True, "repo", "branch"),
+    ("berth_branch", True, True, "tmp", "berth+branch"),
 )
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
+    (include_berth, include_branch): descriptor
+    for _variant_id, include_berth, include_branch, _run_cwd_kind, descriptor in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
+}
 
 
 def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, int]:
@@ -85,7 +83,7 @@ RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCase, ...] = tuple(
         run_cwd_kind,
         f"{command_name}_{variant_id}",
     )
-    for variant_id, include_berth, include_branch, run_cwd_kind in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
+    for variant_id, include_berth, include_branch, run_cwd_kind, _descriptor in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
     for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCase, ...] = tuple(

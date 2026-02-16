@@ -18,7 +18,7 @@ RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RunCommandCase = tuple[str, str, str, str]
-RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
+RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str, str]
 RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("resume", "resume", "resume", "resume"),
     ("r", "r", "r_alias", "resume alias"),
@@ -29,24 +29,20 @@ RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASE
 RUN_SCOPE_COMMAND_LABELS: dict[str, str] = {
     command_name: label for command_name, _slug, _case_id, label in RUN_COMMAND_CASES
 }
+RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
+    ("default", False, False, "repo", "default", "default"),
+    ("berth", True, False, "tmp", "berth", "berth"),
+    ("branch", False, True, "repo", "branch", "branch"),
+    ("berth_branch", True, True, "tmp", "berth+branch", "berth-branch"),
+)
 RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (False, False): "default",
-    (True, False): "berth",
-    (False, True): "branch",
-    (True, True): "berth+branch",
+    (include_berth, include_branch): descriptor
+    for _variant_id, include_berth, include_branch, _run_cwd_kind, descriptor, _slug in RUN_SCOPE_VARIANTS
 }
 RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (False, False): "default",
-    (True, False): "berth",
-    (False, True): "branch",
-    (True, True): "berth-branch",
+    (include_berth, include_branch): slug
+    for _variant_id, include_berth, include_branch, _run_cwd_kind, _descriptor, slug in RUN_SCOPE_VARIANTS
 }
-RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
-    ("default", False, False, "repo"),
-    ("berth", True, False, "tmp"),
-    ("branch", False, True, "repo"),
-    ("berth_branch", True, True, "tmp"),
-)
 RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(
     (
         command_name,
@@ -55,7 +51,7 @@ RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(
         run_cwd_kind,
         f"{command_name}_{variant_id}",
     )
-    for variant_id, include_berth, include_branch, run_cwd_kind in RUN_SCOPE_VARIANTS
+    for variant_id, include_berth, include_branch, run_cwd_kind, _descriptor, _slug in RUN_SCOPE_VARIANTS
     for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(case for case in RUN_SCOPE_CASES if case[2])
