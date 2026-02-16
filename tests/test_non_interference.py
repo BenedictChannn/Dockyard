@@ -18,13 +18,13 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
-SaveCommandCase = tuple[str, str]
-SAVE_COMMAND_IDS = ["save", "s_alias", "dock_alias"]
+SaveCommandCase = tuple[str, str, str]
 SAVE_COMMAND_CASES: list[SaveCommandCase] = [
-    ("save", "save"),
-    ("s", "alias_s"),
-    ("dock", "alias_dock"),
+    ("save", "save", "save"),
+    ("s", "alias_s", "s_alias"),
+    ("dock", "alias_dock", "dock_alias"),
 ]
+SAVE_COMMAND_IDS = [case[2] for case in SAVE_COMMAND_CASES]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
 RUN_SCOPE_COMMAND_ORDER = {"resume": 0, "r": 1, "undock": 2}
@@ -148,7 +148,7 @@ def _build_save_no_prompt_scenarios(cases: list[SaveCommandCase]) -> list[SaveNo
         Parameter tuples for no-prompt save non-interference tests.
     """
     scenarios: list[SaveNoPromptScenario] = []
-    for command_name, case_label in cases:
+    for command_name, case_label, _case_id in cases:
         scenarios.append(
             (
                 command_name,
@@ -173,7 +173,7 @@ def _build_save_editor_scenarios(cases: list[SaveCommandCase]) -> list[SaveEdito
         Parameter tuples for save/editor non-interference tests.
     """
     scenarios: list[SaveEditorScenario] = []
-    for command_name, case_label in cases:
+    for command_name, case_label, _case_id in cases:
         scenarios.append(
             (
                 command_name,
@@ -195,7 +195,7 @@ def _build_save_template_scenarios(cases: list[SaveCommandCase]) -> list[SaveTem
         Parameter tuples for save/template non-interference tests.
     """
     scenarios: list[SaveTemplateScenario] = []
-    for command_name, case_label in cases:
+    for command_name, case_label, _case_id in cases:
         scenarios.append(
             (
                 command_name,
