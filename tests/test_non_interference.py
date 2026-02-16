@@ -543,6 +543,89 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo
     )
 
 
+def _resume_read_variants(
+    command_name: str,
+    *,
+    berth: str | None = None,
+    branch: str | None = None,
+    include_json: bool = True,
+    include_handoff: bool = True,
+) -> list[list[str]]:
+    """Build read-only resume command variants for a command token.
+
+    Args:
+        command_name: Dockyard command token (resume/r/undock).
+        berth: Optional berth argument to target.
+        branch: Optional branch argument to target.
+        include_json: Whether to include ``--json`` variant for base command.
+        include_handoff: Whether to include ``--handoff`` variant for base command.
+
+    Returns:
+        Command argument matrix prefixed with ``python3 -m dockyard``.
+    """
+    base_command = ["python3", "-m", "dockyard", command_name]
+    if berth is not None:
+        base_command.append(berth)
+
+    commands = [base_command.copy()]
+    if include_json:
+        commands.append([*base_command, "--json"])
+    if include_handoff:
+        commands.append([*base_command, "--handoff"])
+    if branch is not None:
+        branch_command = [*base_command, "--branch", branch]
+        commands.append(branch_command)
+        if include_json:
+            commands.append([*branch_command, "--json"])
+        if include_handoff:
+            commands.append([*branch_command, "--handoff"])
+    return commands
+
+
+def _assert_resume_read_paths_do_not_execute_saved_commands(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    commands: list[list[str]],
+    run_cwd: Path,
+) -> None:
+    """Assert resume read paths never execute stored resume commands.
+
+    Args:
+        git_repo: Repository under test.
+        tmp_path: Temporary path used for Dockyard home.
+        marker_name: Marker filename expected to remain absent.
+        objective: Checkpoint objective text.
+        decisions: Checkpoint decisions text.
+        next_step: Checkpoint next-step text.
+        commands: Resume-path commands to execute.
+        run_cwd: Working directory for command execution.
+    """
+    env = _dockyard_env(tmp_path)
+    marker = git_repo / marker_name
+    marker_command = f"touch {marker}"
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        risks="none",
+        command=marker_command,
+    )
+
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+    _run_commands(commands, cwd=run_cwd, env=env)
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     (
         "command_name",
@@ -755,31 +838,21 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_path: Path) -> None:
     """Resume read-only paths must not execute stored resume commands."""
-    env = _dockyard_env(tmp_path)
-    marker = git_repo / "dockyard_resume_should_not_run.txt"
-    marker_command = f"touch {marker}"
-
-    _save_checkpoint(
+    commands = [
+        *_resume_read_variants("resume"),
+        *_resume_read_variants("r", include_json=False, include_handoff=False),
+        *_resume_read_variants("undock", include_json=False, include_handoff=False),
+    ]
+    _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
-        env,
+        tmp_path,
+        marker_name="dockyard_resume_should_not_run.txt",
         objective="Resume command safety baseline",
         decisions="Ensure resume read paths do not execute stored commands",
         next_step="Inspect resume output",
-        risks="none",
-        command=marker_command,
+        commands=commands,
+        run_cwd=git_repo,
     )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(["python3", "-m", "dockyard", "resume"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", "--json"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", "--handoff"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "r"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "undock"], cwd=git_repo, env=env)
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
 
 
 def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
@@ -787,44 +860,21 @@ def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Berth-targeted alias read paths must not execute stored commands."""
-    env = _dockyard_env(tmp_path)
-    marker = git_repo / "dockyard_alias_berth_resume_should_not_run.txt"
-    marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
-
-    _save_checkpoint(
+    commands = [
+        *_resume_read_variants("r", berth=git_repo.name, branch=base_branch),
+        *_resume_read_variants("undock", berth=git_repo.name, branch=base_branch),
+    ]
+    _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
-        env,
+        tmp_path,
+        marker_name="dockyard_alias_berth_resume_should_not_run.txt",
         objective="Alias berth command safety baseline",
         decisions="Ensure alias berth read paths do not execute stored commands",
         next_step="Inspect alias berth resume output",
-        risks="none",
-        command=marker_command,
+        commands=commands,
+        run_cwd=tmp_path,
     )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-    _run_commands(
-        [
-            ["python3", "-m", "dockyard", "r", git_repo.name],
-            ["python3", "-m", "dockyard", "r", git_repo.name, "--json"],
-            ["python3", "-m", "dockyard", "r", git_repo.name, "--handoff"],
-            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch],
-            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--json"],
-            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--handoff"],
-            ["python3", "-m", "dockyard", "undock", git_repo.name],
-            ["python3", "-m", "dockyard", "undock", git_repo.name, "--json"],
-            ["python3", "-m", "dockyard", "undock", git_repo.name, "--handoff"],
-            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch],
-            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--json"],
-            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--handoff"],
-        ],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
 
 
 def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
@@ -832,47 +882,23 @@ def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Trimmed berth/branch alias read paths must not execute stored commands."""
-    env = _dockyard_env(tmp_path)
-    marker = git_repo / "dockyard_alias_trimmed_resume_should_not_run.txt"
-    marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
-
-    _save_checkpoint(
+    trimmed_berth = f"  {git_repo.name}  "
+    trimmed_branch = f"  {base_branch}  "
+    commands = [
+        *_resume_read_variants("r", berth=trimmed_berth, branch=trimmed_branch),
+        *_resume_read_variants("undock", berth=trimmed_berth, branch=trimmed_branch),
+    ]
+    _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
-        env,
+        tmp_path,
+        marker_name="dockyard_alias_trimmed_resume_should_not_run.txt",
         objective="Alias trimmed berth command safety baseline",
         decisions="Ensure trimmed alias berth read paths do not execute stored commands",
         next_step="Inspect trimmed alias berth resume output",
-        risks="none",
-        command=marker_command,
+        commands=commands,
+        run_cwd=tmp_path,
     )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-    trimmed_berth = f"  {git_repo.name}  "
-    trimmed_branch = f"  {base_branch}  "
-
-    _run_commands(
-        [
-            ["python3", "-m", "dockyard", "r", trimmed_berth],
-            ["python3", "-m", "dockyard", "r", trimmed_berth, "--json"],
-            ["python3", "-m", "dockyard", "r", trimmed_berth, "--handoff"],
-            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch],
-            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--json"],
-            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--json"],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--handoff"],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--json"],
-            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
-        ],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
 
 
 def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
@@ -880,41 +906,19 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Trimmed berth/branch primary resume paths must never execute commands."""
-    env = _dockyard_env(tmp_path)
-    marker = git_repo / "dockyard_primary_trimmed_resume_should_not_run.txt"
-    marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
-
-    _save_checkpoint(
+    trimmed_berth = f"  {git_repo.name}  "
+    trimmed_branch = f"  {base_branch}  "
+    _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
-        env,
+        tmp_path,
+        marker_name="dockyard_primary_trimmed_resume_should_not_run.txt",
         objective="Primary trimmed berth command safety baseline",
         decisions="Ensure trimmed primary berth read paths do not execute commands",
         next_step="Inspect trimmed primary berth resume output",
-        risks="none",
-        command=marker_command,
+        commands=_resume_read_variants("resume", berth=trimmed_berth, branch=trimmed_branch),
+        run_cwd=tmp_path,
     )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-    trimmed_berth = f"  {git_repo.name}  "
-    trimmed_branch = f"  {base_branch}  "
-
-    _run_commands(
-        [
-            ["python3", "-m", "dockyard", "resume", trimmed_berth],
-            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--json"],
-            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--handoff"],
-            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch],
-            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--json"],
-            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
-        ],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
 
 
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
