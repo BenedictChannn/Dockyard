@@ -52,6 +52,12 @@ def test_normalize_editor_text_drops_multiple_scaffold_lines() -> None:
     assert _normalize_editor_text(raw) == "Decision body"
 
 
+def test_normalize_editor_text_handles_windows_newlines() -> None:
+    """Normalization should work with CRLF editor payloads."""
+    raw = "# Decisions / Findings\r\n\r\nDecision body\r\n"
+    assert _normalize_editor_text(raw) == "Decision body"
+
+
 def test_normalize_editor_text_empty_input_returns_empty() -> None:
     """Empty editor payload should normalize to empty string."""
     assert _normalize_editor_text("") == ""
