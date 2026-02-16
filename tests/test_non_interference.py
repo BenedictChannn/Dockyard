@@ -18,7 +18,13 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
+SaveCommandCase = tuple[str, str]
 SAVE_COMMAND_IDS = ["save", "s_alias", "dock_alias"]
+SAVE_COMMAND_CASES: list[SaveCommandCase] = [
+    ("save", "save"),
+    ("s", "alias_s"),
+    ("dock", "alias_dock"),
+]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
 RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
@@ -53,6 +59,9 @@ RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [case[4] for case in RUN_SCOPE_CASES_DEFAUL
 RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH]
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 RunOptInMutationScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str]
+SaveNoPromptScenario = tuple[str, str, str, str, str, str, str]
+SaveEditorScenario = tuple[str, str, str, str]
+SaveTemplateScenario = tuple[str, str, str]
 
 
 def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
@@ -105,6 +114,74 @@ def _build_opt_in_mutation_run_scope_scenarios(
                 f"{scope_label} opt-in mutation baseline",
                 f"Verify {scope_label} --run may execute mutating commands",
                 f"run {scope_label} --run",
+            ),
+        )
+    return scenarios
+
+
+def _build_save_no_prompt_scenarios(cases: list[SaveCommandCase]) -> list[SaveNoPromptScenario]:
+    """Build no-prompt save scenarios from shared command metadata.
+
+    Args:
+        cases: Save command metadata tuples.
+
+    Returns:
+        Parameter tuples for no-prompt save non-interference tests.
+    """
+    scenarios: list[SaveNoPromptScenario] = []
+    for command_name, case_label in cases:
+        scenarios.append(
+            (
+                command_name,
+                f"{case_label} no-prompt objective",
+                f"{case_label} no-prompt decisions",
+                f"run {case_label} resume",
+                "none",
+                f"echo {case_label}-resume",
+                f"echo {case_label}-build",
+            ),
+        )
+    return scenarios
+
+
+def _build_save_editor_scenarios(cases: list[SaveCommandCase]) -> list[SaveEditorScenario]:
+    """Build save/editor scenarios from shared command metadata.
+
+    Args:
+        cases: Save command metadata tuples.
+
+    Returns:
+        Parameter tuples for save/editor non-interference tests.
+    """
+    scenarios: list[SaveEditorScenario] = []
+    for command_name, case_label in cases:
+        scenarios.append(
+            (
+                command_name,
+                f"{case_label}_editor.sh",
+                f"{case_label} editor decisions for non-interference",
+                f"{case_label} editor non-interference objective",
+            ),
+        )
+    return scenarios
+
+
+def _build_save_template_scenarios(cases: list[SaveCommandCase]) -> list[SaveTemplateScenario]:
+    """Build save/template scenarios from shared command metadata.
+
+    Args:
+        cases: Save command metadata tuples.
+
+    Returns:
+        Parameter tuples for save/template non-interference tests.
+    """
+    scenarios: list[SaveTemplateScenario] = []
+    for command_name, case_label in cases:
+        scenarios.append(
+            (
+                command_name,
+                f"{case_label}_template.json",
+                f"{case_label} template non-interference objective",
             ),
         )
     return scenarios
@@ -686,35 +763,7 @@ def _build_review_add_command_root_override(git_repo: Path, base_branch: str) ->
         "resume_command",
         "build_command",
     ),
-    [
-        (
-            "save",
-            "Checkpoint objective",
-            "Decision text",
-            "Do another thing",
-            "Review infra carefully",
-            "pytest -q",
-            "python -m build",
-        ),
-        (
-            "s",
-            "Alias s no-prompt non-interference objective",
-            "Alias s no-prompt non-interference decisions",
-            "run resume",
-            "none",
-            "echo noop",
-            "echo build",
-        ),
-        (
-            "dock",
-            "Dock alias save objective",
-            "Dock alias save decisions",
-            "Run resume",
-            "none",
-            "echo noop",
-            "echo build",
-        ),
-    ],
+    _build_save_no_prompt_scenarios(SAVE_COMMAND_CASES),
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_no_prompt_flows_do_not_modify_repo(
@@ -1087,26 +1136,7 @@ def test_review_and_link_commands_do_not_modify_repo(
 
 @pytest.mark.parametrize(
     ("command_name", "script_name", "decisions_text", "objective"),
-    [
-        (
-            "save",
-            "editor.sh",
-            "Editor decisions for non-interference",
-            "Editor non-interference objective",
-        ),
-        (
-            "s",
-            "alias_s_editor.sh",
-            "Alias s editor decisions for non-interference",
-            "Alias s editor non-interference objective",
-        ),
-        (
-            "dock",
-            "alias_dock_editor.sh",
-            "Alias dock editor decisions for non-interference",
-            "Alias dock editor non-interference objective",
-        ),
-    ],
+    _build_save_editor_scenarios(SAVE_COMMAND_CASES),
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_editor_flows_do_not_modify_repo(
@@ -1163,11 +1193,7 @@ def test_save_editor_flows_do_not_modify_repo(
 
 @pytest.mark.parametrize(
     ("command_name", "template_name", "objective"),
-    [
-        ("save", "save_template.json", "Template non-interference objective"),
-        ("s", "save_alias_s_template.json", "Template alias s non-interference objective"),
-        ("dock", "save_alias_dock_template.json", "Template alias dock non-interference objective"),
-    ],
+    _build_save_template_scenarios(SAVE_COMMAND_CASES),
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_template_flows_do_not_modify_repo(
