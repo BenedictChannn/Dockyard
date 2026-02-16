@@ -16,6 +16,28 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RUN_COMMAND_IDS = ["resume", "r_alias", "undock_alias"]
+RUN_SCOPE_IDS = [
+    "resume_default",
+    "r_default",
+    "undock_default",
+    "resume_berth",
+    "r_berth",
+    "undock_berth",
+    "resume_branch",
+    "r_branch",
+    "undock_branch",
+    "resume_berth_branch",
+    "r_berth_branch",
+    "undock_berth_branch",
+]
+RUN_BRANCH_SCOPE_IDS = [
+    "resume_branch",
+    "r_branch",
+    "undock_branch",
+    "resume_berth_branch",
+    "r_berth_branch",
+    "undock_berth_branch",
+]
 
 
 def _run_dock(
@@ -2586,14 +2608,7 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
             ["echo undock-berth-branch-run-one", "echo undock-berth-branch-run-two"],
         ),
     ],
-    ids=[
-        "resume_branch",
-        "r_branch",
-        "undock_branch",
-        "resume_berth_branch",
-        "r_berth_branch",
-        "undock_berth_branch",
-    ],
+    ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_execute_commands_on_success(
     git_repo: Path,
@@ -2702,14 +2717,7 @@ def test_run_branch_scopes_execute_commands_on_success(
             "echo undock-berth-branch-should-not-run",
         ),
     ],
-    ids=[
-        "resume_branch",
-        "r_branch",
-        "undock_branch",
-        "resume_berth_branch",
-        "r_berth_branch",
-        "undock_berth_branch",
-    ],
+    ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_stop_on_failure(
     git_repo: Path,
@@ -3155,20 +3163,7 @@ def _assert_run_no_commands_noop_for_scope(
             "run undock berth+branch with run",
         ),
     ],
-    ids=[
-        "resume_default",
-        "r_default",
-        "undock_default",
-        "resume_berth",
-        "r_berth",
-        "undock_berth",
-        "resume_branch",
-        "r_branch",
-        "undock_branch",
-        "resume_berth_branch",
-        "r_berth_branch",
-        "undock_berth_branch",
-    ],
+    ids=RUN_SCOPE_IDS,
 )
 def test_run_scopes_with_no_commands_are_noop_success(
     git_repo: Path,
