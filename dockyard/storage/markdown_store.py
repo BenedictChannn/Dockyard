@@ -127,11 +127,19 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
 
     current_title: str | None = None
     bucket: dict[str, list[str]] = {target: [] for target in sections.values()}
+    freeform_sections = {"objective", "decisions", "risks_review"}
     for raw_line in markdown_text.splitlines():
         section_match = re.match(r"^##\s+(.+)$", raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
-            current_title = sections.get(title)
+            mapped_title = sections.get(title)
+            if mapped_title:
+                current_title = mapped_title
+                continue
+            if current_title in freeform_sections:
+                bucket[current_title].append(raw_line.rstrip())
+                continue
+            current_title = None
             continue
         if not current_title:
             continue
@@ -147,8 +155,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
 
 def _normalize_block(lines: list[str]) -> str:
     """Normalize a freeform markdown section into text."""
-    cleaned = [line for line in lines if not line.startswith("## ")]
-    return "\n".join(cleaned).strip()
+    return "\n".join(lines).strip()
 
 
 def _normalize_numbered(lines: list[str]) -> list[str]:
