@@ -1196,19 +1196,13 @@ def test_build_review_add_command_root_override_delegates_to_helper() -> None:
 def test_build_link_command_omits_root_by_default() -> None:
     """Link command builder should omit root argument by default."""
     command = _build_link_command("https://example.com/default-link")
-    assert command == [
-        "python3",
-        "-m",
-        "dockyard",
-        "link",
-        "https://example.com/default-link",
-    ]
+    assert command == _dockyard_command("link", "https://example.com/default-link")
 
 
 def test_build_links_command_omits_root_by_default() -> None:
     """Links command builder should omit root argument by default."""
     command = _build_links_command()
-    assert command == ["python3", "-m", "dockyard", "links"]
+    assert command == _dockyard_command("links")
 
 
 def test_build_link_and_links_commands_include_root_when_provided() -> None:
@@ -1217,23 +1211,13 @@ def test_build_link_and_links_commands_include_root_when_provided() -> None:
     link_command = _build_link_command("https://example.com/root-link", root=root)
     links_command = _build_links_command(root=root)
 
-    assert link_command == [
-        "python3",
-        "-m",
-        "dockyard",
+    assert link_command == _dockyard_command(
         "link",
         "https://example.com/root-link",
         "--root",
         str(root),
-    ]
-    assert links_command == [
-        "python3",
-        "-m",
-        "dockyard",
-        "links",
-        "--root",
-        str(root),
-    ]
+    )
+    assert links_command == _dockyard_command("links", "--root", str(root))
 
 
 def test_build_metadata_commands_in_repo_uses_default_link_url() -> None:
