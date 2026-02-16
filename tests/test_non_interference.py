@@ -37,6 +37,7 @@ class RunScopeCaseMeta:
     include_berth: bool
     include_branch: bool
     run_cwd_kind: RunCwdKind
+    variant_id: RunScopeVariantId
     case_id: str
 
 
@@ -83,6 +84,7 @@ class RunScopeVariantMeta:
     include_branch: bool
     run_cwd_kind: RunCwdKind
     descriptor: str
+    sort_rank: int
 
 
 @dataclass(frozen=True)
@@ -125,10 +127,10 @@ RUN_SCOPE_COMMAND_LABELS: Mapping[RunCommandName, str] = MappingProxyType(
     {case.name: case.label for case in RUN_SCOPE_COMMAND_CASES}
 )
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariantMeta, ...] = (
-    RunScopeVariantMeta("default", False, False, "repo", "default"),
-    RunScopeVariantMeta("berth", True, False, "tmp", "berth"),
-    RunScopeVariantMeta("branch", False, True, "repo", "branch"),
-    RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch"),
+    RunScopeVariantMeta("default", False, False, "repo", "default", 0),
+    RunScopeVariantMeta("berth", True, False, "tmp", "berth", 2),
+    RunScopeVariantMeta("branch", False, True, "repo", "branch", 1),
+    RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch", 3),
 )
 RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyType(
     {
@@ -136,13 +138,8 @@ RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyTyp
         for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
     }
 )
-RUN_SCOPE_RANK_BY_FLAGS: Mapping[tuple[bool, bool], int] = MappingProxyType(
-    {
-        (False, False): 0,
-        (False, True): 1,
-        (True, False): 2,
-        (True, True): 3,
-    }
+RUN_SCOPE_VARIANT_RANK: Mapping[RunScopeVariantId, int] = MappingProxyType(
+    {variant.variant_id: variant.sort_rank for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH}
 )
 
 
@@ -155,7 +152,7 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int
     Returns:
         Tuple sorted by scope family then command ordering.
     """
-    scope_rank = RUN_SCOPE_RANK_BY_FLAGS[(case.include_berth, case.include_branch)]
+    scope_rank = RUN_SCOPE_VARIANT_RANK[case.variant_id]
     return (scope_rank, RUN_SCOPE_COMMAND_ORDER[case.command_name])
 
 
@@ -165,6 +162,7 @@ RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCaseMeta, ...] = tuple(
         include_berth=variant.include_berth,
         include_branch=variant.include_branch,
         run_cwd_kind=variant.run_cwd_kind,
+        variant_id=variant.variant_id,
         case_id=f"{command_name}_{variant.variant_id}",
     )
     for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
