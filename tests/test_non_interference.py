@@ -55,6 +55,20 @@ def _current_branch(git_repo: Path) -> str:
     return _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
 
+def _dockyard_env(tmp_path: Path) -> dict[str, str]:
+    """Create environment mapping with isolated Dockyard home.
+
+    Args:
+        tmp_path: Temporary test path used for Dockyard data.
+
+    Returns:
+        Environment variables with DOCKYARD_HOME configured.
+    """
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    return env
+
+
 def _configure_editor(env: dict[str, str], tmp_path: Path, script_name: str, decisions_text: str) -> None:
     """Create editor script and wire EDITOR env var for save --editor tests.
 
@@ -179,8 +193,7 @@ def _assert_opt_in_run_mutates_repo(
         decisions: Checkpoint decisions text for setup save.
         next_step: Checkpoint next-step text for setup save.
     """
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     marker = git_repo / marker_name
 
     _save_checkpoint(
@@ -247,8 +260,7 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
 
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
     """Saving checkpoint should not alter tracked files or git index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
 
@@ -290,8 +302,7 @@ def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_pa
 
 def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Resume/ls/search/review read paths must not mutate repository state."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
@@ -411,8 +422,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_path: Path) -> None:
     """Resume read-only paths must not execute stored resume commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     marker = git_repo / "dockyard_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
 
@@ -444,8 +454,7 @@ def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Berth-targeted alias read paths must not execute stored commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     marker = git_repo / "dockyard_alias_berth_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
@@ -490,8 +499,7 @@ def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Trimmed berth/branch alias read paths must not execute stored commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     marker = git_repo / "dockyard_alias_trimmed_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
@@ -539,8 +547,7 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
     tmp_path: Path,
 ) -> None:
     """Trimmed berth/branch primary resume paths must never execute commands."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     marker = git_repo / "dockyard_primary_trimmed_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
     base_branch = _current_branch(git_repo)
@@ -579,8 +586,7 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
 
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Dockyard metadata mutations must not alter repository working tree."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _save_checkpoint(
         git_repo,
@@ -634,8 +640,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     tmp_path: Path,
 ) -> None:
     """Root/override metadata mutations must not alter repository tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
     base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
@@ -700,8 +705,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
 
 def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Editor-assisted save flow should not alter project working tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _configure_editor(
         env=env,
@@ -749,8 +753,7 @@ def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Template-driven save flow should not alter project working tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     template_path = tmp_path / "save_template.json"
     _write_non_interference_template(
@@ -782,8 +785,7 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
 
 def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `s` template save flow should not alter project tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     template_path = tmp_path / "save_alias_s_template.json"
     _write_non_interference_template(
@@ -815,8 +817,7 @@ def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_pat
 
 def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `s` editor save flow should not alter project tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _configure_editor(
         env=env,
@@ -864,8 +865,7 @@ def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path:
 
 def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `s` no-prompt save should not alter project tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
 
@@ -907,8 +907,7 @@ def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: P
 
 def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `dock` template save flow should not alter project tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     template_path = tmp_path / "save_alias_dock_template.json"
     _write_non_interference_template(
@@ -940,8 +939,7 @@ def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_
 
 def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `dock` editor save flow should not alter project tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _configure_editor(
         env=env,
@@ -989,8 +987,7 @@ def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_pa
 
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
 
@@ -1001,8 +998,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
 
 def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """`dock dock` alias save flow should not alter project working tree/index."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
 
