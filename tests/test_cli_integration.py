@@ -641,6 +641,81 @@ def test_save_alias_s_template_directory_path_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_alias_s_missing_template_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should fail clearly for missing template files."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    missing_template = tmp_path / "alias-s-missing-template.json"
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(missing_template),
+            "--no-prompt",
+            "--objective",
+            "Alias s missing template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use an existing template file",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template not found:" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_s_invalid_template_content_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should fail clearly for malformed template content."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_s_bad_template.toml"
+    bad_template.write_text("[broken\nvalue = 1", encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Alias s invalid template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix template syntax",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to parse template:" in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -915,6 +990,81 @@ def test_save_alias_dock_template_directory_path_is_actionable(
     )
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_missing_template_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should fail clearly for missing template files."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    missing_template = tmp_path / "alias-dock-missing-template.json"
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(missing_template),
+            "--no-prompt",
+            "--objective",
+            "Dock alias missing template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use an existing template file",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template not found:" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_invalid_template_content_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should fail clearly for malformed template content."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_dock_bad_template.toml"
+    bad_template.write_text("[broken\nvalue = 1", encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Dock alias invalid template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix template syntax",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to parse template:" in output
     assert "Traceback" not in output
 
 
