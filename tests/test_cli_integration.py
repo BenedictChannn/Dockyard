@@ -4656,6 +4656,49 @@ def test_search_repo_filter_no_match_is_informative(git_repo: Path, tmp_path: Pa
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+def test_search_repo_filter_no_match_json_returns_empty_array(git_repo: Path, tmp_path: Path) -> None:
+    """Search JSON should return [] when repo filter excludes results."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Repo filter no-match json objective",
+            "--decisions",
+            "Repo filter no-match json decisions",
+            "--next-step",
+            "run repo filtered search json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Repo filter no-match json objective", "--repo", "missing-berth", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+
+
 def test_search_branch_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
@@ -4700,6 +4743,53 @@ def test_search_branch_filter_no_match_json_returns_empty_array(
         env=env,
     )
     assert json.loads(result.stdout) == []
+
+
+def test_search_branch_filter_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search should show no-match guidance when branch filter excludes rows."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Branch filter no-match message objective",
+            "--decisions",
+            "Branch filter no-match message decisions",
+            "--next-step",
+            "run branch filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Branch filter no-match message objective", "--branch", "missing/branch"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_tag_repo_filter_no_match_json_returns_empty_array(
