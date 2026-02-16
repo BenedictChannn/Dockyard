@@ -111,11 +111,11 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
         Parsed dictionary with selected sections.
     """
     sections = {
-        "Objective": "objective",
-        "Decisions/Findings": "decisions",
-        "Next Steps": "next_steps",
-        "Risks/Review Needed": "risks_review",
-        "Resume Commands": "resume_commands",
+        "objective": "objective",
+        "decisions/findings": "decisions",
+        "next steps": "next_steps",
+        "risks/review needed": "risks_review",
+        "resume commands": "resume_commands",
     }
     parsed: dict[str, str | list[str]] = {
         "objective": "",
@@ -132,7 +132,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
         section_match = re.match(r"^##\s+(.+)$", raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
-            mapped_title = sections.get(_normalize_section_heading(title))
+            mapped_title = sections.get(_normalize_section_heading(title).lower())
             if mapped_title:
                 current_title = mapped_title
                 continue
