@@ -115,6 +115,20 @@ def _run_scope_slug(include_berth: bool, include_branch: bool) -> str:
     return RUN_SCOPE_SLUG_BY_FLAGS[(include_berth, include_branch)]
 
 
+def _run_scope_context(
+    command_name: RunCommandName,
+    *,
+    include_berth: bool,
+    include_branch: bool,
+) -> tuple[str, str, str]:
+    """Return command label plus scope descriptor/slug for metadata text."""
+    return (
+        RUN_SCOPE_COMMAND_LABELS[command_name],
+        _run_scope_descriptor(include_berth, include_branch),
+        _run_scope_slug(include_berth, include_branch),
+    )
+
+
 def _build_default_run_success_scenarios(
     cases: Sequence[RunCommandMeta],
 ) -> list[RunDefaultSuccessScenario]:
@@ -177,9 +191,11 @@ def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     """
     scenarios: list[RunBranchSuccessScenario] = []
     for case in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
-        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
-        scope_slug = _run_scope_slug(case.include_berth, case.include_branch)
+        command_label, scope_descriptor, scope_slug = _run_scope_context(
+            case.command_name,
+            include_berth=case.include_berth,
+            include_branch=case.include_branch,
+        )
         scenarios.append(
             (
                 case.command_name,
@@ -209,9 +225,11 @@ def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     """
     scenarios: list[RunBranchFailureScenario] = []
     for case in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
-        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
-        scope_slug = _run_scope_slug(case.include_berth, case.include_branch)
+        command_label, scope_descriptor, scope_slug = _run_scope_context(
+            case.command_name,
+            include_berth=case.include_berth,
+            include_branch=case.include_branch,
+        )
         scenarios.append(
             (
                 case.command_name,
@@ -239,8 +257,11 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """
     scenarios: list[RunNoCommandScenario] = []
     for case in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
-        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
+        command_label, scope_descriptor, _scope_slug = _run_scope_context(
+            case.command_name,
+            include_berth=case.include_berth,
+            include_branch=case.include_branch,
+        )
         scenarios.append(
             (
                 case.command_name,

@@ -162,6 +162,19 @@ def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     return RUN_SCOPE_DESCRIPTOR_BY_FLAGS[(include_berth, include_branch)]
 
 
+def _run_scope_context(
+    command_name: RunCommandName,
+    *,
+    include_berth: bool,
+    include_branch: bool,
+) -> tuple[str, str]:
+    """Return command label plus scope descriptor for scenario text."""
+    return (
+        RUN_SCOPE_COMMAND_LABELS[command_name],
+        _run_scope_descriptor(include_berth, include_branch),
+    )
+
+
 def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:
     """Return pytest ID labels derived from run-scope metadata."""
     return tuple(case.case_id for case in cases)
@@ -182,8 +195,11 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """
     scenarios: list[RunNoCommandScenario] = []
     for case in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
-        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
+        command_label, scope_descriptor = _run_scope_context(
+            case.command_name,
+            include_berth=case.include_berth,
+            include_branch=case.include_branch,
+        )
         scenarios.append(
             (
                 case.command_name,
@@ -211,8 +227,11 @@ def _build_opt_in_mutation_run_scope_scenarios(
     """
     scenarios: list[RunOptInMutationScenario] = []
     for case in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
-        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
+        command_label, scope_descriptor = _run_scope_context(
+            case.command_name,
+            include_berth=case.include_berth,
+            include_branch=case.include_branch,
+        )
         scenarios.append(
             (
                 case.command_name,
