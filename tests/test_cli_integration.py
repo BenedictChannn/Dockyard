@@ -78,6 +78,13 @@ RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (variant.include_berth, variant.include_branch): variant.slug
     for variant in RUN_SCOPE_VARIANTS
 }
+
+
+def _run_scope_case_command_sort_key(case: RunScopeCaseMeta) -> int:
+    """Return sort key for command ordering across run-scope cases."""
+    return RUN_SCOPE_COMMAND_INDEX[case.command_name]
+
+
 RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     RunScopeCaseMeta(
         command_name=command_name,
@@ -92,7 +99,7 @@ RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     sorted(
         (case for case in RUN_SCOPE_CASES if case.include_branch),
-        key=lambda case: RUN_SCOPE_COMMAND_INDEX[case.command_name],
+        key=_run_scope_case_command_sort_key,
     )
 )
 RunDefaultSuccessScenario = tuple[RunCommandName, str, str, str, RunCommands]
