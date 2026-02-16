@@ -77,6 +77,11 @@ def test_comma_or_pipe_values_with_mixed_separators_prefers_pipe() -> None:
     assert _comma_or_pipe_values("alpha,beta|gamma") == ["alpha,beta", "gamma"]
 
 
+def test_comma_or_pipe_values_drops_empty_pipe_segments() -> None:
+    """Pipe parsing should ignore empty segments after trimming."""
+    assert _comma_or_pipe_values("alpha|| beta | ") == ["alpha", "beta"]
+
+
 def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.MonkeyPatch) -> None:
     """JSON emitter should output parseable text without unicode escaping."""
     captured: list[str] = []
