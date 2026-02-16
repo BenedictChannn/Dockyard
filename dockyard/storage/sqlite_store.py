@@ -617,6 +617,8 @@ class SQLiteStore:
                     updated = datetime.fromisoformat(item["updated_at"])
                 except ValueError:
                     continue
+                if updated.tzinfo is None:
+                    updated = updated.replace(tzinfo=timezone.utc)
                 if updated <= threshold:
                     filtered.append(item)
             results = filtered

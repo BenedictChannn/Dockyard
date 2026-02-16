@@ -150,3 +150,34 @@ def test_harbor_stale_filter_ignores_invalid_timestamps(tmp_path) -> None:
 
     stale_rows = store.list_harbor(stale_days=1)
     assert [row["repo_id"] for row in stale_rows] == ["valid"]
+
+
+def test_harbor_stale_filter_accepts_naive_timestamps(tmp_path) -> None:
+    """Stale filtering should treat naive ISO timestamps as UTC values."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.upsert_berth(Berth(repo_id="naive", name="Naive", root_path="/tmp/naive", remote_url=None))
+    store.upsert_berth(Berth(repo_id="aware", name="Aware", root_path="/tmp/aware", remote_url=None))
+
+    store.upsert_slip(
+        Slip(
+            repo_id="naive",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="2000-01-01T00:00:00",
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="aware",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="2999-01-01T00:00:00+00:00",
+        )
+    )
+
+    stale_rows = store.list_harbor(stale_days=1)
+    assert [row["repo_id"] for row in stale_rows] == ["naive"]
