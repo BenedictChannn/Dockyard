@@ -269,11 +269,70 @@ RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCaseMeta, ...] = tuple(
         key=_run_scope_branch_before_berth_sort_key,
     ),
 )
-RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
-RunOptInMutationScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, str]
-SaveNoPromptScenario = tuple[SaveCommandName, str, str, str, str, str, str]
-SaveEditorScenario = tuple[SaveCommandName, str, str, str]
-SaveTemplateScenario = tuple[SaveCommandName, str, str]
+
+
+@dataclass(frozen=True)
+class RunNoCommandScenarioMeta:
+    """Rendered scenario metadata for no-command run scope tests."""
+
+    case_id: str
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    objective: str
+    decisions: str
+    next_step: str
+
+
+@dataclass(frozen=True)
+class RunOptInMutationScenarioMeta:
+    """Rendered scenario metadata for opt-in mutation run scope tests."""
+
+    case_id: str
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    marker_name: str
+    objective: str
+    decisions: str
+    next_step: str
+
+
+@dataclass(frozen=True)
+class SaveNoPromptScenarioMeta:
+    """Rendered scenario metadata for no-prompt save tests."""
+
+    case_id: str
+    command_name: SaveCommandName
+    objective: str
+    decisions: str
+    next_step: str
+    risks: str
+    resume_command: str
+    build_command: str
+
+
+@dataclass(frozen=True)
+class SaveEditorScenarioMeta:
+    """Rendered scenario metadata for save editor-mode tests."""
+
+    case_id: str
+    command_name: SaveCommandName
+    script_name: str
+    decisions_text: str
+    objective: str
+
+
+@dataclass(frozen=True)
+class SaveTemplateScenarioMeta:
+    """Rendered scenario metadata for save template-mode tests."""
+
+    case_id: str
+    command_name: SaveCommandName
+    template_name: str
+    objective: str
 
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
@@ -310,135 +369,138 @@ RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _case_ids(
 )
 
 
-def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(
+    cases: Sequence[RunScopeCaseMeta],
+) -> tuple[RunNoCommandScenarioMeta, ...]:
     """Build no-command run-scope scenarios from shared scope metadata.
 
     Args:
         cases: Scope metadata entries containing command/scope configuration.
 
     Returns:
-        Parameter rows for no-command run-scope tests.
+        Rendered case metadata rows for no-command run-scope tests.
     """
-    scenarios: list[RunNoCommandScenario] = []
-    for case in cases:
-        context = _run_scope_context(
-            case.command_name,
+    return tuple(
+        RunNoCommandScenarioMeta(
+            case_id=case.case_id,
+            command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
+            run_cwd_kind=case.run_cwd_kind,
+            objective=f"{context.phrase} run no-commands baseline",
+            decisions=f"Verify {context.phrase} --run no-op path remains non-mutating",
+            next_step=f"run {context.phrase} --run",
         )
-        scenarios.append(
-            (
+        for case in cases
+        for context in (
+            _run_scope_context(
                 case.command_name,
-                case.include_berth,
-                case.include_branch,
-                case.run_cwd_kind,
-                f"{context.phrase} run no-commands baseline",
-                f"Verify {context.phrase} --run no-op path remains non-mutating",
-                f"run {context.phrase} --run",
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
             ),
         )
-    return scenarios
+    )
 
 
 def _build_opt_in_mutation_run_scope_scenarios(
     cases: Sequence[RunScopeCaseMeta],
-) -> list[RunOptInMutationScenario]:
+) -> tuple[RunOptInMutationScenarioMeta, ...]:
     """Build opt-in mutation run-scope scenarios from shared scope metadata.
 
     Args:
         cases: Scope metadata entries containing command/scope configuration.
 
     Returns:
-        Parameter rows for opt-in mutation run-scope tests.
+        Rendered case metadata rows for opt-in mutation run-scope tests.
     """
-    scenarios: list[RunOptInMutationScenario] = []
-    for case in cases:
-        context = _run_scope_context(
-            case.command_name,
+    return tuple(
+        RunOptInMutationScenarioMeta(
+            case_id=case.case_id,
+            command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
+            run_cwd_kind=case.run_cwd_kind,
+            marker_name=f"{case.case_id}_opt_in_marker.txt",
+            objective=f"{context.phrase} opt-in mutation baseline",
+            decisions=f"Verify {context.phrase} --run may execute mutating commands",
+            next_step=f"run {context.phrase} --run",
         )
-        scenarios.append(
-            (
+        for case in cases
+        for context in (
+            _run_scope_context(
                 case.command_name,
-                case.include_berth,
-                case.include_branch,
-                case.run_cwd_kind,
-                f"{case.case_id}_opt_in_marker.txt",
-                f"{context.phrase} opt-in mutation baseline",
-                f"Verify {context.phrase} --run may execute mutating commands",
-                f"run {context.phrase} --run",
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
             ),
         )
-    return scenarios
+    )
 
 
-def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveNoPromptScenario]:
+def _build_save_no_prompt_scenarios(
+    cases: Sequence[SaveCommandMeta],
+) -> tuple[SaveNoPromptScenarioMeta, ...]:
     """Build no-prompt save scenarios from shared command metadata.
 
     Args:
         cases: Save command metadata entries.
 
     Returns:
-        Parameter rows for no-prompt save non-interference tests.
+        Rendered case metadata rows for no-prompt save non-interference tests.
     """
-    scenarios: list[SaveNoPromptScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.name,
-                f"{case.slug} no-prompt objective",
-                f"{case.slug} no-prompt decisions",
-                f"run {case.slug} resume",
-                "none",
-                f"echo {case.slug}-resume",
-                f"echo {case.slug}-build",
-            ),
+    return tuple(
+        SaveNoPromptScenarioMeta(
+            case_id=case.case_id,
+            command_name=case.name,
+            objective=f"{case.slug} no-prompt objective",
+            decisions=f"{case.slug} no-prompt decisions",
+            next_step=f"run {case.slug} resume",
+            risks="none",
+            resume_command=f"echo {case.slug}-resume",
+            build_command=f"echo {case.slug}-build",
         )
-    return scenarios
+        for case in cases
+    )
 
 
-def _build_save_editor_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveEditorScenario]:
+def _build_save_editor_scenarios(cases: Sequence[SaveCommandMeta]) -> tuple[SaveEditorScenarioMeta, ...]:
     """Build save/editor scenarios from shared command metadata.
 
     Args:
         cases: Save command metadata entries.
 
     Returns:
-        Parameter rows for save/editor non-interference tests.
+        Rendered case metadata rows for save/editor non-interference tests.
     """
-    scenarios: list[SaveEditorScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.name,
-                f"{case.slug}_editor.sh",
-                f"{case.slug} editor decisions for non-interference",
-                f"{case.slug} editor non-interference objective",
-            ),
+    return tuple(
+        SaveEditorScenarioMeta(
+            case_id=case.case_id,
+            command_name=case.name,
+            script_name=f"{case.slug}_editor.sh",
+            decisions_text=f"{case.slug} editor decisions for non-interference",
+            objective=f"{case.slug} editor non-interference objective",
         )
-    return scenarios
+        for case in cases
+    )
 
 
-def _build_save_template_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveTemplateScenario]:
+def _build_save_template_scenarios(cases: Sequence[SaveCommandMeta]) -> tuple[SaveTemplateScenarioMeta, ...]:
     """Build save/template scenarios from shared command metadata.
 
     Args:
         cases: Save command metadata entries.
 
     Returns:
-        Parameter rows for save/template non-interference tests.
+        Rendered case metadata rows for save/template non-interference tests.
     """
-    scenarios: list[SaveTemplateScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.name,
-                f"{case.slug}_template.json",
-                f"{case.slug} template non-interference objective",
-            ),
+    return tuple(
+        SaveTemplateScenarioMeta(
+            case_id=case.case_id,
+            command_name=case.name,
+            template_name=f"{case.slug}_template.json",
+            objective=f"{case.slug} template non-interference objective",
         )
-    return scenarios
+        for case in cases
+    )
 
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
@@ -1116,31 +1178,40 @@ METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
     METADATA_SCOPE_SCENARIOS,
     get_id=attrgetter("case_id"),
 )
+SAVE_NO_PROMPT_SCENARIOS: tuple[SaveNoPromptScenarioMeta, ...] = _build_save_no_prompt_scenarios(
+    SAVE_COMMAND_CASES,
+)
+SAVE_EDITOR_SCENARIOS: tuple[SaveEditorScenarioMeta, ...] = _build_save_editor_scenarios(
+    SAVE_COMMAND_CASES,
+)
+SAVE_TEMPLATE_SCENARIOS: tuple[SaveTemplateScenarioMeta, ...] = _build_save_template_scenarios(
+    SAVE_COMMAND_CASES,
+)
+RUN_NO_COMMAND_SCENARIOS: tuple[RunNoCommandScenarioMeta, ...] = _build_no_command_run_scope_scenarios(
+    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+)
+RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(
+    RUN_NO_COMMAND_SCENARIOS,
+    get_id=attrgetter("case_id"),
+)
+RUN_OPT_IN_MUTATION_SCENARIOS: tuple[RunOptInMutationScenarioMeta, ...] = (
+    _build_opt_in_mutation_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
+)
+RUN_OPT_IN_MUTATION_IDS: tuple[str, ...] = _case_ids(
+    RUN_OPT_IN_MUTATION_SCENARIOS,
+    get_id=attrgetter("case_id"),
+)
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "objective",
-        "decisions",
-        "next_step",
-        "risks",
-        "resume_command",
-        "build_command",
-    ),
-    _build_save_no_prompt_scenarios(SAVE_COMMAND_CASES),
+    "case",
+    SAVE_NO_PROMPT_SCENARIOS,
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_no_prompt_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: SaveCommandName,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    risks: str,
-    resume_command: str,
-    build_command: str,
+    case: SaveNoPromptScenarioMeta,
 ) -> None:
     """No-prompt save flows should not alter tracked files or git index."""
     env = _dockyard_env(tmp_path)
@@ -1150,26 +1221,26 @@ def test_save_no_prompt_flows_do_not_modify_repo(
             "python3",
             "-m",
             "dockyard",
-            command_name,
+            case.command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            objective,
+            case.objective,
             "--decisions",
-            decisions,
+            case.decisions,
             "--next-step",
-            next_step,
+            case.next_step,
             "--risks",
-            risks,
+            case.risks,
             "--command",
-            resume_command,
+            case.resume_command,
             "--tests-run",
             "--tests-command",
             "pytest -q",
             "--build-ok",
             "--build-command",
-            build_command,
+            case.build_command,
             "--lint-fail",
             "--smoke-fail",
             "--no-auto-review",
@@ -1366,25 +1437,22 @@ def test_review_and_link_commands_do_not_modify_repo(
 
 
 @pytest.mark.parametrize(
-    ("command_name", "script_name", "decisions_text", "objective"),
-    _build_save_editor_scenarios(SAVE_COMMAND_CASES),
+    "case",
+    SAVE_EDITOR_SCENARIOS,
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_editor_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: SaveCommandName,
-    script_name: str,
-    decisions_text: str,
-    objective: str,
+    case: SaveEditorScenarioMeta,
 ) -> None:
     """Save/editor flows should not alter project working tree/index."""
     env = _dockyard_env(tmp_path)
     _configure_editor(
         env=env,
         tmp_path=tmp_path,
-        script_name=script_name,
-        decisions_text=decisions_text,
+        script_name=case.script_name,
+        decisions_text=case.decisions_text,
     )
 
     _assert_repo_clean(git_repo)
@@ -1393,13 +1461,13 @@ def test_save_editor_flows_do_not_modify_repo(
             "python3",
             "-m",
             "dockyard",
-            command_name,
+            case.command_name,
             "--root",
             str(git_repo),
             "--editor",
             "--no-prompt",
             "--objective",
-            objective,
+            case.objective,
             "--next-step",
             "run resume",
             "--risks",
@@ -1423,21 +1491,19 @@ def test_save_editor_flows_do_not_modify_repo(
 
 
 @pytest.mark.parametrize(
-    ("command_name", "template_name", "objective"),
-    _build_save_template_scenarios(SAVE_COMMAND_CASES),
+    "case",
+    SAVE_TEMPLATE_SCENARIOS,
     ids=SAVE_COMMAND_IDS,
 )
 def test_save_template_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: SaveCommandName,
-    template_name: str,
-    objective: str,
+    case: SaveTemplateScenarioMeta,
 ) -> None:
     """Save/template flows should not alter project working tree/index."""
     env = _dockyard_env(tmp_path)
-    template_path = tmp_path / template_name
-    _write_non_interference_template(template_path=template_path, objective=objective)
+    template_path = tmp_path / case.template_name
+    _write_non_interference_template(template_path=template_path, objective=case.objective)
 
     _assert_repo_clean(git_repo)
     _run(
@@ -1445,7 +1511,7 @@ def test_save_template_flows_do_not_modify_repo(
             "python3",
             "-m",
             "dockyard",
-            command_name,
+            case.command_name,
             "--root",
             str(git_repo),
             "--template",
@@ -1471,79 +1537,49 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "include_berth",
-        "include_branch",
-        "run_cwd_kind",
-        "objective",
-        "decisions",
-        "next_step",
-    ),
-    _build_no_command_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH),
-    ids=RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH,
+    "case",
+    RUN_NO_COMMAND_SCENARIOS,
+    ids=RUN_NO_COMMAND_IDS,
 )
 def test_run_scopes_without_commands_keep_repo_clean(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    include_berth: bool,
-    include_branch: bool,
-    run_cwd_kind: RunCwdKind,
-    objective: str,
-    decisions: str,
-    next_step: str,
+    case: RunNoCommandScenarioMeta,
 ) -> None:
     """No-command run scopes should remain non-mutating."""
     _assert_opt_in_run_without_commands_for_scope(
         git_repo,
         tmp_path,
-        command_name=command_name,
-        include_berth=include_berth,
-        include_branch=include_branch,
-        run_cwd_kind=run_cwd_kind,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
+        command_name=case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
+        run_cwd_kind=case.run_cwd_kind,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
     )
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "include_berth",
-        "include_branch",
-        "run_cwd_kind",
-        "marker_name",
-        "objective",
-        "decisions",
-        "next_step",
-    ),
-    _build_opt_in_mutation_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH),
-    ids=RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH,
+    "case",
+    RUN_OPT_IN_MUTATION_SCENARIOS,
+    ids=RUN_OPT_IN_MUTATION_IDS,
 )
 def test_run_scopes_opt_in_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    include_berth: bool,
-    include_branch: bool,
-    run_cwd_kind: RunCwdKind,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
+    case: RunOptInMutationScenarioMeta,
 ) -> None:
     """Opt-in run scopes may mutate repository as expected."""
     _assert_opt_in_run_mutates_for_scope(
         git_repo,
         tmp_path,
-        command_name=command_name,
-        include_berth=include_berth,
-        include_branch=include_branch,
-        run_cwd_kind=run_cwd_kind,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
+        command_name=case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
+        run_cwd_kind=case.run_cwd_kind,
+        marker_name=case.marker_name,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
     )
