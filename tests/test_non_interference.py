@@ -30,7 +30,7 @@ SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
     ("dock", "alias_dock", "dock_alias"),
 )
 SAVE_COMMAND_IDS = tuple(case[2] for case in SAVE_COMMAND_CASES)
-RUN_SCOPE_COMMANDS = ["resume", "r", "undock"]
+RUN_SCOPE_COMMANDS: tuple[str, ...] = ("resume", "r", "undock")
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 
 
