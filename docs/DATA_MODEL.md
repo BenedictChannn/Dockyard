@@ -130,3 +130,4 @@ Parser normalization notes:
   (for example, both `- cmd` and `-cmd` parse correctly).
 - Section heading lookup normalizes spacing and slash variants (for example,
   `Decisions / Findings`, `Risks/Review Needed`, and `Resume   Commands`).
+- Section heading lookup is case-insensitive for known Dockyard sections.
