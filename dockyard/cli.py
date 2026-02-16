@@ -104,6 +104,14 @@ def _coerce_text_items(value: Any) -> list[str]:
     return items
 
 
+def _normalize_optional_text(value: str | None) -> str | None:
+    """Trim optional text value and convert blank input to None."""
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
 def _normalize_editor_text(raw: str) -> str:
     """Normalize editor text by dropping scaffold comments and outer blanks.
 
@@ -718,6 +726,8 @@ def review_add(
     normalized_reason = reason.strip()
     if not normalized_reason:
         raise typer.BadParameter("--reason must be a non-empty string.")
+    normalized_notes = _normalize_optional_text(notes)
+    normalized_checkpoint_id = _normalize_optional_text(checkpoint_id)
     if (repo and not branch) or (branch and not repo):
         raise DockyardError("Provide both --repo and --branch when overriding context.")
     if repo and branch:
@@ -734,12 +744,12 @@ def review_add(
         id=f"rev_{uuid.uuid4().hex[:10]}",
         repo_id=repo,
         branch=branch,
-        checkpoint_id=checkpoint_id,
+        checkpoint_id=normalized_checkpoint_id,
         created_at=utc_now_iso(),
         reason=normalized_reason,
         severity=normalized_severity,
         status="open",
-        notes=notes,
+        notes=normalized_notes,
         files=normalized_files,
     )
     store.add_review_item(item)

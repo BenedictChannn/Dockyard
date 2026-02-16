@@ -176,6 +176,8 @@ python3 -m dockyard review add --reason "manual" --severity low --repo my_repo -
 ```
 
 `review add` ignores blank `--file` entries.
+Optional `--notes` and `--checkpoint-id` values are trimmed; blank values are
+treated as missing.
 
 ### Mark done
 

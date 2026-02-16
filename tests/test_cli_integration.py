@@ -3842,6 +3842,130 @@ def test_review_add_trims_reason_whitespace(git_repo: Path, tmp_path: Path) -> N
     assert "reason: padded_reason" in opened.stdout
 
 
+def test_review_add_trims_notes_and_checkpoint_id(git_repo: Path, tmp_path: Path) -> None:
+    """Review add should trim notes and checkpoint-id fields."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review optional field trimming baseline",
+            "--decisions",
+            "Ensure notes and checkpoint-id are normalized",
+            "--next-step",
+            "open review details",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "trim optional fields",
+            "--severity",
+            "low",
+            "--checkpoint-id",
+            "  cp_trim_test  ",
+            "--notes",
+            "  keep this note  ",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "checkpoint_id: cp_trim_test" in opened
+    assert "notes: keep this note" in opened
+    assert "checkpoint_id:   cp_trim_test" not in opened
+    assert "notes:   keep this note" not in opened
+
+
+def test_review_add_blank_checkpoint_id_is_treated_as_missing(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Blank checkpoint-id input should not trigger missing-checkpoint panel."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Blank checkpoint id baseline",
+            "--decisions",
+            "Ensure blank checkpoint id normalizes to None",
+            "--next-step",
+            "open review",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "blank checkpoint id",
+            "--severity",
+            "low",
+            "--checkpoint-id",
+            "   ",
+            "--notes",
+            "   ",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "checkpoint_id: (none)" in opened
+    assert "notes: (none)" in opened
+    assert "Associated Checkpoint" not in opened
+
+
 def test_review_list_compacts_multiline_reason_text(git_repo: Path, tmp_path: Path) -> None:
     """Review list should compact multiline reasons into one-line previews."""
     env = dict(os.environ)

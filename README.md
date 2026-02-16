@@ -157,6 +157,8 @@ Review list/open outputs compact multiline fields into single-line text and use
 explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
 (including checkpoint id, notes, and file fields in `review open`).
 `review add` ignores blank `--file` entries.
+Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
+treated as missing.
 
 ### 6) Link URLs to a branch context
 

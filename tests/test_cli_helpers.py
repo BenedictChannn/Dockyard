@@ -12,6 +12,7 @@ from dockyard.cli import (
     _comma_or_pipe_values,
     _emit_json,
     _normalize_editor_text,
+    _normalize_optional_text,
     _safe_preview,
     _safe_text,
 )
@@ -206,3 +207,14 @@ def test_coerce_text_items_handles_mixed_iterables() -> None:
     """Coercion helper should coerce iterable items and skip blank entries."""
     values = ["alpha", 42, "   ", None]
     assert _coerce_text_items(values) == ["alpha", "42"]
+
+
+def test_normalize_optional_text_trims_non_blank_values() -> None:
+    """Optional text normalizer should trim surrounding whitespace."""
+    assert _normalize_optional_text("  keep me  ") == "keep me"
+
+
+def test_normalize_optional_text_returns_none_for_blank_input() -> None:
+    """Optional text normalizer should collapse blank values to None."""
+    assert _normalize_optional_text("   ") is None
+    assert _normalize_optional_text(None) is None
