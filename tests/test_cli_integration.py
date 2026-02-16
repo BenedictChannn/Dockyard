@@ -3758,6 +3758,99 @@ def test_undock_alias_branch_flag_accepts_trimmed_value(
     assert selected["objective"] == "Undock trimmed branch objective"
 
 
+def test_undock_alias_run_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Undock alias should execute all commands when run succeeds."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock run success objective",
+            "--decisions",
+            "Validate undock --run alias path",
+            "--next-step",
+            "run undock alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock-one",
+            "--command",
+            "echo undock-two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(["undock", "--run"], cwd=git_repo, env=env).stdout
+    assert "$ echo undock-one -> exit 0" in output
+    assert "$ echo undock-two -> exit 0" in output
+
+
+def test_undock_alias_run_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Undock alias should stop on first failing command."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock run failure objective",
+            "--decisions",
+            "Validate failure-stop behavior on undock alias",
+            "--next-step",
+            "run undock alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock-first",
+            "--command",
+            "false",
+            "--command",
+            "echo undock-should-not-run",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(["undock", "--run"], cwd=git_repo, env=env, expect_code=1).stdout
+    assert "$ echo undock-first -> exit 0" in output
+    assert "$ false -> exit 1" in output
+    assert "$ echo undock-should-not-run -> exit" not in output
+
+
 def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path) -> None:
     """Auto-created review should link back to associated checkpoint details."""
     env = dict(os.environ)
