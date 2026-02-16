@@ -93,3 +93,8 @@ def test_pair_scope_cases_with_context_uses_scope_fields() -> None:
         (cases[0], "resume:False:True"),
         (cases[1], "undock:True:False"),
     )
+
+
+def test_pair_scope_cases_with_context_returns_empty_tuple_for_empty_input() -> None:
+    """pair_scope_cases_with_context should return empty tuple for empty input."""
+    assert pair_scope_cases_with_context((), context_builder=lambda *_: "unused") == ()
