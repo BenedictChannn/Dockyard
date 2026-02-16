@@ -144,6 +144,52 @@ def _save_checkpoint(
     _run(save_command, cwd=git_repo, env=env)
 
 
+def _assert_opt_in_run_mutates_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    run_command: list[str],
+    run_cwd: Path,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """Assert explicit run mode executes mutating command in repository.
+
+    Args:
+        git_repo: Repository path where mutation should occur.
+        tmp_path: Temporary path used for Dockyard home.
+        run_command: Dockyard CLI command to execute (must include ``--run``).
+        run_cwd: Working directory from which to execute ``run_command``.
+        marker_name: Marker filename expected after command executes.
+        objective: Checkpoint objective text for setup save.
+        decisions: Checkpoint decisions text for setup save.
+        next_step: Checkpoint next-step text for setup save.
+    """
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / marker_name
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        risks="none",
+        command=f"touch {marker}",
+    )
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+
+    _run(run_command, cwd=run_cwd, env=env)
+
+    assert marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert marker_name in status_after
+
+
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
     """Saving checkpoint should not alter tracked files or git index."""
     env = dict(os.environ)
@@ -943,52 +989,30 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
 
 def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run is explicit opt-in and may mutate repository files."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    marker = git_repo / "resume_run_opt_in_marker.txt"
-
-    _save_checkpoint(
+    _assert_opt_in_run_mutates_repo(
         git_repo,
-        env,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "resume", "--run"],
+        run_cwd=git_repo,
+        marker_name="resume_run_opt_in_marker.txt",
         objective="Resume run opt-in mutation baseline",
         decisions="Verify explicit --run path may execute mutating commands",
         next_step="run resume --run",
-        risks="none",
-        command=f"touch {marker}",
     )
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(["python3", "-m", "dockyard", "resume", "--run"], cwd=git_repo, env=env)
-
-    assert marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert "resume_run_opt_in_marker.txt" in status_after
 
 
 def test_resume_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `r --run` is explicit opt-in and may mutate repository files."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    marker = git_repo / "resume_alias_run_opt_in_marker.txt"
-
-    _save_checkpoint(
+    _assert_opt_in_run_mutates_repo(
         git_repo,
-        env,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "r", "--run"],
+        run_cwd=git_repo,
+        marker_name="resume_alias_run_opt_in_marker.txt",
         objective="Resume alias run opt-in mutation baseline",
         decisions="Verify r --run may execute mutating commands",
         next_step="run r --run",
-        risks="none",
-        command=f"touch {marker}",
     )
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(["python3", "-m", "dockyard", "r", "--run"], cwd=git_repo, env=env)
-
-    assert marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert "resume_alias_run_opt_in_marker.txt" in status_after
 
 
 def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
@@ -996,31 +1020,16 @@ def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
     tmp_path: Path,
 ) -> None:
     """Alias `undock <berth> --run` is opt-in and may mutate repo files."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    marker = git_repo / "undock_alias_run_opt_in_marker.txt"
-
-    _save_checkpoint(
+    _assert_opt_in_run_mutates_repo(
         git_repo,
-        env,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "undock", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        marker_name="undock_alias_run_opt_in_marker.txt",
         objective="Undock alias run opt-in mutation baseline",
         decisions="Verify undock --run with berth may execute mutating commands",
         next_step="run undock <berth> --run",
-        risks="none",
-        command=f"touch {marker}",
     )
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(
-        ["python3", "-m", "dockyard", "undock", f"  {git_repo.name}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert "undock_alias_run_opt_in_marker.txt" in status_after
 
 
 def test_resume_run_opt_in_with_trimmed_berth_can_modify_repo(
@@ -1028,31 +1037,16 @@ def test_resume_run_opt_in_with_trimmed_berth_can_modify_repo(
     tmp_path: Path,
 ) -> None:
     """Primary `resume <berth> --run` may mutate repo when explicitly opted-in."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    marker = git_repo / "resume_run_with_berth_opt_in_marker.txt"
-
-    _save_checkpoint(
+    _assert_opt_in_run_mutates_repo(
         git_repo,
-        env,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "resume", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        marker_name="resume_run_with_berth_opt_in_marker.txt",
         objective="Resume berth run opt-in mutation baseline",
         decisions="Verify resume <berth> --run may execute mutating commands",
         next_step="run resume <berth> --run",
-        risks="none",
-        command=f"touch {marker}",
     )
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(
-        ["python3", "-m", "dockyard", "resume", f"  {git_repo.name}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert "resume_run_with_berth_opt_in_marker.txt" in status_after
 
 
 def test_resume_alias_run_opt_in_with_trimmed_berth_can_modify_repo(
@@ -1060,28 +1054,13 @@ def test_resume_alias_run_opt_in_with_trimmed_berth_can_modify_repo(
     tmp_path: Path,
 ) -> None:
     """Alias `r <berth> --run` may mutate repo when explicitly opted-in."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    marker = git_repo / "resume_alias_run_with_berth_opt_in_marker.txt"
-
-    _save_checkpoint(
+    _assert_opt_in_run_mutates_repo(
         git_repo,
-        env,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "r", f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        marker_name="resume_alias_run_with_berth_opt_in_marker.txt",
         objective="Resume alias berth run opt-in mutation baseline",
         decisions="Verify r <berth> --run may execute mutating commands",
         next_step="run r <berth> --run",
-        risks="none",
-        command=f"touch {marker}",
     )
-    assert not marker.exists()
-    _assert_repo_clean(git_repo)
-
-    _run(
-        ["python3", "-m", "dockyard", "r", f"  {git_repo.name}  ", "--run"],
-        cwd=tmp_path,
-        env=env,
-    )
-
-    assert marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert "resume_alias_run_with_berth_opt_in_marker.txt" in status_after
