@@ -319,6 +319,8 @@ Decision text
 - First bullet step
 * Second bullet step
 + Third bullet step
+-Fourth tight bullet step
+*Fifth tight bullet step
 ## Risks/Review Needed
 None
 ## Resume Commands
@@ -343,6 +345,8 @@ None
         "First bullet step",
         "Second bullet step",
         "Third bullet step",
+        "Fourth tight bullet step",
+        "Fifth tight bullet step",
     ]
 
 
