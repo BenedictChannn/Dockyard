@@ -64,6 +64,11 @@ SaveEditorScenario = tuple[str, str, str, str]
 SaveTemplateScenario = tuple[str, str, str]
 
 
+def _scope_label(scope_id: str) -> str:
+    """Return human-readable scope label derived from scope ID."""
+    return scope_id.replace("_", " ")
+
+
 def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
     """Build no-command run-scope scenarios from shared scope metadata.
 
@@ -75,7 +80,7 @@ def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[Run
     """
     scenarios: list[RunNoCommandScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = scope_id.replace("_", " ")
+        scope_label = _scope_label(scope_id)
         scenarios.append(
             (
                 command_name,
@@ -103,7 +108,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
     """
     scenarios: list[RunOptInMutationScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = scope_id.replace("_", " ")
+        scope_label = _scope_label(scope_id)
         scenarios.append(
             (
                 command_name,
