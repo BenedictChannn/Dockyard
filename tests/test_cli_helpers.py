@@ -111,3 +111,18 @@ def test_emit_json_handles_list_payload(monkeypatch: pytest.MonkeyPatch) -> None
 
     assert captured == ["[]"]
     assert "\x1b[" not in captured[0]
+
+
+def test_emit_json_list_payload_preserves_unicode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """List payload emission should keep unicode characters unescaped."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json(["façade"])
+
+    assert len(captured) == 1
+    assert "\\u00e7" not in captured[0]
+    assert json.loads(captured[0]) == ["façade"]
