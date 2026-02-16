@@ -4799,6 +4799,103 @@ def test_search_tag_repo_filter_no_match_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+def test_search_tag_branch_filter_no_match_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search JSON should return [] when combined tag+branch filters miss."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tag branch filter no-match objective",
+            "--decisions",
+            "Tag branch filter no-match decisions",
+            "--next-step",
+            "run tag branch filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Tag branch filter no-match objective", "--tag", "alpha", "--branch", "missing/branch", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+
+
+def test_search_tag_branch_filter_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search should keep no-match guidance for combined tag+branch misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tag branch filter message objective",
+            "--decisions",
+            "Tag branch filter message decisions",
+            "--next-step",
+            "run tag branch filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Tag branch filter message objective", "--tag", "alpha", "--branch", "missing/branch"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
 def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path) -> None:
     """Search snippets should surface matches from risks text."""
     env = dict(os.environ)
