@@ -2650,6 +2650,156 @@ def test_undock_alias_run_with_branch_executes_commands_on_success(
     assert "$ echo undock-branch-run-two -> exit 0" in output
 
 
+def test_resume_run_with_berth_and_branch_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`resume <berth> --branch <name> --run` should execute commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume berth+branch run success objective",
+            "--decisions",
+            "Validate berth+branch run success-path behavior",
+            "--next-step",
+            "run resume berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo resume-berth-branch-run-one",
+            "--command",
+            "echo resume-berth-branch-run-two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "$ echo resume-berth-branch-run-one -> exit 0" in output
+    assert "$ echo resume-berth-branch-run-two -> exit 0" in output
+
+
+def test_resume_alias_run_with_berth_and_branch_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`r <berth> --branch <name> --run` should execute commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume alias berth+branch run success objective",
+            "--decisions",
+            "Validate alias berth+branch run success-path behavior",
+            "--next-step",
+            "run r berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-berth-branch-run-one",
+            "--command",
+            "echo alias-berth-branch-run-two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "$ echo alias-berth-branch-run-one -> exit 0" in output
+    assert "$ echo alias-berth-branch-run-two -> exit 0" in output
+
+
+def test_undock_alias_run_with_berth_and_branch_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`undock <berth> --branch <name> --run` should execute commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock alias berth+branch run success objective",
+            "--decisions",
+            "Validate undock berth+branch run success-path behavior",
+            "--next-step",
+            "run undock berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock-berth-branch-run-one",
+            "--command",
+            "echo undock-berth-branch-run-two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        ["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "$ echo undock-berth-branch-run-one -> exit 0" in output
+    assert "$ echo undock-berth-branch-run-two -> exit 0" in output
+
+
 def test_resume_run_with_branch_stops_on_failure(
     git_repo: Path,
     tmp_path: Path,
