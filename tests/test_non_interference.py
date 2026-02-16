@@ -8,6 +8,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     """Run subprocess command and return stdout."""
@@ -1321,180 +1323,175 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
     _assert_repo_clean(git_repo)
 
 
-def test_resume_run_without_commands_keeps_repo_clean(git_repo: Path, tmp_path: Path) -> None:
-    """Primary `resume --run` with no commands must not mutate repository."""
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "Resume run no-commands baseline",
+            "Verify resume --run no-op path remains non-mutating",
+            "run resume --run",
+        ),
+        (
+            "r",
+            "Resume alias run no-commands baseline",
+            "Verify r --run no-op path remains non-mutating",
+            "run r --run",
+        ),
+        (
+            "undock",
+            "Undock alias run no-commands baseline",
+            "Verify undock --run no-op path remains non-mutating",
+            "run undock --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_default_scope_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """`<command> --run` with no commands should remain non-mutating."""
     _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        command_name="resume",
-        objective="Resume run no-commands baseline",
-        decisions="Verify resume --run no-op path remains non-mutating",
-        next_step="run resume --run",
+        command_name=command_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_alias_run_without_commands_keeps_repo_clean(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "Resume berth run no-commands baseline",
+            "Verify resume <berth> --run no-op path remains non-mutating",
+            "run resume <berth> --run",
+        ),
+        (
+            "r",
+            "Resume alias berth run no-commands baseline",
+            "Verify r <berth> --run no-op path remains non-mutating",
+            "run r <berth> --run",
+        ),
+        (
+            "undock",
+            "Undock alias berth run no-commands baseline",
+            "Verify undock <berth> --run no-op path remains non-mutating",
+            "run undock <berth> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_trimmed_berth_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
 ) -> None:
-    """Alias `r --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        objective="Resume alias run no-commands baseline",
-        decisions="Verify r --run no-op path remains non-mutating",
-        next_step="run r --run",
-    )
-
-
-def test_undock_alias_run_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `undock --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        objective="Undock alias run no-commands baseline",
-        decisions="Verify undock --run no-op path remains non-mutating",
-        next_step="run undock --run",
-    )
-
-
-def test_resume_run_with_trimmed_berth_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`resume <berth> --run` with no commands must not mutate repository."""
+    """`<command> <berth> --run` with no commands should remain non-mutating."""
     _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        command_name="resume",
-        objective="Resume berth run no-commands baseline",
-        decisions="Verify resume <berth> --run no-op path remains non-mutating",
-        next_step="run resume <berth> --run",
+        command_name=command_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "Resume branch run no-commands baseline",
+            "Verify resume --branch <name> --run no-op path is non-mutating",
+            "run resume --branch <name> --run",
+        ),
+        (
+            "r",
+            "Resume alias branch run no-commands baseline",
+            "Verify r --branch <name> --run no-op path is non-mutating",
+            "run r --branch <name> --run",
+        ),
+        (
+            "undock",
+            "Undock alias branch run no-commands baseline",
+            "Verify undock --branch <name> --run no-op path is non-mutating",
+            "run undock --branch <name> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_branch_scope_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
 ) -> None:
-    """`r <berth> --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        objective="Resume alias berth run no-commands baseline",
-        decisions="Verify r <berth> --run no-op path remains non-mutating",
-        next_step="run r <berth> --run",
-    )
-
-
-def test_undock_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`undock <berth> --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        objective="Undock alias berth run no-commands baseline",
-        decisions="Verify undock <berth> --run no-op path remains non-mutating",
-        next_step="run undock <berth> --run",
-    )
-
-
-def test_resume_run_with_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`resume --branch <name> --run` with no commands must not mutate repo."""
+    """`<command> --branch <name> --run` without commands should not mutate."""
     _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        command_name="resume",
-        objective="Resume branch run no-commands baseline",
-        decisions="Verify resume --branch <name> --run no-op path is non-mutating",
-        next_step="run resume --branch <name> --run",
+        command_name=command_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_alias_run_with_branch_without_commands_keeps_repo_clean(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "Resume berth+branch run no-commands baseline",
+            "Verify resume <berth> --branch <name> --run no-op is non-mutating",
+            "run resume <berth> --branch <name> --run",
+        ),
+        (
+            "r",
+            "Resume alias berth+branch run no-commands baseline",
+            "Verify r <berth> --branch <name> --run no-op is non-mutating",
+            "run r <berth> --branch <name> --run",
+        ),
+        (
+            "undock",
+            "Undock alias berth+branch run no-commands baseline",
+            "Verify undock <berth> --branch <name> --run no-op is non-mutating",
+            "run undock <berth> --branch <name> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
 ) -> None:
-    """`r --branch <name> --run` with no commands must not mutate repo."""
-    _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        objective="Resume alias branch run no-commands baseline",
-        decisions="Verify r --branch <name> --run no-op path is non-mutating",
-        next_step="run r --branch <name> --run",
-    )
-
-
-def test_undock_alias_run_with_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`undock --branch <name> --run` with no commands must not mutate repo."""
-    _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        objective="Undock alias branch run no-commands baseline",
-        decisions="Verify undock --branch <name> --run no-op path is non-mutating",
-        next_step="run undock --branch <name> --run",
-    )
-
-
-def test_resume_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`resume <berth> --branch <name> --run` with no commands is non-mutating."""
+    """`<command> <berth> --branch <name> --run` no-command path is read-only."""
     _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        command_name="resume",
-        objective="Resume berth+branch run no-commands baseline",
-        decisions="Verify resume <berth> --branch <name> --run no-op is non-mutating",
-        next_step="run resume <berth> --branch <name> --run",
-    )
-
-
-def test_resume_alias_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`r <berth> --branch <name> --run` with no commands is non-mutating."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        objective="Resume alias berth+branch run no-commands baseline",
-        decisions="Verify r <berth> --branch <name> --run no-op is non-mutating",
-        next_step="run r <berth> --branch <name> --run",
-    )
-
-
-def test_undock_alias_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`undock <berth> --branch <name> --run` with no commands is non-mutating."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        objective="Undock alias berth+branch run no-commands baseline",
-        decisions="Verify undock <berth> --branch <name> --run no-op is non-mutating",
-        next_step="run undock <berth> --branch <name> --run",
+        command_name=command_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
