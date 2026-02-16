@@ -8,6 +8,15 @@ from pathlib import Path
 from dockyard.config import DockyardPaths
 from dockyard.models import Checkpoint
 
+SECTION_FIELD_MAP: dict[str, str] = {
+    "objective": "objective",
+    "decisions/findings": "decisions",
+    "next steps": "next_steps",
+    "risks/review needed": "risks_review",
+    "resume commands": "resume_commands",
+}
+FREEFORM_SECTION_FIELDS: set[str] = {"objective", "decisions", "risks_review"}
+
 
 def _safe_branch(branch: str) -> str:
     """Normalize branch name for filesystem paths."""
@@ -110,13 +119,6 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
     Returns:
         Parsed dictionary with selected sections.
     """
-    sections = {
-        "objective": "objective",
-        "decisions/findings": "decisions",
-        "next steps": "next_steps",
-        "risks/review needed": "risks_review",
-        "resume commands": "resume_commands",
-    }
     parsed: dict[str, str | list[str]] = {
         "objective": "",
         "decisions": "",
@@ -126,17 +128,16 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
     }
 
     current_title: str | None = None
-    bucket: dict[str, list[str]] = {target: [] for target in sections.values()}
-    freeform_sections = {"objective", "decisions", "risks_review"}
+    bucket: dict[str, list[str]] = {target: [] for target in SECTION_FIELD_MAP.values()}
     for raw_line in markdown_text.splitlines():
         section_match = re.match(r"^##\s+(.+)$", raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
-            mapped_title = sections.get(_normalize_section_heading(title).lower())
+            mapped_title = SECTION_FIELD_MAP.get(_normalize_section_heading(title).lower())
             if mapped_title:
                 current_title = mapped_title
                 continue
-            if current_title in freeform_sections:
+            if current_title in FREEFORM_SECTION_FIELDS:
                 bucket[current_title].append(raw_line.rstrip())
                 continue
             current_title = None
