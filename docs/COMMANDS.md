@@ -190,7 +190,7 @@ available), including creation timestamp, checkpoint id, and any attached file
 paths.
 Blank metadata fields are rendered with explicit fallback text where
 applicable (`(unknown)` / `(none)`), and multiline values are compacted to
-single-line text.
+single-line text (including `checkpoint_id`, `notes`, and `files` fields).
 
 ## `link` / `links`
 

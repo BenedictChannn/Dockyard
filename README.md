@@ -152,7 +152,8 @@ python3 -m dockyard review done <id>
 ```
 
 Review list/open outputs compact multiline fields into single-line text and use
-explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values.
+explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
+(including checkpoint id, notes, and file fields in `review open`).
 
 ### 6) Link URLs to a branch context
 

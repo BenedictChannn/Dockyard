@@ -4040,9 +4040,12 @@ def test_review_open_falls_back_for_blank_metadata_fields(
     assert "repo: (unknown)" in opened
     assert "branch: (unknown)" in opened
     assert "created_at: (unknown)" in opened
+    assert "checkpoint_id: (none)" in opened
     assert "severity: (unknown)" in opened
     assert "status: (unknown)" in opened
     assert "reason: (none)" in opened
+    assert "notes: (none)" in opened
+    assert "files: (none)" in opened
 
 
 def test_review_open_handles_scalar_files_payload(git_repo: Path, tmp_path: Path) -> None:
