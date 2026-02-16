@@ -1739,6 +1739,108 @@ def test_search_alias_repo_filter_no_match_returns_empty_json(git_repo: Path, tm
     ) == []
 
 
+def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should honor --tag filtering semantics."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias tag filter objective default",
+            "--decisions",
+            "default tag checkpoint",
+            "--next-step",
+            "validate tag filtering",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/alias-tag-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias tag filter objective feature",
+            "--decisions",
+            "feature tag checkpoint",
+            "--next-step",
+            "validate feature tag filtering",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tag",
+            "beta",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    alpha_rows = json.loads(
+        _run_dock(
+            ["f", "Alias tag filter objective", "--tag", "alpha", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(alpha_rows) == 1
+    assert alpha_rows[0]["branch"] == default_branch
+
+    beta_rows = json.loads(
+        _run_dock(
+            ["f", "Alias tag filter objective", "--tag", "beta", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(beta_rows) == 1
+    assert beta_rows[0]["branch"] == "feature/alias-tag-filter"
+
+
 def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> None:
     """Search alias should honor --branch filtering semantics."""
     env = dict(os.environ)
