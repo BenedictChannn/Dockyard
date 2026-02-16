@@ -99,6 +99,8 @@ Notes:
 - `--run` ignores blank command entries after payload normalization.
 - `--run` is explicit opt-in: `resume --run`, `r --run`, and
   `undock --run` may mutate repo files depending on recorded commands.
+- Opt-in mutation semantics also apply when BERTH and/or `--branch` are used
+  with `--run` (e.g., `resume <berth> --branch <name> --run`).
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 

@@ -113,6 +113,8 @@ Useful flags:
   are recorded.
 - Handoff renders blank objective/risks values as `(none)`, and `--run`
   ignores blank command entries after normalization.
+- `--run` is always explicit opt-in, including BERTH/`--branch` variants
+  (for example: `resume my-berth --branch main --run`).
 - BERTH argument values are trimmed; blank BERTH values are rejected.
 - `--branch` values are trimmed; blank values are rejected.
 
