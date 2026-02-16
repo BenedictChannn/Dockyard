@@ -188,11 +188,15 @@ Override values passed to `--repo/--branch` are also trimmed before lookup.
 python3 -m dockyard review done <review_id>
 ```
 
+`review_id` values are trimmed; blank values are rejected.
+
 ### Open details
 
 ```bash
 python3 -m dockyard review open <review_id>
 ```
+
+`review_id` values are trimmed; blank values are rejected.
 
 `review open` displays review metadata plus associated checkpoint details (if
 available), including creation timestamp, checkpoint id, and any attached file

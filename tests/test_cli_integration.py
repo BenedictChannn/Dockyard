@@ -3782,6 +3782,116 @@ def test_review_done_unknown_id_is_actionable(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_review_done_accepts_trimmed_review_id(git_repo: Path, tmp_path: Path) -> None:
+    """Review done should accept review IDs with surrounding whitespace."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review done trimmed id baseline",
+            "--decisions",
+            "Need review context",
+            "--next-step",
+            "resolve review by padded id",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "trimmed_done", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    resolved = _run_dock(["review", "done", f"  {review_id}  "], cwd=tmp_path, env=env).stdout
+    assert f"Resolved review {review_id}" in resolved
+
+
+def test_review_open_accepts_trimmed_review_id(git_repo: Path, tmp_path: Path) -> None:
+    """Review open should accept review IDs with surrounding whitespace."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review open trimmed id baseline",
+            "--decisions",
+            "Need review context",
+            "--next-step",
+            "open review by padded id",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "trimmed_open", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", f"  {review_id}  "], cwd=tmp_path, env=env).stdout
+    assert f"id: {review_id}" in opened
+
+
+def test_review_done_and_open_reject_blank_review_ids(tmp_path: Path) -> None:
+    """Review done/open should reject blank review IDs."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    done_failed = _run_dock(["review", "done", "   "], cwd=tmp_path, env=env, expect_code=2)
+    done_output = f"{done_failed.stdout}\n{done_failed.stderr}"
+    assert "Review ID must be a non-empty string." in done_output
+    assert "Traceback" not in done_output
+
+    open_failed = _run_dock(["review", "open", "   "], cwd=tmp_path, env=env, expect_code=2)
+    open_output = f"{open_failed.stdout}\n{open_failed.stderr}"
+    assert "Review ID must be a non-empty string." in open_output
+    assert "Traceback" not in open_output
+
+
 def test_review_all_with_no_items_is_informative(tmp_path: Path) -> None:
     """Review --all should report no items when ledger is empty."""
     env = dict(os.environ)

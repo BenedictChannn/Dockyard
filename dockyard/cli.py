@@ -767,23 +767,29 @@ def review_add(
 @review_app.command("done")
 def review_done(review_id: str = typer.Argument(..., help="Review item ID.")) -> None:
     """Mark review item as done."""
+    normalized_review_id = _normalize_optional_text(review_id)
+    if normalized_review_id is None:
+        raise typer.BadParameter("Review ID must be a non-empty string.")
     store, _ = _store()
-    review = store.get_review(review_id)
+    review = store.get_review(normalized_review_id)
     if not review:
-        raise DockyardError(f"Review item not found: {review_id}")
-    if not store.mark_review_done(review_id):
-        raise DockyardError(f"Review item not found: {review_id}")
+        raise DockyardError(f"Review item not found: {normalized_review_id}")
+    if not store.mark_review_done(normalized_review_id):
+        raise DockyardError(f"Review item not found: {normalized_review_id}")
     store.recompute_slip_status(repo_id=review.repo_id, branch=review.branch)
-    console.print(f"[green]Resolved review[/green] {_safe_text(review_id)}")
+    console.print(f"[green]Resolved review[/green] {_safe_text(normalized_review_id)}")
 
 
 @review_app.command("open")
 def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) -> None:
     """Show review details and associated checkpoint context."""
+    normalized_review_id = _normalize_optional_text(review_id)
+    if normalized_review_id is None:
+        raise typer.BadParameter("Review ID must be a non-empty string.")
     store, _ = _store()
-    item = store.get_review(review_id)
+    item = store.get_review(normalized_review_id)
     if not item:
-        raise DockyardError(f"Review item not found: {review_id}")
+        raise DockyardError(f"Review item not found: {normalized_review_id}")
     console.print(
         Panel.fit(
             "\n".join(

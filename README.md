@@ -162,6 +162,7 @@ explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
 Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
 treated as missing.
 `--repo` / `--branch` override values are trimmed before lookup.
+`review open` / `review done` IDs are trimmed; blank IDs are rejected.
 
 ### 6) Link URLs to a branch context
 
