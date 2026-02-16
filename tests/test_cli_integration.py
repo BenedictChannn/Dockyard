@@ -569,6 +569,42 @@ def test_save_alias_s_rejects_tml_template_extension(git_repo: Path, tmp_path: P
     assert "Traceback" not in output
 
 
+def test_save_alias_s_template_non_utf8_file_is_actionable(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should show actionable errors for non-UTF8 templates."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "alias_s_non_utf8_template.json"
+    bad_template.write_bytes(b"\xff\xfe\x00")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Alias s non-utf8 template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use a utf-8 encoded template",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -768,6 +804,45 @@ def test_save_alias_dock_rejects_tml_template_extension(
     )
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "Template must be .json or .toml" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_template_non_utf8_file_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should show actionable errors for non-UTF8 templates."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "alias_dock_non_utf8_template.json"
+    bad_template.write_bytes(b"\xff\xfe\x00")
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Dock alias non-utf8 template",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use a utf-8 encoded template",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
     assert "Traceback" not in output
 
 
