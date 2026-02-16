@@ -52,6 +52,11 @@ def test_normalize_editor_text_drops_multiple_scaffold_lines() -> None:
     assert _normalize_editor_text(raw) == "Decision body"
 
 
+def test_normalize_editor_text_empty_input_returns_empty() -> None:
+    """Empty editor payload should normalize to empty string."""
+    assert _normalize_editor_text("") == ""
+
+
 def test_comma_or_pipe_values_supports_commas() -> None:
     """Comma-separated input should parse into stripped values."""
     assert _comma_or_pipe_values("alpha, beta , ,gamma") == ["alpha", "beta", "gamma"]
