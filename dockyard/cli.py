@@ -194,6 +194,11 @@ def _verification_from_inputs(
         if smoke_ok and not smoke_notes:
             smoke_notes = typer.prompt("Smoke notes", default="")
 
+    tests_command = _normalize_optional_text(tests_command)
+    build_command = _normalize_optional_text(build_command)
+    lint_command = _normalize_optional_text(lint_command)
+    smoke_notes = _normalize_optional_text(smoke_notes)
+
     tests_run = bool(tests_run)
     build_ok = bool(build_ok)
     lint_ok = bool(lint_ok)

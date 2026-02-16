@@ -502,6 +502,55 @@ def test_save_rejects_blank_root_override(git_repo: Path, tmp_path: Path) -> Non
     assert "Traceback" not in output
 
 
+def test_save_verification_text_fields_are_normalized(git_repo: Path, tmp_path: Path) -> None:
+    """Save should trim non-blank verification text and drop blank entries."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Verification normalization objective",
+            "--decisions",
+            "Normalize verification command/note text values",
+            "--next-step",
+            "inspect resume json",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "   ",
+            "--build-ok",
+            "--build-command",
+            "  make build  ",
+            "--lint-ok",
+            "--lint-command",
+            "  ruff check  ",
+            "--smoke-ok",
+            "--smoke-notes",
+            "   ",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    verification = payload["verification"]
+    assert verification["tests_run"] is True
+    assert verification["build_ok"] is True
+    assert verification["lint_ok"] is True
+    assert verification["smoke_ok"] is True
+    assert verification["tests_command"] is None
+    assert verification["build_command"] == "make build"
+    assert verification["lint_command"] == "ruff check"
+    assert verification["smoke_notes"] is None
+
+
 def test_save_editor_populates_decisions(git_repo: Path, tmp_path: Path) -> None:
     """Save should capture decisions from the configured editor."""
     env = dict(os.environ)

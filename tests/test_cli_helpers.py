@@ -17,6 +17,7 @@ from dockyard.cli import (
     _normalize_text_values,
     _safe_preview,
     _safe_text,
+    _verification_from_inputs,
 )
 
 
@@ -244,3 +245,47 @@ def test_normalize_text_values_optionally_deduplicates() -> None:
     """List-value normalizer should support de-duplication mode."""
     values = ["alpha", " alpha ", "beta", "alpha", "beta", "gamma"]
     assert _normalize_text_values(values, dedupe=True) == ["alpha", "beta", "gamma"]
+
+
+def test_verification_from_inputs_normalizes_blank_text_fields() -> None:
+    """Verification helper should collapse blank command/note values to None."""
+    verification = _verification_from_inputs(
+        no_prompt=True,
+        tests_run=True,
+        tests_command="   ",
+        build_ok=True,
+        build_command="   ",
+        lint_ok=True,
+        lint_command="   ",
+        smoke_ok=True,
+        smoke_notes="   ",
+    )
+
+    assert verification.tests_run is True
+    assert verification.build_ok is True
+    assert verification.lint_ok is True
+    assert verification.smoke_ok is True
+    assert verification.tests_command is None
+    assert verification.build_command is None
+    assert verification.lint_command is None
+    assert verification.smoke_notes is None
+
+
+def test_verification_from_inputs_trims_non_blank_text_fields() -> None:
+    """Verification helper should trim non-blank command/note values."""
+    verification = _verification_from_inputs(
+        no_prompt=True,
+        tests_run=True,
+        tests_command="  pytest -q  ",
+        build_ok=True,
+        build_command="  make build  ",
+        lint_ok=True,
+        lint_command="  ruff check  ",
+        smoke_ok=True,
+        smoke_notes="  smoke passed  ",
+    )
+
+    assert verification.tests_command == "pytest -q"
+    assert verification.build_command == "make build"
+    assert verification.lint_command == "ruff check"
+    assert verification.smoke_notes == "smoke passed"
