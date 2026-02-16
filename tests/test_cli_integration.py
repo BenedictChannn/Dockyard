@@ -716,6 +716,103 @@ def test_save_alias_s_invalid_template_content_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_alias_s_template_list_field_type_error_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should surface schema list-field type errors cleanly."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_s_bad_types.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "bad list shape",
+                "decisions": "invalid next_steps type",
+                "next_steps": "not-a-list",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'next_steps' must be an array of strings" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_s_template_verification_type_error_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should surface verification type errors cleanly."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_s_bad_verification.toml"
+    bad_template.write_text(
+        "\n".join(
+            [
+                'objective = "bad verification"',
+                'decisions = "verification section malformed"',
+                'next_steps = ["step"]',
+                "",
+                "[verification]",
+                "tests_run = 123",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -1065,6 +1162,103 @@ def test_save_alias_dock_invalid_template_content_is_actionable(
     )
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "Failed to parse template:" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_template_list_field_type_error_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should surface schema list-field type errors cleanly."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_dock_bad_types.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "bad list shape",
+                "decisions": "invalid next_steps type",
+                "next_steps": "not-a-list",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'next_steps' must be an array of strings" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_template_verification_type_error_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should surface verification type errors cleanly."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_dock_bad_verification.toml"
+    bad_template.write_text(
+        "\n".join(
+            [
+                'objective = "bad verification"',
+                'decisions = "verification section malformed"',
+                'next_steps = ["step"]',
+                "",
+                "[verification]",
+                "tests_run = 123",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
     assert "Traceback" not in output
 
 
