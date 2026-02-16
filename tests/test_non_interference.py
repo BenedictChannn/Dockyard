@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -626,6 +627,43 @@ def _assert_resume_read_paths_do_not_execute_saved_commands(
     _assert_repo_clean(git_repo)
 
 
+def _build_resume_read_commands_in_repo(git_repo: Path) -> list[list[str]]:
+    """Build in-repo resume read-only command matrix."""
+    return [
+        *_resume_read_variants("resume"),
+        *_resume_read_variants("r", include_json=False, include_handoff=False),
+        *_resume_read_variants("undock", include_json=False, include_handoff=False),
+    ]
+
+
+def _build_resume_read_commands_alias_berth(git_repo: Path) -> list[list[str]]:
+    """Build berth-targeted alias resume read-only command matrix."""
+    base_branch = _current_branch(git_repo)
+    return [
+        *_resume_read_variants("r", berth=git_repo.name, branch=base_branch),
+        *_resume_read_variants("undock", berth=git_repo.name, branch=base_branch),
+    ]
+
+
+def _build_resume_read_commands_alias_trimmed_berth(git_repo: Path) -> list[list[str]]:
+    """Build trimmed berth/branch alias resume read-only command matrix."""
+    base_branch = _current_branch(git_repo)
+    trimmed_berth = f"  {git_repo.name}  "
+    trimmed_branch = f"  {base_branch}  "
+    return [
+        *_resume_read_variants("r", berth=trimmed_berth, branch=trimmed_branch),
+        *_resume_read_variants("undock", berth=trimmed_berth, branch=trimmed_branch),
+    ]
+
+
+def _build_resume_read_commands_primary_trimmed_berth(git_repo: Path) -> list[list[str]]:
+    """Build trimmed berth/branch primary resume read-only command matrix."""
+    base_branch = _current_branch(git_repo)
+    trimmed_berth = f"  {git_repo.name}  "
+    trimmed_branch = f"  {base_branch}  "
+    return _resume_read_variants("resume", berth=trimmed_berth, branch=trimmed_branch)
+
+
 def _assert_review_link_commands_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
@@ -880,88 +918,65 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _assert_repo_clean(git_repo)
 
 
-def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_path: Path) -> None:
-    """Resume read-only paths must not execute stored resume commands."""
-    commands = [
-        *_resume_read_variants("resume"),
-        *_resume_read_variants("r", include_json=False, include_handoff=False),
-        *_resume_read_variants("undock", include_json=False, include_handoff=False),
-    ]
-    _assert_resume_read_paths_do_not_execute_saved_commands(
-        git_repo,
-        tmp_path,
-        marker_name="dockyard_resume_should_not_run.txt",
-        objective="Resume command safety baseline",
-        decisions="Ensure resume read paths do not execute stored commands",
-        next_step="Inspect resume output",
-        commands=commands,
-        run_cwd=git_repo,
-    )
-
-
-def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
+@pytest.mark.parametrize(
+    ("marker_name", "objective", "decisions", "next_step", "commands_builder", "run_cwd_kind"),
+    [
+        (
+            "dockyard_resume_should_not_run.txt",
+            "Resume command safety baseline",
+            "Ensure resume read paths do not execute stored commands",
+            "Inspect resume output",
+            _build_resume_read_commands_in_repo,
+            "repo",
+        ),
+        (
+            "dockyard_alias_berth_resume_should_not_run.txt",
+            "Alias berth command safety baseline",
+            "Ensure alias berth read paths do not execute stored commands",
+            "Inspect alias berth resume output",
+            _build_resume_read_commands_alias_berth,
+            "tmp",
+        ),
+        (
+            "dockyard_alias_trimmed_resume_should_not_run.txt",
+            "Alias trimmed berth command safety baseline",
+            "Ensure trimmed alias berth read paths do not execute stored commands",
+            "Inspect trimmed alias berth resume output",
+            _build_resume_read_commands_alias_trimmed_berth,
+            "tmp",
+        ),
+        (
+            "dockyard_primary_trimmed_resume_should_not_run.txt",
+            "Primary trimmed berth command safety baseline",
+            "Ensure trimmed primary berth read paths do not execute commands",
+            "Inspect trimmed primary berth resume output",
+            _build_resume_read_commands_primary_trimmed_berth,
+            "tmp",
+        ),
+    ],
+    ids=["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"],
+)
+def test_resume_read_paths_do_not_execute_saved_commands(
     git_repo: Path,
     tmp_path: Path,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    commands_builder: Callable[[Path], list[list[str]]],
+    run_cwd_kind: str,
 ) -> None:
-    """Berth-targeted alias read paths must not execute stored commands."""
-    base_branch = _current_branch(git_repo)
-    commands = [
-        *_resume_read_variants("r", berth=git_repo.name, branch=base_branch),
-        *_resume_read_variants("undock", berth=git_repo.name, branch=base_branch),
-    ]
+    """Resume read-only path variants must never execute stored commands."""
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
         tmp_path,
-        marker_name="dockyard_alias_berth_resume_should_not_run.txt",
-        objective="Alias berth command safety baseline",
-        decisions="Ensure alias berth read paths do not execute stored commands",
-        next_step="Inspect alias berth resume output",
-        commands=commands,
-        run_cwd=tmp_path,
-    )
-
-
-def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Trimmed berth/branch alias read paths must not execute stored commands."""
-    base_branch = _current_branch(git_repo)
-    trimmed_berth = f"  {git_repo.name}  "
-    trimmed_branch = f"  {base_branch}  "
-    commands = [
-        *_resume_read_variants("r", berth=trimmed_berth, branch=trimmed_branch),
-        *_resume_read_variants("undock", berth=trimmed_berth, branch=trimmed_branch),
-    ]
-    _assert_resume_read_paths_do_not_execute_saved_commands(
-        git_repo,
-        tmp_path,
-        marker_name="dockyard_alias_trimmed_resume_should_not_run.txt",
-        objective="Alias trimmed berth command safety baseline",
-        decisions="Ensure trimmed alias berth read paths do not execute stored commands",
-        next_step="Inspect trimmed alias berth resume output",
-        commands=commands,
-        run_cwd=tmp_path,
-    )
-
-
-def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Trimmed berth/branch primary resume paths must never execute commands."""
-    base_branch = _current_branch(git_repo)
-    trimmed_berth = f"  {git_repo.name}  "
-    trimmed_branch = f"  {base_branch}  "
-    _assert_resume_read_paths_do_not_execute_saved_commands(
-        git_repo,
-        tmp_path,
-        marker_name="dockyard_primary_trimmed_resume_should_not_run.txt",
-        objective="Primary trimmed berth command safety baseline",
-        decisions="Ensure trimmed primary berth read paths do not execute commands",
-        next_step="Inspect trimmed primary berth resume output",
-        commands=_resume_read_variants("resume", berth=trimmed_berth, branch=trimmed_branch),
-        run_cwd=tmp_path,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        commands=commands_builder(git_repo),
+        run_cwd=run_cwd,
     )
 
 
