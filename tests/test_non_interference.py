@@ -40,6 +40,12 @@ RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandCase, ...] = (
 RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 RUN_SCOPE_COMMAND_LABELS = {command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES}
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS = {
+    (False, False): "default",
+    (True, False): "berth",
+    (False, True): "branch",
+    (True, True): "berth+branch",
+}
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
     ("default", False, False, "repo"),
     ("berth", True, False, "tmp"),
@@ -95,13 +101,7 @@ SaveTemplateScenario = tuple[str, str, str]
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     """Return scope descriptor text for run-scenario metadata strings."""
-    if include_berth and include_branch:
-        return "berth+branch"
-    if include_berth:
-        return "berth"
-    if include_branch:
-        return "branch"
-    return "default"
+    return RUN_SCOPE_DESCRIPTOR_BY_FLAGS[(include_berth, include_branch)]
 
 
 def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:

@@ -27,6 +27,18 @@ RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
 RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMAND_LABELS = {command_name: label for command_name, _slug, _case_id, label in RUN_COMMAND_CASES}
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS = {
+    (False, False): "default",
+    (True, False): "berth",
+    (False, True): "branch",
+    (True, True): "berth+branch",
+}
+RUN_SCOPE_SLUG_BY_FLAGS = {
+    (False, False): "default",
+    (True, False): "berth",
+    (False, True): "branch",
+    (True, True): "berth-branch",
+}
 RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
     ("default", False, False, "repo"),
     ("berth", True, False, "tmp"),
@@ -63,24 +75,12 @@ RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_BRANCH_SCOPE_CASES)
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     """Return scope descriptor text for run-scenario metadata strings."""
-    if include_berth and include_branch:
-        return "berth+branch"
-    if include_berth:
-        return "berth"
-    if include_branch:
-        return "branch"
-    return "default"
+    return RUN_SCOPE_DESCRIPTOR_BY_FLAGS[(include_berth, include_branch)]
 
 
 def _run_scope_slug(include_berth: bool, include_branch: bool) -> str:
     """Return command suffix slug for scope-aware command labels."""
-    if include_berth and include_branch:
-        return "berth-branch"
-    if include_berth:
-        return "berth"
-    if include_branch:
-        return "branch"
-    return "default"
+    return RUN_SCOPE_SLUG_BY_FLAGS[(include_berth, include_branch)]
 
 
 def _build_default_run_success_scenarios(
