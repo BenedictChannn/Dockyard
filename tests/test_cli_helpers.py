@@ -7,7 +7,13 @@ import json
 import pytest
 
 import dockyard.cli as cli_module
-from dockyard.cli import _comma_or_pipe_values, _emit_json, _normalize_editor_text, _safe_text
+from dockyard.cli import (
+    _comma_or_pipe_values,
+    _emit_json,
+    _normalize_editor_text,
+    _safe_preview,
+    _safe_text,
+)
 
 
 def test_normalize_editor_text_drops_scaffold_line() -> None:
@@ -163,3 +169,15 @@ def test_safe_text_handles_non_string_values() -> None:
     """Safe text helper should coerce and escape non-string values safely."""
     escaped = _safe_text(123)
     assert escaped == "123"
+
+
+def test_safe_preview_compacts_multiline_text() -> None:
+    """Safe preview helper should compact multiline text into one line."""
+    preview = _safe_preview("line1\nline2\tline3")
+    assert preview == "line1 line2 line3"
+
+
+def test_safe_preview_applies_length_bound() -> None:
+    """Safe preview helper should enforce max-length truncation."""
+    preview = _safe_preview("x" * 20, max_length=10)
+    assert preview == "x" * 10

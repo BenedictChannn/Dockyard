@@ -73,6 +73,12 @@ def _safe_text(value: Any) -> str:
     return escape(str(value))
 
 
+def _safe_preview(value: Any, max_length: int = 200) -> str:
+    """Escape and compact text for one-line CLI preview output."""
+    compact = " ".join(str(value).split())
+    return escape(compact[:max_length])
+
+
 def _normalize_editor_text(raw: str) -> str:
     """Normalize editor text by dropping scaffold comments and outer blanks.
 
@@ -655,8 +661,9 @@ def review_list(
         return
     lines = [
         (
-            f"{_safe_text(item.id)} | {_safe_text(item.severity)} | {_safe_text(item.status)}"
-            f" | {_safe_text(item.repo_id)}/{_safe_text(item.branch)} | {_safe_text(item.reason)}"
+            f"{_safe_preview(item.id, 60)} | {_safe_preview(item.severity, 20)}"
+            f" | {_safe_preview(item.status, 20)} | {_safe_preview(item.repo_id, 80)}"
+            f"/{_safe_preview(item.branch, 80)} | {_safe_preview(item.reason, 200)}"
         )
         for item in items
     ]
@@ -804,7 +811,7 @@ def links_command(
         console.print("No links for current slip.")
         return
     for item in items:
-        console.print(f"{_safe_text(item.created_at)} | {_safe_text(item.url)}")
+        console.print(f"{_safe_preview(item.created_at, 60)} | {_safe_preview(item.url, 220)}")
 
 
 def main() -> None:

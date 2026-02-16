@@ -3538,6 +3538,51 @@ def test_review_add_trims_reason_whitespace(git_repo: Path, tmp_path: Path) -> N
     assert "reason: padded_reason" in opened.stdout
 
 
+def test_review_list_compacts_multiline_reason_text(git_repo: Path, tmp_path: Path) -> None:
+    """Review list should compact multiline reasons into one-line previews."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review list multiline reason baseline",
+            "--decisions",
+            "Need review context",
+            "--next-step",
+            "add multiline reason review",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        ["review", "add", "--reason", "line one\nline two", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+
+    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "line one line two" in listed
+    assert "line one\nline two" not in listed
+
+
 def test_review_outputs_preserve_literal_markup_like_text(
     git_repo: Path,
     tmp_path: Path,
@@ -6748,6 +6793,19 @@ def test_link_commands_support_root_override_outside_repo(
     )
     listed = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
     assert "https://example.com/root-override" in listed
+
+
+def test_links_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path) -> None:
+    """Links list should compact multiline URL text into one-line previews."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_url = "https://example.com/line-one\nline-two"
+    _run_dock(["link", multiline_url], cwd=git_repo, env=env)
+
+    listed = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/line-one line-two" in listed
+    assert "https://example.com/line-one\nline-two" not in listed
 
 
 def test_link_outputs_preserve_literal_markup_like_urls(git_repo: Path, tmp_path: Path) -> None:
