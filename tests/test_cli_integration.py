@@ -4192,6 +4192,99 @@ def test_ls_json_ordering_prioritizes_open_review_count(
     assert rows[0]["branch"] == base_branch
 
 
+def test_ls_json_ordering_uses_status_then_staleness_on_review_ties(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Harbor ordering should use status then staleness when reviews tie."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    base_branch = _git_current_branch(git_repo)
+
+    def _save_branch_checkpoint(objective: str) -> None:
+        _run_dock(
+            [
+                "save",
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                "--objective",
+                objective,
+                "--decisions",
+                "ordering context",
+                "--next-step",
+                "inspect ordering",
+                "--risks",
+                "none",
+                "--command",
+                "echo ordering",
+                "--tests-run",
+                "--tests-command",
+                "pytest -q",
+                "--build-ok",
+                "--build-command",
+                "echo build",
+                "--lint-fail",
+                "--smoke-fail",
+                "--no-auto-review",
+            ],
+            cwd=git_repo,
+            env=env,
+        )
+
+    branch_names = [
+        "feature/order-red-old",
+        "feature/order-red-new",
+        "feature/order-yellow",
+        "feature/order-green",
+    ]
+    for branch in branch_names:
+        subprocess.run(
+            ["git", "checkout", "-b", branch],
+            cwd=str(git_repo),
+            check=True,
+            capture_output=True,
+        )
+        _save_branch_checkpoint(f"Ordering checkpoint for {branch}")
+        subprocess.run(
+            ["git", "checkout", base_branch],
+            cwd=str(git_repo),
+            check=True,
+            capture_output=True,
+        )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ?, updated_at = ? WHERE branch = ?",
+        ("red", "2000-01-01T00:00:00+00:00", "feature/order-red-old"),
+    )
+    conn.execute(
+        "UPDATE slips SET status = ?, updated_at = ? WHERE branch = ?",
+        ("red", "2005-01-01T00:00:00+00:00", "feature/order-red-new"),
+    )
+    conn.execute(
+        "UPDATE slips SET status = ?, updated_at = ? WHERE branch = ?",
+        ("yellow", "1990-01-01T00:00:00+00:00", "feature/order-yellow"),
+    )
+    conn.execute(
+        "UPDATE slips SET status = ?, updated_at = ? WHERE branch = ?",
+        ("green", "1980-01-01T00:00:00+00:00", "feature/order-green"),
+    )
+    conn.commit()
+    conn.close()
+
+    ordered_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    ordered_branches = [row["branch"] for row in ordered_rows]
+    assert ordered_branches[:4] == [
+        "feature/order-red-old",
+        "feature/order-red-new",
+        "feature/order-yellow",
+        "feature/order-green",
+    ]
+
+
 def test_ls_limit_flag_restricts_result_count(git_repo: Path, tmp_path: Path) -> None:
     """CLI `ls --limit` should cap number of returned rows."""
     env = dict(os.environ)
