@@ -120,6 +120,8 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
             objective = str(objective)
         if isinstance(next_steps, list) and next_steps:
             next_step = str(next_steps[0])
+        elif isinstance(next_steps, str) and next_steps:
+            next_step = next_steps
         else:
             next_step = objective[:60]
         table.add_row(

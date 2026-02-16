@@ -303,3 +303,25 @@ def test_print_harbor_handles_non_string_next_step_item() -> None:
     )
     output = console.export_text()
     assert "42" in output
+
+
+def test_print_harbor_handles_string_next_steps_field() -> None:
+    """Harbor renderer should tolerate next_steps payloads as raw strings."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-next-step-string",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": "single next step text",
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "single next step" in output
+    assert "text" in output
