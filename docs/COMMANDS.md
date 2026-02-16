@@ -136,6 +136,8 @@ python3 -m dockyard review --all
 python3 -m dockyard review list --all
 ```
 
+Both `review` and `review list` print `No review items.` when the ledger is empty.
+
 ### Add
 
 ```bash
