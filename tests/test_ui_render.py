@@ -236,6 +236,43 @@ def test_print_search_truncates_long_snippets() -> None:
     assert "x" * 121 not in output
 
 
+def test_print_search_escapes_markup_like_snippet_text() -> None:
+    """Search renderer should preserve literal bracketed snippet text."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_fallback",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "[red]literal snippet[/red]",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "[red]literal" in output
+    assert "snippet[/red]" in output
+
+
+def test_print_search_escapes_markup_like_berth_label() -> None:
+    """Search renderer should preserve literal bracketed berth labels."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "[blue]repo-label[/blue]",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "safe snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "[blue]repo-label[/blue]" in output
+
+
 def test_print_search_handles_non_string_snippet() -> None:
     """Search renderer should tolerate non-string snippet payloads."""
     console = Console(record=True, width=120)
@@ -809,6 +846,28 @@ def test_print_harbor_handles_non_string_objective() -> None:
     )
     output = console.export_text()
     assert "123" in output
+
+
+def test_print_harbor_escapes_markup_like_next_step_preview() -> None:
+    """Harbor renderer should preserve literal bracketed next-step text."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-x",
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": ["[green]literal next step[/green]"],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "[green]literal next" in output
+    assert "step[/green]" in output
 
 
 def test_print_harbor_handles_non_string_next_step_item() -> None:
