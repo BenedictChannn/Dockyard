@@ -85,6 +85,8 @@ Notes:
 - If a checkpoint has no next steps, resume summary shows `(none recorded)`.
 - `--handoff` output compacts multiline objective/next-step/risk/command
   fields into one-line bullet previews.
+- When handoff next steps or commands are empty, Dockyard prints
+  `(none recorded)` placeholders.
 - `--run` command labels in output are compacted to one-line previews.
 
 ## `ls` (`harbor`)

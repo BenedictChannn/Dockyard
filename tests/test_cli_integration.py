@@ -1529,6 +1529,60 @@ def test_resume_output_handles_empty_next_steps_payload(
     assert payload["next_steps"] == []
 
 
+def test_resume_handoff_shows_placeholders_for_empty_lists(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Handoff output should show placeholders when steps/commands are empty."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Empty handoff list baseline",
+            "--decisions",
+            "Corrupt list payload fields to empty arrays",
+            "--next-step",
+            "seed initial step",
+            "--risks",
+            "none",
+            "--command",
+            "echo seed",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET next_steps_json = ?, resume_commands_json = ?",
+        ("[]", "[]"),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["resume", "--handoff"], cwd=git_repo, env=env).stdout
+    assert "- Next Steps:" in output
+    assert "- Commands:" in output
+    assert output.count("  - (none recorded)") >= 2
+
+
 def test_resume_output_compacts_multiline_summary_fields(
     git_repo: Path,
     tmp_path: Path,

@@ -556,6 +556,8 @@ def resume_command(
         )
 
     if handoff:
+        handoff_next_steps = checkpoint.next_steps or ["(none recorded)"]
+        handoff_commands = checkpoint.resume_commands or ["(none recorded)"]
         handoff_block = "\n".join(
             [
                 "### Dockyard Handoff",
@@ -563,11 +565,11 @@ def resume_command(
                 f"- Branch: {_safe_preview(checkpoint.branch, 120, fallback='(unknown)')}",
                 f"- Objective: {_safe_preview(checkpoint.objective, 240, fallback='(none)')}",
                 "- Next Steps:",
-                *[f"  - {_safe_preview(step, 240, fallback='(none)')}" for step in checkpoint.next_steps],
+                *[f"  - {_safe_preview(step, 240, fallback='(none)')}" for step in handoff_next_steps],
                 f"- Risks: {_safe_preview(checkpoint.risks_review, 240, fallback='(none)')}",
                 f"- Verification: tests={checkpoint.verification.tests_run}, build={checkpoint.verification.build_ok}, lint={checkpoint.verification.lint_ok}",
                 "- Commands:",
-                *[f"  - {_safe_preview(cmd, 240, fallback='(none)')}" for cmd in checkpoint.resume_commands],
+                *[f"  - {_safe_preview(cmd, 240, fallback='(none)')}" for cmd in handoff_commands],
             ]
         )
         console.print(Panel.fit(handoff_block, title="Agent Handoff", border_style="cyan"))

@@ -101,6 +101,8 @@ Useful flags:
   line previews for faster scanning.
 - Handoff bullets and `--run` command labels are compacted to single-line
   previews for readability.
+- Handoff shows `(none recorded)` placeholders when no next steps or commands
+  are recorded.
 
 ### 3) Harbor dashboard across projects
 
