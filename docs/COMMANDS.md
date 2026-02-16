@@ -65,6 +65,7 @@ Editor note:
   duplicates are de-duplicated.
 - `--root` must be non-empty when provided.
 - `--template` path values are trimmed and must be non-empty when provided.
+- `--template` path must resolve to a readable file.
 - verification command/note text fields are trimmed; blank values are treated
   as missing.
 

@@ -237,7 +237,10 @@ def _load_template_data(template_path: str | None) -> dict:
     if not path.exists():
         raise DockyardError(f"Template not found: {path}")
 
-    raw = path.read_text(encoding="utf-8")
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise DockyardError(f"Failed to read template: {path}") from exc
     suffix = path.suffix.lower()
     try:
         parsed: dict[str, Any]

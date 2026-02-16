@@ -53,6 +53,7 @@ python3 -m dockyard save \
 exact repeats.
 `--root` override values are trimmed; blank values are rejected.
 `--template` path values are trimmed; blank values are rejected.
+`--template` must point to a readable file.
 Verification command/note text flags are trimmed; blank values are treated as
 missing.
 

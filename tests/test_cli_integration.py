@@ -5347,6 +5347,40 @@ def test_save_rejects_blank_template_path(git_repo: Path, tmp_path: Path) -> Non
     assert "Traceback" not in output
 
 
+def test_save_template_directory_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Directory-valued template paths should fail with actionable error text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(tmp_path),
+            "--no-prompt",
+            "--objective",
+            "fallback objective",
+            "--decisions",
+            "fallback decisions",
+            "--next-step",
+            "fallback step",
+            "--risks",
+            "none",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
 def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) -> None:
     """Template bool-like strings should coerce to verification booleans."""
     env = dict(os.environ)
