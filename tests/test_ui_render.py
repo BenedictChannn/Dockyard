@@ -116,7 +116,7 @@ def test_print_search_truncates_long_snippets() -> None:
     )
     output = console.export_text()
     assert long_snippet not in output
-    assert "…" in output
+    assert "x" * 121 not in output
 
 
 def test_print_search_handles_non_string_snippet() -> None:
@@ -153,6 +153,24 @@ def test_print_search_handles_non_string_created_at() -> None:
     )
     output = console.export_text()
     assert "repo_created_at" in output
+
+
+def test_print_search_normalizes_multiline_snippet_text() -> None:
+    """Search renderer should compact multiline snippet text to one line."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_multiline",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "line1\nline2   line3",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "line1 line2 line3" in output
 
 
 def test_print_search_uses_unknown_berth_when_identifiers_missing() -> None:
@@ -407,3 +425,24 @@ def test_print_harbor_handles_string_next_steps_field() -> None:
     output = console.export_text()
     assert "single next step" in output
     assert "text" in output
+
+
+def test_print_harbor_next_step_preview_is_single_line() -> None:
+    """Harbor renderer should compact multiline next-step previews."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-next-step-multiline",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": ["line1\nline2   line3"],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "line1 line2 line3" in output

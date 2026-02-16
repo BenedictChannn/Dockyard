@@ -21,6 +21,13 @@ def _display_berth_label(row: dict[str, Any]) -> str:
     return "(unknown)"
 
 
+def _preview_text(value: Any, max_length: int) -> str:
+    """Return compact, single-line preview text bounded by max length."""
+    text = str(value) if value is not None else ""
+    compact = " ".join(text.split())
+    return compact[:max_length]
+
+
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
@@ -132,13 +139,13 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
         elif isinstance(next_steps, str) and next_steps:
             next_step = next_steps
         else:
-            next_step = objective[:60]
+            next_step = objective
         table.add_row(
             str(berth),
             str(branch),
             status_badge.get(str(status), str(status)),
             format_age(row.get("updated_at")),
-            next_step,
+            _preview_text(next_step, 60),
             str(row.get("open_review_count", 0)),
         )
     console.print(table)
@@ -165,6 +172,6 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
             str(berth),
             str(branch),
             str(created_at),
-            snippet[:120],
+            _preview_text(snippet, 120),
         )
     console.print(table)
