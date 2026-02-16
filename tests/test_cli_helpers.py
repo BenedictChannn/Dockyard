@@ -137,3 +137,17 @@ def test_emit_json_list_payload_preserves_unicode(monkeypatch: pytest.MonkeyPatc
     assert len(captured) == 1
     assert "\\u00e7" not in captured[0]
     assert json.loads(captured[0]) == ["façade"]
+
+
+def test_emit_json_list_payload_is_pretty_indented(monkeypatch: pytest.MonkeyPatch) -> None:
+    """List payload emission should keep readable pretty indentation."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json(["alpha", "beta"])
+
+    assert len(captured) == 1
+    assert captured[0].startswith("[\n  ")
