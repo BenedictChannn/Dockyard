@@ -2952,183 +2952,159 @@ def _assert_run_no_commands_noop_for_scope(
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
+    (
+        "command_name",
+        "include_berth",
+        "include_branch",
+        "run_cwd_kind",
+        "objective",
+        "decisions",
+        "next_step",
+    ),
     [
         (
             "resume",
+            False,
+            False,
+            "repo",
             "No command resume run",
             "Ensure run path handles empty command list",
             "resume with run",
         ),
         (
             "r",
+            False,
+            False,
+            "repo",
             "No command resume alias run",
             "Ensure alias run path handles empty command list",
             "run r --run",
         ),
         (
             "undock",
+            False,
+            False,
+            "repo",
             "No command undock alias run",
             "Ensure undock alias run path handles empty command list",
             "run undock --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_default_scope_with_no_commands_is_noop_success(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --run` should no-op when checkpoint has no run commands."""
-    _assert_run_no_commands_noop_for_scope(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=False,
-        include_branch=False,
-        run_cwd_kind="repo",
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            False,
+            "tmp",
             "No command resume berth run",
             "Ensure berth run path handles empty command list",
             "run resume berth with run",
         ),
         (
             "r",
+            True,
+            False,
+            "tmp",
             "No command resume alias berth run",
             "Ensure alias berth run path handles empty command list",
             "run r berth with run",
         ),
         (
             "undock",
+            True,
+            False,
+            "tmp",
             "No command undock alias berth run",
             "Ensure undock berth run path handles empty command list",
             "run undock berth with run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_berth_scope_with_no_commands_is_noop_success(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> <berth> --run` should no-op with empty run command list."""
-    _assert_run_no_commands_noop_for_scope(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=True,
-        include_branch=False,
-        run_cwd_kind="tmp",
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            False,
+            True,
+            "repo",
             "No command resume branch run",
             "Ensure branch run path handles empty command list",
             "run resume branch with run",
         ),
         (
             "r",
+            False,
+            True,
+            "repo",
             "No command resume alias branch run",
             "Ensure alias branch run path handles empty command list",
             "run r branch with run",
         ),
         (
             "undock",
+            False,
+            True,
+            "repo",
             "No command undock alias branch run",
             "Ensure undock branch run path handles empty command list",
             "run undock branch with run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_branch_scope_with_no_commands_is_noop_success(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --branch <name> --run` should no-op with empty commands."""
-    _assert_run_no_commands_noop_for_scope(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=False,
-        include_branch=True,
-        run_cwd_kind="repo",
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            True,
+            "tmp",
             "No command resume berth branch run",
             "Ensure berth+branch run path handles empty command list",
             "run resume berth+branch with run",
         ),
         (
             "r",
+            True,
+            True,
+            "tmp",
             "No command resume alias berth branch run",
             "Ensure alias berth+branch run path handles empty command list",
             "run r berth+branch with run",
         ),
         (
             "undock",
+            True,
+            True,
+            "tmp",
             "No command undock alias berth branch run",
             "Ensure undock berth+branch run path handles empty command list",
             "run undock berth+branch with run",
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=[
+        "resume_default",
+        "r_default",
+        "undock_default",
+        "resume_berth",
+        "r_berth",
+        "undock_berth",
+        "resume_branch",
+        "r_branch",
+        "undock_branch",
+        "resume_berth_branch",
+        "r_berth_branch",
+        "undock_berth_branch",
+    ],
 )
-def test_run_berth_branch_scope_with_no_commands_is_noop_success(
+def test_run_scopes_with_no_commands_are_noop_success(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     objective: str,
     decisions: str,
     next_step: str,
 ) -> None:
-    """`<command> <berth> --branch <name> --run` should no-op with no commands."""
+    """Run scope variants should no-op when no commands are recorded."""
     _assert_run_no_commands_noop_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
         command_name=command_name,
-        include_berth=True,
-        include_branch=True,
-        run_cwd_kind="tmp",
+        include_berth=include_berth,
+        include_branch=include_branch,
+        run_cwd_kind=run_cwd_kind,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
