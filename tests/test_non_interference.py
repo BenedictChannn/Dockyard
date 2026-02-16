@@ -263,6 +263,61 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     assert status_after == ""
 
 
+def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_path: Path) -> None:
+    """Resume read-only paths must not execute stored resume commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / "dockyard_resume_should_not_run.txt"
+    marker_command = f"touch {marker}"
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume command safety baseline",
+            "--decisions",
+            "Ensure resume read paths do not execute stored commands",
+            "--next-step",
+            "Inspect resume output",
+            "--risks",
+            "none",
+            "--command",
+            marker_command,
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    assert not marker.exists()
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(["python3", "-m", "dockyard", "resume"], cwd=git_repo, env=env)
+    _run(["python3", "-m", "dockyard", "resume", "--json"], cwd=git_repo, env=env)
+    _run(["python3", "-m", "dockyard", "resume", "--handoff"], cwd=git_repo, env=env)
+    _run(["python3", "-m", "dockyard", "r"], cwd=git_repo, env=env)
+    _run(["python3", "-m", "dockyard", "undock"], cwd=git_repo, env=env)
+
+    assert not marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Dockyard metadata mutations must not alter repository working tree."""
     env = dict(os.environ)
