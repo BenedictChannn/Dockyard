@@ -1565,6 +1565,59 @@ def test_resume_output_compacts_multiline_project_label(
     assert f"Project/Branch: Repo line 1 Repo line 2 / {branch}" in result.stdout
 
 
+def test_resume_output_falls_back_for_blank_project_label(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume output should fallback to unknown when berth label is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Project label blank fallback",
+            "--decisions",
+            "Ensure resume label fallback remains explicit",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE berths SET name = ?",
+        ("   ",),
+    )
+    conn.commit()
+    conn.close()
+
+    result = _run_dock(["resume"], cwd=git_repo, env=env)
+    assert f"Project/Branch: (unknown) / {branch}" in result.stdout
+
+
 def test_resume_by_berth_from_outside_repo_with_handoff(
     git_repo: Path,
     tmp_path: Path,
