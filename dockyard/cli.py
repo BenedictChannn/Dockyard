@@ -497,7 +497,8 @@ def save_command(
         review_heuristics=runtime_config.review_heuristics,
     )
     console.print(
-        f"[green]Saved checkpoint[/green] {_safe_text(checkpoint.id)} for {_safe_text(checkpoint.branch)}"
+        f"[green]Saved checkpoint[/green] {_safe_preview(checkpoint.id, 80, fallback='(unknown)')}"
+        f" for {_safe_preview(checkpoint.branch, 120, fallback='(unknown)')}"
     )
     if triggers:
         console.print(f"[yellow]Review triggers:[/yellow] {_safe_text(', '.join(triggers))}")
@@ -558,15 +559,15 @@ def resume_command(
         handoff_block = "\n".join(
             [
                 "### Dockyard Handoff",
-                f"- Repo ID: {_safe_text(checkpoint.repo_id)}",
-                f"- Branch: {_safe_text(checkpoint.branch)}",
-                f"- Objective: {_safe_text(checkpoint.objective)}",
+                f"- Repo ID: {_safe_preview(checkpoint.repo_id, 120, fallback='(unknown)')}",
+                f"- Branch: {_safe_preview(checkpoint.branch, 120, fallback='(unknown)')}",
+                f"- Objective: {_safe_preview(checkpoint.objective, 240, fallback='(none)')}",
                 "- Next Steps:",
-                *[f"  - {_safe_text(step)}" for step in checkpoint.next_steps],
-                f"- Risks: {_safe_text(checkpoint.risks_review)}",
+                *[f"  - {_safe_preview(step, 240, fallback='(none)')}" for step in checkpoint.next_steps],
+                f"- Risks: {_safe_preview(checkpoint.risks_review, 240, fallback='(none)')}",
                 f"- Verification: tests={checkpoint.verification.tests_run}, build={checkpoint.verification.build_ok}, lint={checkpoint.verification.lint_ok}",
                 "- Commands:",
-                *[f"  - {_safe_text(cmd)}" for cmd in checkpoint.resume_commands],
+                *[f"  - {_safe_preview(cmd, 240, fallback='(none)')}" for cmd in checkpoint.resume_commands],
             ]
         )
         console.print(Panel.fit(handoff_block, title="Agent Handoff", border_style="cyan"))
@@ -578,7 +579,7 @@ def resume_command(
             raise DockyardError("Cannot resolve repository root for --run execution.")
         success, results = run_commands(checkpoint.resume_commands, cwd=berth_record.root_path)
         for cmd, code in results:
-            console.print(f"$ {_safe_text(cmd)} -> exit {code}")
+            console.print(f"$ {_safe_preview(cmd, 240, fallback='(empty)')} -> exit {code}")
         if not success:
             raise SystemExit(1)
 
@@ -746,15 +747,15 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
             "\n".join(
                 [
                     f"id: {_safe_text(item.id)}",
-                    f"repo: {_safe_text(item.repo_id)}",
-                    f"branch: {_safe_text(item.branch)}",
-                    f"created_at: {_safe_text(item.created_at)}",
-                    f"checkpoint_id: {_safe_text(item.checkpoint_id or '')}",
-                    f"severity: {_safe_text(item.severity)}",
-                    f"status: {_safe_text(item.status)}",
-                    f"reason: {_safe_text(item.reason)}",
-                    f"notes: {_safe_text(item.notes or '')}",
-                    f"files: {_safe_text(', '.join(item.files) if item.files else '')}",
+                    f"repo: {_safe_preview(item.repo_id, 180, fallback='(unknown)')}",
+                    f"branch: {_safe_preview(item.branch, 180, fallback='(unknown)')}",
+                    f"created_at: {_safe_preview(item.created_at, 180, fallback='(unknown)')}",
+                    f"checkpoint_id: {_safe_preview(item.checkpoint_id or '', 180)}",
+                    f"severity: {_safe_preview(item.severity, 40, fallback='(unknown)')}",
+                    f"status: {_safe_preview(item.status, 40, fallback='(unknown)')}",
+                    f"reason: {_safe_preview(item.reason, 240, fallback='(none)')}",
+                    f"notes: {_safe_preview(item.notes or '', 240)}",
+                    f"files: {_safe_preview(', '.join(item.files) if item.files else '', 240)}",
                 ]
             ),
             title="Review Item",
@@ -767,8 +768,8 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
             console.print(
                 Panel.fit(
                     (
-                        f"checkpoint: {_safe_text(checkpoint.id)}\n"
-                        f"objective: {_safe_text(checkpoint.objective)}"
+                        f"checkpoint: {_safe_preview(checkpoint.id, 120, fallback='(unknown)')}\n"
+                        f"objective: {_safe_preview(checkpoint.objective, 240, fallback='(none)')}"
                     ),
                     title="Associated Checkpoint",
                     border_style="cyan",
@@ -778,7 +779,7 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
             console.print(
                 Panel.fit(
                     (
-                        f"checkpoint_id: {_safe_text(item.checkpoint_id)}\n"
+                        f"checkpoint_id: {_safe_preview(item.checkpoint_id, 180, fallback='(unknown)')}\n"
                         "status: missing from index"
                     ),
                     title="Associated Checkpoint",

@@ -1782,6 +1782,51 @@ def test_resume_handoff_preserves_literal_markup_like_text(
     assert "  - [blue]echo literal[/blue]" in handoff_output
 
 
+def test_resume_handoff_compacts_multiline_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Handoff output should compact multiline objective/step/risk/command text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "objective line one\nline two",
+            "--decisions",
+            "handoff compaction baseline",
+            "--next-step",
+            "step one\nstep two",
+            "--risks",
+            "risk one\nrisk two",
+            "--command",
+            "echo one\necho two",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    handoff_output = _run_dock(["resume", "--handoff"], cwd=git_repo, env=env).stdout
+    assert "- Objective: objective line one line two" in handoff_output
+    assert "  - step one step two" in handoff_output
+    assert "- Risks: risk one risk two" in handoff_output
+    assert "  - echo one echo two" in handoff_output
+
+
 def test_resume_by_berth_from_outside_repo_with_handoff(
     git_repo: Path,
     tmp_path: Path,
@@ -3710,6 +3755,69 @@ def test_review_outputs_preserve_literal_markup_like_text(
     assert "reason: [red]urgent[/red]" in opened
     assert "notes: [bold]needs eyes[/bold]" in opened
     assert "files: [cyan]src/core.py[/cyan]" in opened
+
+
+def test_review_open_compacts_multiline_metadata_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review open output should compact multiline metadata values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review open compaction baseline",
+            "--decisions",
+            "Need review context",
+            "--next-step",
+            "create multiline review metadata",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "reason line one\nline two",
+            "--severity",
+            "med",
+            "--notes",
+            "notes line one\nline two",
+            "--file",
+            "src/one.py\nsrc/two.py",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "reason: reason line one line two" in opened
+    assert "notes: notes line one line two" in opened
+    assert "files: src/one.py src/two.py" in opened
 
 
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
