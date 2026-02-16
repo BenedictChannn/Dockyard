@@ -533,6 +533,42 @@ def test_save_alias_s_rejects_blank_template_path(git_repo: Path, tmp_path: Path
     assert "Traceback" not in output
 
 
+def test_save_alias_s_rejects_tml_template_extension(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should reject unsupported `.tml` templates."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "alias_s_template.tml"
+    bad_template.write_text('objective = "bad extension"\n', encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Alias s unsupported extension",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use json or toml",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template must be .json or .toml" in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -693,6 +729,45 @@ def test_save_alias_dock_rejects_blank_template_path(git_repo: Path, tmp_path: P
     )
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "--template must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_rejects_tml_template_extension(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should reject unsupported `.tml` templates."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "alias_dock_template.tml"
+    bad_template.write_text('objective = "bad extension"\n', encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Dock alias unsupported extension",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use json or toml",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template must be .json or .toml" in output
     assert "Traceback" not in output
 
 
