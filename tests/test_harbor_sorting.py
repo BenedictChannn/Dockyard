@@ -181,3 +181,34 @@ def test_harbor_stale_filter_accepts_naive_timestamps(tmp_path) -> None:
 
     stale_rows = store.list_harbor(stale_days=1)
     assert [row["repo_id"] for row in stale_rows] == ["naive"]
+
+
+def test_harbor_stale_filter_skips_non_string_timestamps(tmp_path) -> None:
+    """Stale filtering should skip rows with non-string timestamp payloads."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.upsert_berth(Berth(repo_id="numeric", name="Numeric", root_path="/tmp/numeric", remote_url=None))
+    store.upsert_berth(Berth(repo_id="valid", name="Valid", root_path="/tmp/valid", remote_url=None))
+
+    store.upsert_slip(
+        Slip(
+            repo_id="numeric",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at=12345,  # type: ignore[arg-type]
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="valid",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="2000-01-01T00:00:00+00:00",
+        )
+    )
+
+    stale_rows = store.list_harbor(stale_days=1)
+    assert [row["repo_id"] for row in stale_rows] == ["valid"]

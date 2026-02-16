@@ -4793,6 +4793,58 @@ def test_ls_stale_skips_invalid_updated_timestamp(git_repo: Path, tmp_path: Path
     assert harbor_rows == []
 
 
+def test_ls_stale_skips_non_string_updated_timestamp(git_repo: Path, tmp_path: Path) -> None:
+    """Stale filtering should skip slips with non-string updated_at values."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Numeric stale timestamp baseline",
+            "--decisions",
+            "Ensure non-string stale timestamps are skipped",
+            "--next-step",
+            "run harbor stale 1",
+            "--risks",
+            "none",
+            "--command",
+            "echo stale",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET updated_at = ? WHERE branch = ?",
+        (0, branch),
+    )
+    conn.commit()
+    conn.close()
+
+    ls_rows = json.loads(_run_dock(["ls", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert ls_rows == []
+    harbor_rows = json.loads(_run_dock(["harbor", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert harbor_rows == []
+
+
 def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
     """Combined ls filters should still obey limit and tag constraints."""
     env = dict(os.environ)

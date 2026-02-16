@@ -615,7 +615,7 @@ class SQLiteStore:
             for item in results:
                 try:
                     updated = datetime.fromisoformat(item["updated_at"])
-                except ValueError:
+                except (TypeError, ValueError):
                     continue
                 if updated.tzinfo is None:
                     updated = updated.replace(tzinfo=timezone.utc)
