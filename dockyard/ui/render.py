@@ -12,7 +12,7 @@ from rich.table import Table
 from dockyard.models import Checkpoint
 
 
-def format_age(timestamp_iso: str) -> str:
+def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
         then = datetime.fromisoformat(timestamp_iso)
@@ -111,14 +111,24 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
 
     status_badge = {"green": "[green]G[/green]", "yellow": "[yellow]Y[/yellow]", "red": "[red]R[/red]"}
     for row in rows:
-        next_step = row["next_steps"][0] if row["next_steps"] else row["objective"][:60]
+        berth = row.get("berth_name") or row.get("repo_id", "(unknown)")
+        branch = row.get("branch", "")
+        status = row.get("status", "unknown")
+        next_steps = row.get("next_steps")
+        objective = row.get("objective") or ""
+        if not isinstance(objective, str):
+            objective = str(objective)
+        if isinstance(next_steps, list) and next_steps:
+            next_step = str(next_steps[0])
+        else:
+            next_step = objective[:60]
         table.add_row(
-            row["berth_name"],
-            row["branch"],
-            status_badge.get(row["status"], row["status"]),
-            format_age(row["updated_at"]),
+            str(berth),
+            str(branch),
+            status_badge.get(str(status), str(status)),
+            format_age(row.get("updated_at")),
             next_step,
-            str(row["open_review_count"]),
+            str(row.get("open_review_count", 0)),
         )
     console.print(table)
 
@@ -134,13 +144,16 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
     table.add_column("Timestamp")
     table.add_column("Snippet")
     for row in rows:
+        berth = row.get("berth_name") or row.get("repo_id", "(unknown)")
+        branch = row.get("branch", "")
+        created_at = row.get("created_at", "")
         snippet = row.get("snippet") or ""
         if not isinstance(snippet, str):
             snippet = str(snippet)
         table.add_row(
-            row.get("berth_name", row["repo_id"]),
-            row["branch"],
-            row["created_at"],
+            str(berth),
+            str(branch),
+            str(created_at),
             snippet[:120],
         )
     console.print(table)

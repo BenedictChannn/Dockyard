@@ -137,6 +137,24 @@ def test_print_search_handles_non_string_snippet() -> None:
     assert "repo_non_string" in output
 
 
+def test_print_search_handles_non_string_created_at() -> None:
+    """Search renderer should tolerate non-string timestamp payloads."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_created_at",
+                "branch": "main",
+                "created_at": None,
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_created_at" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -166,6 +184,27 @@ def test_print_harbor_falls_back_to_raw_status_for_unknown_value() -> None:
     assert "blue" in output
 
 
+def test_print_harbor_falls_back_to_repo_id_without_berth_name() -> None:
+    """Harbor renderer should fallback to repo_id when berth name missing."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "repo_id": "repo_harbor_fallback",
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_harbor_fallback" in output
+
+
 def test_print_harbor_handles_non_string_updated_at() -> None:
     """Harbor rendering should tolerate non-string updated_at values."""
     console = Console(record=True, width=120)
@@ -185,3 +224,24 @@ def test_print_harbor_handles_non_string_updated_at() -> None:
     )
     output = console.export_text()
     assert "unknown" in output
+
+
+def test_print_harbor_handles_non_string_objective() -> None:
+    """Harbor renderer should tolerate non-string objective payloads."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-z",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": 123,
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "123" in output
