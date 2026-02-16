@@ -126,5 +126,7 @@ Parser normalization notes:
 - `resume commands` accepts `-`, `*`, or `+` bullet markers.
 - Resume command bullets may be backtick-wrapped (for renderer parity) or
   plain text when manually edited.
+- Resume command bullets accept optional spacing after bullet delimiters
+  (for example, both `- cmd` and `-cmd` parse correctly).
 - Section heading lookup normalizes spacing and slash variants (for example,
   `Decisions / Findings`, `Risks/Review Needed`, and `Resume   Commands`).
