@@ -4648,6 +4648,45 @@ def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     assert len(rows) >= 1
 
 
+def test_harbor_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should accept stale threshold of zero days."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor stale zero baseline",
+            "--decisions",
+            "Need one slip for harbor stale 0",
+            "--next-step",
+            "run harbor stale 0",
+            "--risks",
+            "none",
+            "--command",
+            "echo stale",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["harbor", "--stale", "0", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) >= 1
+
+
 def test_ls_stale_handles_naive_updated_timestamp(git_repo: Path, tmp_path: Path) -> None:
     """Stale filtering should handle naive updated timestamps without crashing."""
     env = dict(os.environ)
