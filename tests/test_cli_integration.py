@@ -3340,6 +3340,30 @@ def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) 
     assert "$  -> exit" not in output
 
 
+def test_resume_run_all_blank_commands_is_noop_success(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run should no-op successfully when all commands are blank."""
+    env = _seed_checkpoint_for_run(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="All blank run commands",
+        decisions="Rewrite commands payload to blank values",
+        next_step="Run resume --run",
+        resume_commands=["echo placeholder"],
+    )
+
+    db_path = Path(env["DOCKYARD_HOME"]) / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET resume_commands_json = ?",
+        (json.dumps(["   ", "\n\t", ""]),),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
+    assert "-> exit" not in output
+
+
 def test_resume_run_with_berth_executes_in_repo_root(
     git_repo: Path,
     tmp_path: Path,
