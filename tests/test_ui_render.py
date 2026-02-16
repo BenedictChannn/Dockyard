@@ -146,3 +146,24 @@ def test_print_harbor_falls_back_to_raw_status_for_unknown_value() -> None:
     )
     output = console.export_text()
     assert "blue" in output
+
+
+def test_print_harbor_handles_non_string_updated_at() -> None:
+    """Harbor rendering should tolerate non-string updated_at values."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-y",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": None,
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "unknown" in output
