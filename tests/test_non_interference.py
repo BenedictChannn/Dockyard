@@ -1115,6 +1115,12 @@ def test_build_link_command_omits_root_by_default() -> None:
     ]
 
 
+def test_build_links_command_omits_root_by_default() -> None:
+    """Links command builder should omit root argument by default."""
+    command = _build_links_command()
+    assert command == ["python3", "-m", "dockyard", "links"]
+
+
 def test_build_link_and_links_commands_include_root_when_provided() -> None:
     """Link and links command builders should include root override."""
     root = Path("/tmp/demo-repo")
@@ -1137,6 +1143,22 @@ def test_build_link_and_links_commands_include_root_when_provided() -> None:
         "links",
         "--root",
         str(root),
+    ]
+
+
+def test_build_metadata_commands_in_repo_uses_default_link_url() -> None:
+    """In-repo metadata command matrix should use default link URL command."""
+    commands = _build_metadata_commands_in_repo(Path("/tmp/demo-repo"), "main")
+    assert commands == [_build_link_command(NON_INTERFERENCE_LINK_URL)]
+
+
+def test_build_metadata_commands_root_override_uses_root_scoped_commands() -> None:
+    """Root-override metadata command matrix should include root-scoped commands."""
+    root = Path("/tmp/demo-repo")
+    commands = _build_metadata_commands_root_override(root, "main")
+    assert commands == [
+        _build_link_command(NON_INTERFERENCE_ROOT_OVERRIDE_LINK_URL, root=root),
+        _build_links_command(root=root),
     ]
 
 
