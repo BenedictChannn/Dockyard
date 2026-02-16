@@ -61,6 +61,9 @@ RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN
 RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
     case.name: case.label for case in RUN_COMMAND_CASES
 }
+RUN_SCOPE_COMMAND_INDEX: dict[RunCommandName, int] = {
+    command_name: index for index, command_name in enumerate(RUN_SCOPE_COMMANDS)
+}
 RUN_SCOPE_VARIANTS: tuple[RunScopeVariantMeta, ...] = (
     RunScopeVariantMeta("default", False, False, "repo", "default", "default"),
     RunScopeVariantMeta("berth", True, False, "tmp", "berth", "berth"),
@@ -87,7 +90,10 @@ RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
-    case for case in RUN_SCOPE_CASES if case.include_branch
+    sorted(
+        (case for case in RUN_SCOPE_CASES if case.include_branch),
+        key=lambda case: RUN_SCOPE_COMMAND_INDEX[case.command_name],
+    )
 )
 RunDefaultSuccessScenario = tuple[RunCommandName, str, str, str, RunCommands]
 RunDefaultFailureScenario = tuple[RunCommandName, str, str, str, str, str]

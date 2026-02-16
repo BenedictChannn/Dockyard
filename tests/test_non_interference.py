@@ -100,7 +100,9 @@ RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandMeta, ...] = (
     RunScopeCommandMeta("undock", "undock alias"),
 )
 RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_SCOPE_COMMAND_CASES)
-RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
+RUN_SCOPE_COMMAND_ORDER: dict[RunCommandName, int] = {
+    name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)
+}
 RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
     case.name: case.label for case in RUN_SCOPE_COMMAND_CASES
 }
