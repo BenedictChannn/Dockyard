@@ -75,6 +75,19 @@ def test_pair_with_context_preserves_order_for_empty_and_non_empty() -> None:
     )
 
 
+def test_pair_with_context_does_not_call_builder_for_empty_input() -> None:
+    """Empty input should skip context builder invocation."""
+    call_count = 0
+
+    def _builder(_case: _CaseMeta) -> str:
+        nonlocal call_count
+        call_count += 1
+        return "unused"
+
+    assert pair_with_context((), context_builder=_builder) == ()
+    assert call_count == 0
+
+
 def test_pair_scope_cases_with_context_uses_scope_fields() -> None:
     """pair_scope_cases_with_context should pass command and scope flags."""
     cases = (
