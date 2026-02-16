@@ -1722,6 +1722,55 @@ def test_resume_output_falls_back_for_blank_project_label(
     assert f"Project/Branch: (unknown) / {branch}" in result.stdout
 
 
+def test_resume_handoff_preserves_literal_markup_like_text(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume and handoff output should preserve literal bracketed text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "[red]Literal objective[/red]",
+            "--decisions",
+            "[bold]Literal decision[/bold]",
+            "--next-step",
+            "[green]Literal step[/green]",
+            "--risks",
+            "[yellow]Literal risk[/yellow]",
+            "--command",
+            "[blue]echo literal[/blue]",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_output = _run_dock(["resume"], cwd=git_repo, env=env).stdout
+    assert "Objective: [red]Literal objective[/red]" in resume_output
+    assert "1. [green]Literal step[/green]" in resume_output
+
+    handoff_output = _run_dock(["resume", "--handoff"], cwd=git_repo, env=env).stdout
+    assert "- Objective: [red]Literal objective[/red]" in handoff_output
+    assert "  - [green]Literal step[/green]" in handoff_output
+    assert "- Risks: [yellow]Literal risk[/yellow]" in handoff_output
+    assert "  - [blue]echo literal[/blue]" in handoff_output
+
+
 def test_resume_by_berth_from_outside_repo_with_handoff(
     git_repo: Path,
     tmp_path: Path,
@@ -3476,6 +3525,72 @@ def test_review_add_trims_reason_whitespace(git_repo: Path, tmp_path: Path) -> N
 
     opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
     assert "reason: padded_reason" in opened.stdout
+
+
+def test_review_outputs_preserve_literal_markup_like_text(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review list/open output should preserve literal bracketed text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review literal text baseline",
+            "--decisions",
+            "Need context for manual review add",
+            "--next-step",
+            "create review with bracketed fields",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "[red]urgent[/red]",
+            "--severity",
+            "low",
+            "--notes",
+            "[bold]needs eyes[/bold]",
+            "--file",
+            "[cyan]src/core.py[/cyan]",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "[red]urgent[/red]" in listed
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "reason: [red]urgent[/red]" in opened
+    assert "notes: [bold]needs eyes[/bold]" in opened
+    assert "files: [cyan]src/core.py[/cyan]" in opened
 
 
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:

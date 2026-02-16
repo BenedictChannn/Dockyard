@@ -11,6 +11,7 @@ from typing import Any
 import click
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 
 from dockyard.config import load_runtime_config, resolve_paths
@@ -65,6 +66,11 @@ def _comma_or_pipe_values(raw: str) -> list[str]:
 def _emit_json(payload: Any) -> None:
     """Emit machine-readable JSON without Rich wrapping effects."""
     typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def _safe_text(value: Any) -> str:
+    """Escape Rich markup tokens in user-visible text values."""
+    return escape(str(value))
 
 
 def _normalize_editor_text(raw: str) -> str:
@@ -480,11 +486,13 @@ def save_command(
         create_review_on_trigger=auto_review,
         review_heuristics=runtime_config.review_heuristics,
     )
-    console.print(f"[green]Saved checkpoint[/green] {checkpoint.id} for {checkpoint.branch}")
+    console.print(
+        f"[green]Saved checkpoint[/green] {_safe_text(checkpoint.id)} for {_safe_text(checkpoint.branch)}"
+    )
     if triggers:
-        console.print(f"[yellow]Review triggers:[/yellow] {', '.join(triggers)}")
+        console.print(f"[yellow]Review triggers:[/yellow] {_safe_text(', '.join(triggers))}")
     if review_id:
-        console.print(f"[yellow]Created review item:[/yellow] {review_id}")
+        console.print(f"[yellow]Created review item:[/yellow] {_safe_text(review_id)}")
 
 
 @app.command("resume")
@@ -540,15 +548,15 @@ def resume_command(
         handoff_block = "\n".join(
             [
                 "### Dockyard Handoff",
-                f"- Repo ID: {checkpoint.repo_id}",
-                f"- Branch: {checkpoint.branch}",
-                f"- Objective: {checkpoint.objective}",
+                f"- Repo ID: {_safe_text(checkpoint.repo_id)}",
+                f"- Branch: {_safe_text(checkpoint.branch)}",
+                f"- Objective: {_safe_text(checkpoint.objective)}",
                 "- Next Steps:",
-                *[f"  - {step}" for step in checkpoint.next_steps],
-                f"- Risks: {checkpoint.risks_review}",
+                *[f"  - {_safe_text(step)}" for step in checkpoint.next_steps],
+                f"- Risks: {_safe_text(checkpoint.risks_review)}",
                 f"- Verification: tests={checkpoint.verification.tests_run}, build={checkpoint.verification.build_ok}, lint={checkpoint.verification.lint_ok}",
                 "- Commands:",
-                *[f"  - {cmd}" for cmd in checkpoint.resume_commands],
+                *[f"  - {_safe_text(cmd)}" for cmd in checkpoint.resume_commands],
             ]
         )
         console.print(Panel.fit(handoff_block, title="Agent Handoff", border_style="cyan"))
@@ -560,7 +568,7 @@ def resume_command(
             raise DockyardError("Cannot resolve repository root for --run execution.")
         success, results = run_commands(checkpoint.resume_commands, cwd=berth_record.root_path)
         for cmd, code in results:
-            console.print(f"$ {cmd} -> exit {code}")
+            console.print(f"$ {_safe_text(cmd)} -> exit {code}")
         if not success:
             raise SystemExit(1)
 
@@ -646,7 +654,10 @@ def review_list(
         console.print("No review items.")
         return
     lines = [
-        f"{item.id} | {item.severity} | {item.status} | {item.repo_id}/{item.branch} | {item.reason}"
+        (
+            f"{_safe_text(item.id)} | {_safe_text(item.severity)} | {_safe_text(item.status)}"
+            f" | {_safe_text(item.repo_id)}/{_safe_text(item.branch)} | {_safe_text(item.reason)}"
+        )
         for item in items
     ]
     console.print("\n".join(lines))
@@ -693,7 +704,7 @@ def review_add(
     )
     store.add_review_item(item)
     store.recompute_slip_status(repo_id=repo, branch=branch)
-    console.print(f"[green]Created review[/green] {item.id}")
+    console.print(f"[green]Created review[/green] {_safe_text(item.id)}")
 
 
 @review_app.command("done")
@@ -706,7 +717,7 @@ def review_done(review_id: str = typer.Argument(..., help="Review item ID.")) ->
     if not store.mark_review_done(review_id):
         raise DockyardError(f"Review item not found: {review_id}")
     store.recompute_slip_status(repo_id=review.repo_id, branch=review.branch)
-    console.print(f"[green]Resolved review[/green] {review_id}")
+    console.print(f"[green]Resolved review[/green] {_safe_text(review_id)}")
 
 
 @review_app.command("open")
@@ -720,16 +731,16 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
         Panel.fit(
             "\n".join(
                 [
-                    f"id: {item.id}",
-                    f"repo: {item.repo_id}",
-                    f"branch: {item.branch}",
-                    f"created_at: {item.created_at}",
-                    f"checkpoint_id: {item.checkpoint_id or ''}",
-                    f"severity: {item.severity}",
-                    f"status: {item.status}",
-                    f"reason: {item.reason}",
-                    f"notes: {item.notes or ''}",
-                    f"files: {', '.join(item.files) if item.files else ''}",
+                    f"id: {_safe_text(item.id)}",
+                    f"repo: {_safe_text(item.repo_id)}",
+                    f"branch: {_safe_text(item.branch)}",
+                    f"created_at: {_safe_text(item.created_at)}",
+                    f"checkpoint_id: {_safe_text(item.checkpoint_id or '')}",
+                    f"severity: {_safe_text(item.severity)}",
+                    f"status: {_safe_text(item.status)}",
+                    f"reason: {_safe_text(item.reason)}",
+                    f"notes: {_safe_text(item.notes or '')}",
+                    f"files: {_safe_text(', '.join(item.files) if item.files else '')}",
                 ]
             ),
             title="Review Item",
@@ -741,7 +752,10 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
         if checkpoint:
             console.print(
                 Panel.fit(
-                    f"checkpoint: {checkpoint.id}\nobjective: {checkpoint.objective}",
+                    (
+                        f"checkpoint: {_safe_text(checkpoint.id)}\n"
+                        f"objective: {_safe_text(checkpoint.objective)}"
+                    ),
                     title="Associated Checkpoint",
                     border_style="cyan",
                 )
@@ -749,7 +763,10 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
         else:
             console.print(
                 Panel.fit(
-                    f"checkpoint_id: {item.checkpoint_id}\nstatus: missing from index",
+                    (
+                        f"checkpoint_id: {_safe_text(item.checkpoint_id)}\n"
+                        "status: missing from index"
+                    ),
                     title="Associated Checkpoint",
                     border_style="red",
                 )
@@ -772,7 +789,7 @@ def link_command(
         created_at=utc_now_iso(),
     )
     store.add_link(item)
-    console.print(f"[green]Linked[/green] {url}")
+    console.print(f"[green]Linked[/green] {_safe_text(url)}")
 
 
 @app.command("links")
@@ -787,7 +804,7 @@ def links_command(
         console.print("No links for current slip.")
         return
     for item in items:
-        console.print(f"{item.created_at} | {item.url}")
+        console.print(f"{_safe_text(item.created_at)} | {_safe_text(item.url)}")
 
 
 def main() -> None:
@@ -795,10 +812,10 @@ def main() -> None:
     try:
         app(standalone_mode=False)
     except DockyardError as err:
-        console.print(f"[red]Error:[/red] {err}")
+        console.print(f"[red]Error:[/red] {_safe_text(err)}")
         raise SystemExit(2) from err
     except NotGitRepositoryError as err:
-        console.print(f"[red]Error:[/red] {err}")
+        console.print(f"[red]Error:[/red] {_safe_text(err)}")
         raise SystemExit(2) from err
     except click.ClickException as err:
         err.show()
