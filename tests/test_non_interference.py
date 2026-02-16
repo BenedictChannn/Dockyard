@@ -8,10 +8,9 @@ import re
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from operator import attrgetter
 from pathlib import Path
 from types import MappingProxyType
-from typing import Literal, TypeVar
+from typing import Literal, Protocol
 
 import pytest
 
@@ -26,7 +25,12 @@ SaveCommandName = Literal["save", "s", "dock"]
 DashboardCommandName = Literal["ls", "harbor"]
 SearchCommandName = Literal["search", "f"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
-CaseT = TypeVar("CaseT")
+
+
+class SupportsCaseId(Protocol):
+    """Protocol for metadata records that include pytest case IDs."""
+
+    case_id: str
 
 
 @dataclass(frozen=True)
@@ -370,9 +374,9 @@ def _run_scope_cases_with_context(
     )
 
 
-def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
+def _case_ids(cases: Sequence[SupportsCaseId]) -> tuple[str, ...]:
     """Return pytest ID labels derived from metadata collection."""
-    return tuple(get_id(case) for case in cases)
+    return tuple(case.case_id for case in cases)
 
 
 def _build_no_command_run_scope_scenarios(
@@ -1142,10 +1146,7 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
 RESUME_READ_PATH_SCENARIOS: tuple[ResumeReadPathScenarioMeta, ...] = _build_resume_read_path_scenarios(
     RESUME_READ_PATH_CASES,
 )
-RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(
-    RESUME_READ_PATH_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
+RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(RESUME_READ_PATH_SCENARIOS)
 
 METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
     MetadataScopeMeta(
@@ -1166,10 +1167,7 @@ METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
 METADATA_SCOPE_SCENARIOS: tuple[MetadataScopeScenarioMeta, ...] = _build_metadata_scope_scenarios(
     METADATA_SCOPE_CASES,
 )
-METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
-    METADATA_SCOPE_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
+METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(METADATA_SCOPE_SCENARIOS)
 SAVE_NO_PROMPT_SCENARIOS: tuple[SaveNoPromptScenarioMeta, ...] = _build_save_no_prompt_scenarios(
     SAVE_COMMAND_CASES,
 )
@@ -1179,32 +1177,17 @@ SAVE_EDITOR_SCENARIOS: tuple[SaveEditorScenarioMeta, ...] = _build_save_editor_s
 SAVE_TEMPLATE_SCENARIOS: tuple[SaveTemplateScenarioMeta, ...] = _build_save_template_scenarios(
     SAVE_COMMAND_CASES,
 )
-SAVE_NO_PROMPT_IDS: tuple[str, ...] = _case_ids(
-    SAVE_NO_PROMPT_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
-SAVE_EDITOR_IDS: tuple[str, ...] = _case_ids(
-    SAVE_EDITOR_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
-SAVE_TEMPLATE_IDS: tuple[str, ...] = _case_ids(
-    SAVE_TEMPLATE_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
+SAVE_NO_PROMPT_IDS: tuple[str, ...] = _case_ids(SAVE_NO_PROMPT_SCENARIOS)
+SAVE_EDITOR_IDS: tuple[str, ...] = _case_ids(SAVE_EDITOR_SCENARIOS)
+SAVE_TEMPLATE_IDS: tuple[str, ...] = _case_ids(SAVE_TEMPLATE_SCENARIOS)
 RUN_NO_COMMAND_SCENARIOS: tuple[RunNoCommandScenarioMeta, ...] = _build_no_command_run_scope_scenarios(
     RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
 )
-RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(
-    RUN_NO_COMMAND_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
+RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_NO_COMMAND_SCENARIOS)
 RUN_OPT_IN_MUTATION_SCENARIOS: tuple[RunOptInMutationScenarioMeta, ...] = (
     _build_opt_in_mutation_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
 )
-RUN_OPT_IN_MUTATION_IDS: tuple[str, ...] = _case_ids(
-    RUN_OPT_IN_MUTATION_SCENARIOS,
-    get_id=attrgetter("case_id"),
-)
+RUN_OPT_IN_MUTATION_IDS: tuple[str, ...] = _case_ids(RUN_OPT_IN_MUTATION_SCENARIOS)
 
 
 @pytest.mark.parametrize(

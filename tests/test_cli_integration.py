@@ -7,12 +7,11 @@ import os
 import re
 import sqlite3
 import subprocess
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from operator import attrgetter
 from pathlib import Path
 from types import MappingProxyType
-from typing import Literal, TypeVar
+from typing import Literal, Protocol
 
 import pytest
 
@@ -21,7 +20,12 @@ RunCommands = Sequence[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
-CaseT = TypeVar("CaseT")
+
+
+class SupportsCaseId(Protocol):
+    """Protocol for metadata records that include pytest case IDs."""
+
+    case_id: str
 
 
 @dataclass(frozen=True)
@@ -185,9 +189,9 @@ def _run_scope_case_branch_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:
     )
 
 
-def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
+def _case_ids(cases: Sequence[SupportsCaseId]) -> tuple[str, ...]:
     """Return pytest ID labels derived from metadata collection."""
-    return tuple(get_id(case) for case in cases)
+    return tuple(case.case_id for case in cases)
 
 
 RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
@@ -396,26 +400,11 @@ RUN_BRANCH_FAILURE_CASES: tuple[RunBranchFailureCaseMeta, ...] = _build_branch_r
 RUN_NO_COMMAND_CASES: tuple[RunNoCommandCaseMeta, ...] = _build_no_command_run_scope_scenarios(
     RUN_SCOPE_CASES,
 )
-RUN_DEFAULT_SUCCESS_IDS: tuple[str, ...] = _case_ids(
-    RUN_DEFAULT_SUCCESS_CASES,
-    get_id=attrgetter("case_id"),
-)
-RUN_DEFAULT_FAILURE_IDS: tuple[str, ...] = _case_ids(
-    RUN_DEFAULT_FAILURE_CASES,
-    get_id=attrgetter("case_id"),
-)
-RUN_BRANCH_SUCCESS_IDS: tuple[str, ...] = _case_ids(
-    RUN_BRANCH_SUCCESS_CASES,
-    get_id=attrgetter("case_id"),
-)
-RUN_BRANCH_FAILURE_IDS: tuple[str, ...] = _case_ids(
-    RUN_BRANCH_FAILURE_CASES,
-    get_id=attrgetter("case_id"),
-)
-RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(
-    RUN_NO_COMMAND_CASES,
-    get_id=attrgetter("case_id"),
-)
+RUN_DEFAULT_SUCCESS_IDS: tuple[str, ...] = _case_ids(RUN_DEFAULT_SUCCESS_CASES)
+RUN_DEFAULT_FAILURE_IDS: tuple[str, ...] = _case_ids(RUN_DEFAULT_FAILURE_CASES)
+RUN_BRANCH_SUCCESS_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_SUCCESS_CASES)
+RUN_BRANCH_FAILURE_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_FAILURE_CASES)
+RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_NO_COMMAND_CASES)
 
 
 def _run_dock(
