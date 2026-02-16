@@ -110,6 +110,7 @@ Harbor dashboard listing slips across berths.
 Validation:
 - `--stale` must be `>= 0`
 - `--limit` must be `>= 1`
+- `--tag` must be non-empty when provided
 
 `ls --json` returns `[]` when no slips are indexed.
 
@@ -151,6 +152,7 @@ This no-match behavior is consistent even when `--tag`, `--repo`, or
 Validation:
 - query must be non-empty
 - `--limit` must be `>= 1`
+- `--tag` must be non-empty when provided
 - `--repo` must be non-empty when provided
 - `--branch` must be non-empty when provided
 

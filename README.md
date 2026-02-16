@@ -124,6 +124,8 @@ Filters:
 python3 -m dockyard ls --stale 3 --tag mvp --limit 20
 ```
 
+`--tag` values are trimmed; blank values are rejected.
+
 ### 4) Search objectives, decisions, next steps, and risks
 
 ```bash
@@ -141,6 +143,7 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --json
 python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
+# --tag must be non-empty when provided
 # --repo must be non-empty when provided
 # --branch must be non-empty when provided
 # in --json mode, no matches are returned as []

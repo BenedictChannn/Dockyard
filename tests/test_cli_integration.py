@@ -6070,6 +6070,117 @@ def test_ls_and_search_validate_limit_arguments(tmp_path: Path) -> None:
     assert "Traceback" not in search_output
 
 
+def test_ls_rejects_blank_tag_filter(tmp_path: Path) -> None:
+    """LS should reject blank tag filter values when provided."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["ls", "--tag", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--tag must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_search_rejects_blank_tag_filter(tmp_path: Path) -> None:
+    """Search should reject blank tag filter values when provided."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["search", "query", "--tag", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--tag must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_ls_tag_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
+    """LS should resolve tag filters after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trimmed ls tag objective",
+            "--decisions",
+            "Verify ls tag filter trimming",
+            "--next-step",
+            "run ls tag filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["ls", "--tag", "  alpha  ", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) >= 1
+
+
+def test_search_tag_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
+    """Search should resolve tag filters after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trimmed search tag objective",
+            "--decisions",
+            "Verify search tag filter trimming",
+            "--next-step",
+            "run search tag filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["search", "Trimmed search tag objective", "--tag", "  alpha  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert rows[0]["objective"] == "Trimmed search tag objective"
+
+
 def test_search_rejects_blank_branch_filter(git_repo: Path, tmp_path: Path) -> None:
     """Search should reject blank branch filter values when provided."""
     env = dict(os.environ)

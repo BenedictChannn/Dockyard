@@ -660,7 +660,8 @@ def ls_command(
     store, _ = _store()
     stale = _require_minimum_int(stale, minimum=0, field_name="--stale")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit")
-    rows = store.list_harbor(stale_days=stale, tag=tag, limit=limit)
+    normalized_tag = _normalize_non_empty_option(tag, "--tag")
+    rows = store.list_harbor(stale_days=stale, tag=normalized_tag, limit=limit)
     if as_json:
         _emit_json(rows)
     else:
@@ -686,6 +687,7 @@ def search_command(
     if not cleaned_query:
         raise typer.BadParameter("Query must be a non-empty string.")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
+    normalized_tag = _normalize_non_empty_option(tag, "--tag")
     repo_filter = _normalize_optional_text(repo)
     normalized_branch = _normalize_non_empty_option(branch, "--branch")
     if repo and repo_filter is None:
@@ -697,7 +699,7 @@ def search_command(
     rows = search_service(
         store,
         query=cleaned_query,
-        tag=tag,
+        tag=normalized_tag,
         repo=repo_filter,
         branch=normalized_branch,
         limit=limit,
