@@ -545,13 +545,16 @@ def resume_command(
 ) -> None:
     """Resume latest checkpoint for current repo or selected berth."""
     store, _ = _store()
+    normalized_berth = _normalize_optional_text(berth)
 
     repo_id: str | None = None
     berth_record = None
-    if berth:
-        berth_record = store.resolve_berth(berth)
+    if berth is not None and normalized_berth is None:
+        raise typer.BadParameter("Berth must be a non-empty string.")
+    if normalized_berth:
+        berth_record = store.resolve_berth(normalized_berth)
         if not berth_record:
-            raise DockyardError(f"Unknown berth: {berth}")
+            raise DockyardError(f"Unknown berth: {normalized_berth}")
         repo_id = berth_record.repo_id
     else:
         try:
@@ -653,9 +656,11 @@ def search_command(
     if not cleaned_query:
         raise typer.BadParameter("Query must be a non-empty string.")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
-    repo_filter = repo
-    if repo:
-        berth = store.resolve_berth(repo)
+    repo_filter = _normalize_optional_text(repo)
+    if repo and repo_filter is None:
+        raise typer.BadParameter("--repo must be a non-empty string.")
+    if repo_filter:
+        berth = store.resolve_berth(repo_filter)
         if berth:
             repo_filter = berth.repo_id
     rows = search_service(
@@ -728,22 +733,24 @@ def review_add(
         raise typer.BadParameter("--reason must be a non-empty string.")
     normalized_notes = _normalize_optional_text(notes)
     normalized_checkpoint_id = _normalize_optional_text(checkpoint_id)
-    if (repo and not branch) or (branch and not repo):
+    normalized_repo = _normalize_optional_text(repo)
+    normalized_branch = _normalize_optional_text(branch)
+    if (normalized_repo and not normalized_branch) or (normalized_branch and not normalized_repo):
         raise DockyardError("Provide both --repo and --branch when overriding context.")
-    if repo and branch:
+    if normalized_repo and normalized_branch:
         # Allow using berth name for ergonomics in cross-repo contexts.
-        berth = store.resolve_berth(repo)
+        berth = store.resolve_berth(normalized_repo)
         if berth:
-            repo = berth.repo_id
+            normalized_repo = berth.repo_id
     else:
         snapshot = inspect_repository()
-        repo = repo or snapshot.repo_id
-        branch = branch or snapshot.branch
+        normalized_repo = normalized_repo or snapshot.repo_id
+        normalized_branch = normalized_branch or snapshot.branch
     normalized_files = _coerce_text_items(file)
     item = ReviewItem(
         id=f"rev_{uuid.uuid4().hex[:10]}",
-        repo_id=repo,
-        branch=branch,
+        repo_id=normalized_repo,
+        branch=normalized_branch,
         checkpoint_id=normalized_checkpoint_id,
         created_at=utc_now_iso(),
         reason=normalized_reason,
@@ -753,7 +760,7 @@ def review_add(
         files=normalized_files,
     )
     store.add_review_item(item)
-    store.recompute_slip_status(repo_id=repo, branch=branch)
+    store.recompute_slip_status(repo_id=normalized_repo, branch=normalized_branch)
     console.print(f"[green]Created review[/green] {_safe_text(item.id)}")
 
 

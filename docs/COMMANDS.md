@@ -90,6 +90,7 @@ Notes:
 - Blank objective/risks values in handoff render as `(none)` for explicitness.
 - `--run` command labels in output are compacted to one-line previews.
 - `--run` ignores blank command entries after payload normalization.
+- BERTH argument must be non-empty when provided.
 
 ## `ls` (`harbor`)
 
@@ -146,6 +147,7 @@ This no-match behavior is consistent even when `--tag`, `--repo`, or
 Validation:
 - query must be non-empty
 - `--limit` must be `>= 1`
+- `--repo` must be non-empty when provided
 
 ## `review`
 
@@ -178,6 +180,7 @@ python3 -m dockyard review add --reason "manual" --severity low --repo my_repo -
 `review add` ignores blank `--file` entries.
 Optional `--notes` and `--checkpoint-id` values are trimmed; blank values are
 treated as missing.
+Override values passed to `--repo/--branch` are also trimmed before lookup.
 
 ### Mark done
 
