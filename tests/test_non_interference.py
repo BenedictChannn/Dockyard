@@ -1201,37 +1201,40 @@ def _build_search_read_commands(command_name: SearchCommandName, repo_name: str,
         ],
     ]
     if command_name == "f":
-        commands.extend(
-            [
-                ["python3", "-m", "dockyard", command_name, "baseline", "--repo", repo_name, "--json"],
-                ["python3", "-m", "dockyard", command_name, "baseline", "--branch", base_branch, "--json"],
-                [
-                    "python3",
-                    "-m",
-                    "dockyard",
-                    command_name,
-                    "baseline",
-                    "--tag",
-                    "baseline",
-                    "--repo",
-                    repo_name,
-                ],
-                [
-                    "python3",
-                    "-m",
-                    "dockyard",
-                    command_name,
-                    "baseline",
-                    "--tag",
-                    "baseline",
-                    "--repo",
-                    repo_name,
-                    "--branch",
-                    base_branch,
-                ],
-            ],
-        )
+        commands.extend(_build_search_alias_extra_read_commands(repo_name=repo_name, base_branch=base_branch))
     return commands
+
+
+def _build_search_alias_extra_read_commands(*, repo_name: str, base_branch: str) -> CommandMatrix:
+    """Build additional alias-only search read commands."""
+    return [
+        ["python3", "-m", "dockyard", "f", "baseline", "--repo", repo_name, "--json"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--branch", base_branch, "--json"],
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "f",
+            "baseline",
+            "--tag",
+            "baseline",
+            "--repo",
+            repo_name,
+        ],
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "f",
+            "baseline",
+            "--tag",
+            "baseline",
+            "--repo",
+            repo_name,
+            "--branch",
+            base_branch,
+        ],
+    ]
 
 
 def _build_outside_repo_read_only_commands(repo_name: str, base_branch: str) -> CommandMatrix:
