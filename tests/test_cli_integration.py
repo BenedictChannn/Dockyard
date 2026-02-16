@@ -2654,6 +2654,86 @@ def test_resume_run_with_no_commands_is_noop_success(
     assert "-> exit" not in result.stdout
 
 
+def test_resume_alias_run_with_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias `r --run` should succeed with no recorded commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume alias run",
+            "--decisions",
+            "Ensure alias run path handles empty command list",
+            "--next-step",
+            "run r --run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["r", "--run"], cwd=git_repo, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_undock_alias_run_with_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Undock alias `--run` should succeed with no recorded commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command undock alias run",
+            "--decisions",
+            "Ensure undock alias run path handles empty command list",
+            "--next-step",
+            "run undock --run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["undock", "--run"], cwd=git_repo, env=env)
+    assert "-> exit" not in result.stdout
+
+
 def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run should ignore blank command entries after coercion."""
     env = dict(os.environ)
