@@ -22,6 +22,7 @@ RunCommands = Sequence[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
+DOCKYARD_COMMAND_PREFIX: tuple[str, ...] = ("python3", "-m", "dockyard")
 
 
 @dataclass(frozen=True)
@@ -398,7 +399,7 @@ def _run_dock(
         Completed process result.
     """
     completed = subprocess.run(
-        ["python3", "-m", "dockyard", *args],
+        _dockyard_command(*args),
         cwd=str(cwd),
         env=env,
         check=False,
@@ -445,6 +446,31 @@ def _build_run_args(
 def _resolve_run_cwd(git_repo: Path, tmp_path: Path, run_cwd_kind: RunCwdKind) -> Path:
     """Resolve run command cwd from run-scope selector."""
     return git_repo if run_cwd_kind == "repo" else tmp_path
+
+
+def _dockyard_command(*args: str) -> list[str]:
+    """Build dockyard command with shared Python module prefix."""
+    return [*DOCKYARD_COMMAND_PREFIX, *args]
+
+
+def test_dockyard_command_helper_uses_shared_prefix() -> None:
+    """Dockyard command helper should prepend the dockyard module prefix."""
+    assert _dockyard_command("resume", "--json") == [
+        "python3",
+        "-m",
+        "dockyard",
+        "resume",
+        "--json",
+    ]
+
+
+def test_dockyard_command_helper_returns_fresh_lists() -> None:
+    """Dockyard command helper should return a fresh list per invocation."""
+    first = _dockyard_command("ls")
+    second = _dockyard_command("ls")
+
+    first.append("--json")
+    assert second == ["python3", "-m", "dockyard", "ls"]
 
 
 def test_build_run_args_renders_expected_scope_variants(tmp_path: Path) -> None:
