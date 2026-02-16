@@ -100,3 +100,4 @@ def test_emit_json_handles_list_payload(monkeypatch: pytest.MonkeyPatch) -> None
     _emit_json([])
 
     assert captured == ["[]"]
+    assert "\x1b[" not in captured[0]
