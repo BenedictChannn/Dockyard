@@ -5071,6 +5071,56 @@ def test_harbor_alias_falls_back_for_blank_branch_text(git_repo: Path, tmp_path:
     assert "(unknown)" in output
 
 
+def test_harbor_alias_falls_back_for_blank_timestamp(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should show unknown age when slip timestamp is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor blank timestamp baseline",
+            "--decisions",
+            "Fallback timestamp rendering should remain explicit",
+            "--next-step",
+            "run harbor",
+            "--risks",
+            "none",
+            "--command",
+            "echo harbor",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET updated_at = ? WHERE branch = ?",
+        ("   ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
+    assert "unknown" in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
