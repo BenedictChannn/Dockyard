@@ -4208,6 +4208,65 @@ def test_review_open_handles_scalar_files_payload(git_repo: Path, tmp_path: Path
     assert "files: src/scalar.py" in opened
 
 
+def test_review_add_ignores_blank_file_entries(git_repo: Path, tmp_path: Path) -> None:
+    """Review add should drop blank file entries before persistence."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review file normalization baseline",
+            "--decisions",
+            "Ensure blank --file values are ignored",
+            "--next-step",
+            "open created review",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "file normalization",
+            "--severity",
+            "low",
+            "--file",
+            "   ",
+            "--file",
+            "src/real.py",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "files: src/real.py" in opened
+    assert "files: (none)" not in opened
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)
@@ -7379,6 +7438,23 @@ def test_link_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path)
     linked = _run_dock(["link", multiline_url], cwd=git_repo, env=env).stdout
     assert "https://example.com/line-one line-two" in linked
     assert "https://example.com/line-one\nline-two" not in linked
+
+
+def test_link_trims_surrounding_whitespace_from_url_input(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Link command should trim outer whitespace from URL input."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    linked = _run_dock(["link", "  https://example.com/trimmed  "], cwd=git_repo, env=env).stdout
+    assert "https://example.com/trimmed" in linked
+    assert "  https://example.com/trimmed  " not in linked
+
+    listed = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/trimmed" in listed
+    assert "  https://example.com/trimmed  " not in listed
 
 
 def test_links_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path) -> None:

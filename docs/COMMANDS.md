@@ -175,6 +175,8 @@ python3 -m dockyard review add --reason "manual" --severity low --repo my_repo -
 # --repo accepts repo_id or berth name
 ```
 
+`review add` ignores blank `--file` entries.
+
 ### Mark done
 
 ```bash
@@ -205,6 +207,7 @@ python3 -m dockyard links
 
 Validation:
 - `link` URL must be a non-empty string
+- surrounding whitespace is trimmed from URL input before persistence/display
 
 `links` output compacts multiline URL/timestamp values to single-line previews
 and uses `(unknown)` fallback text for blank fields.

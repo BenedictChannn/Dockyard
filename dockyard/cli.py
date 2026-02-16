@@ -729,6 +729,7 @@ def review_add(
         snapshot = inspect_repository()
         repo = repo or snapshot.repo_id
         branch = branch or snapshot.branch
+    normalized_files = _coerce_text_items(file)
     item = ReviewItem(
         id=f"rev_{uuid.uuid4().hex[:10]}",
         repo_id=repo,
@@ -739,7 +740,7 @@ def review_add(
         severity=normalized_severity,
         status="open",
         notes=notes,
-        files=file or [],
+        files=normalized_files,
     )
     store.add_review_item(item)
     store.recompute_slip_status(repo_id=repo, branch=branch)
