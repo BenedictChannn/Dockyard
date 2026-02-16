@@ -1413,6 +1413,62 @@ def test_resume_output_includes_required_summary_fields(
     assert positions == sorted(positions)
 
 
+def test_resume_output_handles_empty_next_steps_payload(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume output should show placeholder when checkpoint has no next steps."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Empty next steps rendering",
+            "--decisions",
+            "Corrupt next-steps list to validate fallback",
+            "--next-step",
+            "original step",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET next_steps_json = ?",
+        ("[]",),
+    )
+    conn.commit()
+    conn.close()
+
+    result = _run_dock(["resume"], cwd=git_repo, env=env)
+    assert "Next Steps:" in result.stdout
+    assert "(none recorded)" in result.stdout
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["next_steps"] == []
+
+
 def test_resume_by_berth_from_outside_repo_with_handoff(
     git_repo: Path,
     tmp_path: Path,
