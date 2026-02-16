@@ -5411,6 +5411,55 @@ def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Pat
     assert "No checkpoint matches found." in result.stdout
 
 
+def test_search_output_falls_back_for_blank_timestamp(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search output should show unknown timestamp when created_at is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Search blank timestamp objective",
+            "--decisions",
+            "Verify fallback timestamp rendering for search",
+            "--next-step",
+            "run search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE checkpoints SET created_at = ?", ("   ",))
+    conn.commit()
+    conn.close()
+
+    result = _run_dock(["search", "Search blank timestamp objective"], cwd=tmp_path, env=env)
+    assert "(unknown)" in result.stdout
+
+
 def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
     """JSON search output should remain machine-parseable when empty."""
     env = dict(os.environ)
