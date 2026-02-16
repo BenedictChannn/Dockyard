@@ -16,13 +16,13 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
-RunCommandCase = tuple[str, str]
-RUN_COMMAND_IDS = ["resume", "r_alias", "undock_alias"]
+RunCommandCase = tuple[str, str, str]
 RUN_COMMAND_CASES: list[RunCommandCase] = [
-    ("resume", "resume"),
-    ("r", "r"),
-    ("undock", "undock"),
+    ("resume", "resume", "resume"),
+    ("r", "r", "r_alias"),
+    ("undock", "undock", "undock_alias"),
 ]
+RUN_COMMAND_IDS = [case[2] for case in RUN_COMMAND_CASES]
 RUN_SCOPE_CASES: list[RunScopeCase] = [
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
@@ -67,7 +67,7 @@ def _build_default_run_success_scenarios(cases: list[RunCommandCase]) -> list[Ru
         Parameter tuples for default-scope run success tests.
     """
     scenarios: list[RunDefaultSuccessScenario] = []
-    for command_name, case_label in cases:
+    for command_name, case_label, _case_id in cases:
         scenarios.append(
             (
                 command_name,
@@ -90,7 +90,7 @@ def _build_default_run_failure_scenarios(cases: list[RunCommandCase]) -> list[Ru
         Parameter tuples for default-scope run stop-on-failure tests.
     """
     scenarios: list[RunDefaultFailureScenario] = []
-    for command_name, case_label in cases:
+    for command_name, case_label, _case_id in cases:
         scenarios.append(
             (
                 command_name,
