@@ -478,6 +478,34 @@ def test_dockyard_command_helper_supports_empty_suffix() -> None:
     assert _dockyard_command() == ["python3", "-m", "dockyard"]
 
 
+def test_run_dock_helper_accepts_expected_nonzero_exit_code(tmp_path: Path) -> None:
+    """Run helper should allow callers to assert expected non-zero exit codes."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(
+        ["--definitely-invalid-flag"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    assert result.returncode == 2
+
+
+def test_run_dock_helper_raises_on_unexpected_exit_code(tmp_path: Path) -> None:
+    """Run helper should raise assertion when return code mismatches expectation."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    with pytest.raises(AssertionError):
+        _run_dock(
+            ["--definitely-invalid-flag"],
+            cwd=tmp_path,
+            env=env,
+            expect_code=0,
+        )
+
+
 def test_build_run_args_renders_expected_scope_variants(tmp_path: Path) -> None:
     """Run-args helper should include optional berth and branch selectors."""
     git_repo = tmp_path / "demo-repo"
