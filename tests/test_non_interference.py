@@ -268,183 +268,6 @@ def _assert_opt_in_run_mutates_repo(
     assert marker_name in status_after
 
 
-def _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> <trimmed_berth> --branch <trimmed_branch> --run` mutates.
-
-    Args:
-        git_repo: Repository path where mutation should occur.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        marker_name: Marker filename expected in git status after run.
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    base_branch = _current_branch(git_repo)
-    _assert_opt_in_run_mutates_repo(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(
-            command_name=command_name,
-            git_repo=git_repo,
-            branch=base_branch,
-            include_berth=True,
-        ),
-        run_cwd=tmp_path,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-def _assert_opt_in_run_with_branch_mutates_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> --branch <trimmed_branch> --run` mutates repository.
-
-    Args:
-        git_repo: Repository path where mutation should occur.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        marker_name: Marker filename expected in git status after run.
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    base_branch = _current_branch(git_repo)
-    _assert_opt_in_run_mutates_repo(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(
-            command_name=command_name,
-            git_repo=git_repo,
-            branch=base_branch,
-        ),
-        run_cwd=git_repo,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-def _assert_opt_in_run_with_trimmed_berth_mutates_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> <trimmed_berth> --run` mutates repository.
-
-    Args:
-        git_repo: Repository path where mutation should occur.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        marker_name: Marker filename expected in git status after run.
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    _assert_opt_in_run_mutates_repo(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(
-            command_name=command_name,
-            git_repo=git_repo,
-            include_berth=True,
-        ),
-        run_cwd=tmp_path,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-def _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> --run` is non-mutating when no commands are recorded.
-
-    Args:
-        git_repo: Repository path to inspect for mutations.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(command_name=command_name, git_repo=git_repo),
-        run_cwd=git_repo,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-def _assert_opt_in_run_default_scope_mutates_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> --run` mutates repository in current repo scope.
-
-    Args:
-        git_repo: Repository path where mutation should occur.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        marker_name: Marker filename expected in git status after run.
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    _assert_opt_in_run_mutates_repo(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(command_name=command_name, git_repo=git_repo),
-        run_cwd=git_repo,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
 def _assert_opt_in_run_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
@@ -479,105 +302,62 @@ def _assert_opt_in_run_without_commands_keeps_repo_clean(
     _assert_repo_clean(git_repo)
 
 
-def _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
+def _assert_opt_in_run_without_commands_for_scope(
     git_repo: Path,
     tmp_path: Path,
     *,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     objective: str,
     decisions: str,
     next_step: str,
 ) -> None:
-    """Assert `<command> --branch <trimmed_branch> --run` is non-mutating without commands.
-
-    Args:
-        git_repo: Repository path to inspect for mutations.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    base_branch = _current_branch(git_repo)
+    """Assert no-command opt-in run path is non-mutating for a scope variant."""
+    branch = _current_branch(git_repo) if include_branch else None
     _assert_opt_in_run_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
         run_command=_build_opt_in_run_command(
             command_name=command_name,
             git_repo=git_repo,
-            branch=base_branch,
+            branch=branch,
+            include_berth=include_berth,
         ),
-        run_cwd=git_repo,
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
         objective=objective,
         decisions=decisions,
         next_step=next_step,
     )
 
 
-def _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+def _assert_opt_in_run_mutates_for_scope(
     git_repo: Path,
     tmp_path: Path,
     *,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
+    marker_name: str,
     objective: str,
     decisions: str,
     next_step: str,
 ) -> None:
-    """Assert `<command> <trimmed_berth> --run` is non-mutating without commands.
-
-    Args:
-        git_repo: Repository path to inspect for mutations.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
+    """Assert opt-in run path may mutate repo for a scope variant."""
+    branch = _current_branch(git_repo) if include_branch else None
+    _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
         run_command=_build_opt_in_run_command(
             command_name=command_name,
             git_repo=git_repo,
-            include_berth=True,
+            branch=branch,
+            include_berth=include_berth,
         ),
-        run_cwd=tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-def _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-    *,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """Assert `<command> <trimmed_berth> --branch <trimmed_branch> --run` is non-mutating.
-
-    Args:
-        git_repo: Repository path to inspect for mutations.
-        tmp_path: Temporary path used for Dockyard home.
-        command_name: Dockyard command token (resume/r/undock).
-        objective: Checkpoint objective text for setup save.
-        decisions: Checkpoint decisions text for setup save.
-        next_step: Checkpoint next-step text for setup save.
-    """
-    base_branch = _current_branch(git_repo)
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        run_command=_build_opt_in_run_command(
-            command_name=command_name,
-            git_repo=git_repo,
-            branch=base_branch,
-            include_berth=True,
-        ),
-        run_cwd=tmp_path,
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+        marker_name=marker_name,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
@@ -1343,171 +1123,159 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
+    (
+        "command_name",
+        "include_berth",
+        "include_branch",
+        "run_cwd_kind",
+        "objective",
+        "decisions",
+        "next_step",
+    ),
     [
         (
             "resume",
+            False,
+            False,
+            "repo",
             "Resume run no-commands baseline",
             "Verify resume --run no-op path remains non-mutating",
             "run resume --run",
         ),
         (
             "r",
+            False,
+            False,
+            "repo",
             "Resume alias run no-commands baseline",
             "Verify r --run no-op path remains non-mutating",
             "run r --run",
         ),
         (
             "undock",
+            False,
+            False,
+            "repo",
             "Undock alias run no-commands baseline",
             "Verify undock --run no-op path remains non-mutating",
             "run undock --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_default_scope_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --run` with no commands should remain non-mutating."""
-    _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            False,
+            "tmp",
             "Resume berth run no-commands baseline",
             "Verify resume <berth> --run no-op path remains non-mutating",
             "run resume <berth> --run",
         ),
         (
             "r",
+            True,
+            False,
+            "tmp",
             "Resume alias berth run no-commands baseline",
             "Verify r <berth> --run no-op path remains non-mutating",
             "run r <berth> --run",
         ),
         (
             "undock",
+            True,
+            False,
+            "tmp",
             "Undock alias berth run no-commands baseline",
             "Verify undock <berth> --run no-op path remains non-mutating",
             "run undock <berth> --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_trimmed_berth_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> <berth> --run` with no commands should remain non-mutating."""
-    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            False,
+            True,
+            "repo",
             "Resume branch run no-commands baseline",
             "Verify resume --branch <name> --run no-op path is non-mutating",
             "run resume --branch <name> --run",
         ),
         (
             "r",
+            False,
+            True,
+            "repo",
             "Resume alias branch run no-commands baseline",
             "Verify r --branch <name> --run no-op path is non-mutating",
             "run r --branch <name> --run",
         ),
         (
             "undock",
+            False,
+            True,
+            "repo",
             "Undock alias branch run no-commands baseline",
             "Verify undock --branch <name> --run no-op path is non-mutating",
             "run undock --branch <name> --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_branch_scope_without_commands_keeps_repo_clean(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --branch <name> --run` without commands should not mutate."""
-    _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            True,
+            "tmp",
             "Resume berth+branch run no-commands baseline",
             "Verify resume <berth> --branch <name> --run no-op is non-mutating",
             "run resume <berth> --branch <name> --run",
         ),
         (
             "r",
+            True,
+            True,
+            "tmp",
             "Resume alias berth+branch run no-commands baseline",
             "Verify r <berth> --branch <name> --run no-op is non-mutating",
             "run r <berth> --branch <name> --run",
         ),
         (
             "undock",
+            True,
+            True,
+            "tmp",
             "Undock alias berth+branch run no-commands baseline",
             "Verify undock <berth> --branch <name> --run no-op is non-mutating",
             "run undock <berth> --branch <name> --run",
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=[
+        "resume_default",
+        "r_default",
+        "undock_default",
+        "resume_berth",
+        "r_berth",
+        "undock_berth",
+        "resume_branch",
+        "r_branch",
+        "undock_branch",
+        "resume_berth_branch",
+        "r_berth_branch",
+        "undock_berth_branch",
+    ],
 )
-def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
+def test_run_scopes_without_commands_keep_repo_clean(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     objective: str,
     decisions: str,
     next_step: str,
 ) -> None:
-    """`<command> <berth> --branch <name> --run` no-command path is read-only."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
+    """No-command run scopes should remain non-mutating."""
+    _assert_opt_in_run_without_commands_for_scope(
         git_repo,
         tmp_path,
         command_name=command_name,
+        include_berth=include_berth,
+        include_branch=include_branch,
+        run_cwd_kind=run_cwd_kind,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
@@ -1515,10 +1283,22 @@ def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
 
 
 @pytest.mark.parametrize(
-    ("command_name", "marker_name", "objective", "decisions", "next_step"),
+    (
+        "command_name",
+        "include_berth",
+        "include_branch",
+        "run_cwd_kind",
+        "marker_name",
+        "objective",
+        "decisions",
+        "next_step",
+    ),
     [
         (
             "resume",
+            False,
+            False,
+            "repo",
             "resume_run_opt_in_marker.txt",
             "Resume run opt-in mutation baseline",
             "Verify explicit --run path may execute mutating commands",
@@ -1526,6 +1306,9 @@ def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
         ),
         (
             "r",
+            False,
+            False,
+            "repo",
             "resume_alias_run_opt_in_marker.txt",
             "Resume alias run opt-in mutation baseline",
             "Verify r --run may execute mutating commands",
@@ -1533,40 +1316,19 @@ def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
         ),
         (
             "undock",
+            False,
+            False,
+            "repo",
             "undock_alias_run_opt_in_marker.txt",
             "Undock alias run opt-in mutation baseline",
             "Verify undock --run may execute mutating commands",
             "run undock --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_default_scope_opt_in_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --run` may mutate repository when explicitly opted-in."""
-    _assert_opt_in_run_default_scope_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "marker_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            False,
+            True,
+            "repo",
             "resume_run_with_branch_opt_in_marker.txt",
             "Resume branch run opt-in mutation baseline",
             "Verify resume --branch <name> --run may execute mutating commands",
@@ -1574,6 +1336,9 @@ def test_run_default_scope_opt_in_can_modify_repo(
         ),
         (
             "r",
+            False,
+            True,
+            "repo",
             "resume_alias_run_with_branch_opt_in_marker.txt",
             "Resume alias branch run opt-in mutation baseline",
             "Verify r --branch <name> --run may execute mutating commands",
@@ -1581,40 +1346,19 @@ def test_run_default_scope_opt_in_can_modify_repo(
         ),
         (
             "undock",
+            False,
+            True,
+            "repo",
             "undock_alias_run_with_branch_opt_in_marker.txt",
             "Undock alias branch run opt-in mutation baseline",
             "Verify undock --branch <name> --run may execute mutating commands",
             "run undock --branch <name> --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_branch_scope_opt_in_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> --branch <name> --run` may mutate when explicitly opted-in."""
-    _assert_opt_in_run_with_branch_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "marker_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            False,
+            "tmp",
             "resume_run_with_berth_opt_in_marker.txt",
             "Resume berth run opt-in mutation baseline",
             "Verify resume <berth> --run may execute mutating commands",
@@ -1622,6 +1366,9 @@ def test_run_branch_scope_opt_in_can_modify_repo(
         ),
         (
             "r",
+            True,
+            False,
+            "tmp",
             "resume_alias_run_with_berth_opt_in_marker.txt",
             "Resume alias berth run opt-in mutation baseline",
             "Verify r <berth> --run may execute mutating commands",
@@ -1629,40 +1376,19 @@ def test_run_branch_scope_opt_in_can_modify_repo(
         ),
         (
             "undock",
+            True,
+            False,
+            "tmp",
             "undock_alias_run_opt_in_marker.txt",
             "Undock alias run opt-in mutation baseline",
             "Verify undock --run with berth may execute mutating commands",
             "run undock <berth> --run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_trimmed_berth_scope_opt_in_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-) -> None:
-    """`<command> <berth> --run` may mutate when explicitly opted-in."""
-    _assert_opt_in_run_with_trimmed_berth_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name=command_name,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "marker_name", "objective", "decisions", "next_step"),
-    [
         (
             "resume",
+            True,
+            True,
+            "tmp",
             "resume_run_with_berth_branch_opt_in_marker.txt",
             "Resume berth+branch run opt-in mutation baseline",
             "Verify resume <berth> --branch <branch> --run may mutate repo",
@@ -1670,6 +1396,9 @@ def test_run_trimmed_berth_scope_opt_in_can_modify_repo(
         ),
         (
             "r",
+            True,
+            True,
+            "tmp",
             "resume_alias_run_with_berth_branch_opt_in_marker.txt",
             "Resume alias berth+branch run opt-in mutation baseline",
             "Verify r <berth> --branch <branch> --run may mutate repo",
@@ -1677,28 +1406,50 @@ def test_run_trimmed_berth_scope_opt_in_can_modify_repo(
         ),
         (
             "undock",
+            True,
+            True,
+            "tmp",
             "undock_alias_run_with_berth_branch_opt_in_marker.txt",
             "Undock alias berth+branch run opt-in mutation baseline",
             "Verify undock <berth> --branch <branch> --run may mutate repo",
             "run undock <berth> --branch <branch> --run",
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=[
+        "resume_default",
+        "r_default",
+        "undock_default",
+        "resume_branch",
+        "r_branch",
+        "undock_branch",
+        "resume_berth",
+        "r_berth",
+        "undock_berth",
+        "resume_berth_branch",
+        "r_berth_branch",
+        "undock_berth_branch",
+    ],
 )
-def test_run_trimmed_berth_branch_scope_opt_in_can_modify_repo(
+def test_run_scopes_opt_in_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     marker_name: str,
     objective: str,
     decisions: str,
     next_step: str,
 ) -> None:
-    """`<command> <berth> --branch <branch> --run` may mutate when opted-in."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
+    """Opt-in run scopes may mutate repository as expected."""
+    _assert_opt_in_run_mutates_for_scope(
         git_repo,
         tmp_path,
         command_name=command_name,
+        include_berth=include_berth,
+        include_branch=include_branch,
+        run_cwd_kind=run_cwd_kind,
         marker_name=marker_name,
         objective=objective,
         decisions=decisions,
