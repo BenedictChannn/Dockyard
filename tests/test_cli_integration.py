@@ -1560,6 +1560,52 @@ def test_resume_alias_rejects_blank_branch_option(git_repo: Path, tmp_path: Path
     assert "Traceback" not in output
 
 
+def test_resume_alias_branch_flag_accepts_trimmed_value(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias should resolve --branch values after trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias trimmed branch objective",
+            "--decisions",
+            "Resolve alias branch values with surrounding whitespace",
+            "--next-step",
+            "resume alias with branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-branch",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    selected = json.loads(
+        _run_dock(["r", "--branch", f"  {branch}  ", "--json"], cwd=git_repo, env=env).stdout
+    )
+    assert selected["branch"] == branch
+    assert selected["objective"] == "Alias trimmed branch objective"
+
+
 def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
     """Invoking dockyard without subcommand should run harbor listing."""
     env = dict(os.environ)
@@ -6803,6 +6849,65 @@ def test_search_alias_branch_filter_accepts_trimmed_value(git_repo: Path, tmp_pa
         ).stdout
     )
     assert len(rows) >= 1
+    assert {row["branch"] for row in rows} == {branch}
+
+
+def test_search_alias_repo_and_branch_filters_accept_trimmed_values(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search alias should resolve trimmed repo+branch filters together."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias trimmed repo branch objective",
+            "--decisions",
+            "Alias filters should trim repo and branch together",
+            "--next-step",
+            "run alias repo branch search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "Alias trimmed repo branch objective",
+                "--repo",
+                f"  {git_repo.name}  ",
+                "--branch",
+                f"  {branch}  ",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["berth_name"] for row in rows} == {git_repo.name}
     assert {row["branch"] for row in rows} == {branch}
 
 
