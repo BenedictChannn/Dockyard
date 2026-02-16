@@ -324,6 +324,25 @@ def test_print_search_strips_surrounding_whitespace_from_berth_label() -> None:
     assert "  repo-trim  " not in output
 
 
+def test_print_search_compacts_multiline_berth_label() -> None:
+    """Search renderer should compact multiline berth labels."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "repo\nlabel",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo label" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -459,6 +478,28 @@ def test_print_harbor_strips_surrounding_whitespace_from_berth_label() -> None:
     output = console.export_text()
     assert "repo-trim" in output
     assert "  repo-trim  " not in output
+
+
+def test_print_harbor_compacts_multiline_berth_label() -> None:
+    """Harbor renderer should compact multiline berth labels."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo\nlabel",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo label" in output
 
 
 def test_print_harbor_handles_non_string_updated_at() -> None:

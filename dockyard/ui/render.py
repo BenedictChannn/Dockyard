@@ -16,8 +16,10 @@ def _display_berth_label(row: dict[str, Any]) -> str:
     """Return berth label fallback chain for render rows."""
     for key in ("berth_name", "repo_id"):
         value = row.get(key)
-        if value is not None and str(value).strip():
-            return str(value).strip()
+        if value is not None:
+            compact = " ".join(str(value).split())
+            if compact:
+                return compact[:120]
     return "(unknown)"
 
 
@@ -172,7 +174,7 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
             next_step = objective
         table.add_row(
             str(berth),
-            str(branch),
+            _label_text(branch, 120),
             status_badge.get(str(status), str(status)),
             format_age(row.get("updated_at")),
             _preview_text(next_step, 60),
@@ -200,8 +202,8 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
             snippet = str(snippet)
         table.add_row(
             str(berth),
-            str(branch),
-            str(created_at),
+            _label_text(branch, 120),
+            _preview_text(created_at, 120),
             _preview_text(snippet, 120),
         )
     console.print(table)
