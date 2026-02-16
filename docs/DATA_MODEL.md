@@ -118,7 +118,7 @@ Contains:
 
 Parser normalization notes:
 
-- `next steps` accepts numbered list markers in either `1.` or `1)` style.
+- `next steps` accepts numbered list markers in `1.`, `1)`, or `(1)` style.
 - Numbered next-step markers may include optional whitespace between marker
   and content (for example, `1. step` and `1.step` are both accepted).
 - `next steps` also accepts markdown bullet markers (`-`, `*`, `+`) as a
@@ -128,7 +128,7 @@ Parser normalization notes:
 - Next-step parser strips checklist prefixes from markdown list entries
   (for example, `- [ ] step` and `1. [x] step` normalize to `step`).
 - `resume commands` accepts `-`, `*`, or `+` bullet markers.
-- `resume commands` also accepts numbered list markers (`1.`, `1)`) as a
+- `resume commands` also accepts numbered list markers (`1.`, `1)`, `(1)`) as a
   parser fallback for manually edited checkpoint files.
 - Resume command bullets may be backtick-wrapped (for renderer parity) or
   plain text when manually edited.
