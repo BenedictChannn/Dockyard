@@ -779,7 +779,7 @@ def review_add(
         snapshot = inspect_repository()
         normalized_repo = normalized_repo or snapshot.repo_id
         normalized_branch = normalized_branch or snapshot.branch
-    normalized_files = _coerce_text_items(file)
+    normalized_files = _normalize_text_values(file, dedupe=True)
     item = ReviewItem(
         id=f"rev_{uuid.uuid4().hex[:10]}",
         repo_id=normalized_repo,

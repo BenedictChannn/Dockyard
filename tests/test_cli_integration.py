@@ -4846,6 +4846,69 @@ def test_review_add_ignores_blank_file_entries(git_repo: Path, tmp_path: Path) -
     assert "files: (none)" not in opened
 
 
+def test_review_add_deduplicates_file_entries(git_repo: Path, tmp_path: Path) -> None:
+    """Review add should de-duplicate repeated file entries."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review file dedupe baseline",
+            "--decisions",
+            "Ensure repeated --file values are de-duplicated",
+            "--next-step",
+            "open created review",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "file dedupe",
+            "--severity",
+            "low",
+            "--file",
+            " src/dup.py ",
+            "--file",
+            "src/dup.py",
+            "--file",
+            "src/other.py",
+            "--file",
+            "src/dup.py",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "files: src/dup.py, src/other.py" in opened
+    assert "src/dup.py, src/dup.py" not in opened
+
+
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Template-based save should work in no-prompt mode."""
     env = dict(os.environ)

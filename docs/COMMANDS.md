@@ -184,7 +184,7 @@ python3 -m dockyard review add --reason "manual" --severity low --repo my_repo -
 # --repo accepts repo_id or berth name
 ```
 
-`review add` ignores blank `--file` entries.
+`review add` ignores blank `--file` entries and de-duplicates exact repeats.
 Optional `--notes` and `--checkpoint-id` values are trimmed; blank values are
 treated as missing.
 Override values passed to `--repo/--branch` are also trimmed before lookup.
