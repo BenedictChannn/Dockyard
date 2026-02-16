@@ -24,6 +24,7 @@ RunCommandName = Literal["resume", "r", "undock"]
 SaveCommandName = Literal["save", "s", "dock"]
 DashboardCommandName = Literal["ls", "harbor"]
 SearchCommandName = Literal["search", "f"]
+RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
 CaseT = TypeVar("CaseT")
 
 
@@ -76,7 +77,7 @@ class RunScopeCommandMeta:
 class RunScopeVariantMeta:
     """Metadata describing a run-scope variant."""
 
-    variant_id: str
+    variant_id: RunScopeVariantId
     include_berth: bool
     include_branch: bool
     run_cwd_kind: RunCwdKind

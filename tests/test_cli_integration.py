@@ -19,6 +19,7 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
+RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
 CaseT = TypeVar("CaseT")
 
 
@@ -30,7 +31,7 @@ class RunScopeCaseMeta:
     include_berth: bool
     include_branch: bool
     run_cwd_kind: RunCwdKind
-    variant_id: str
+    variant_id: RunScopeVariantId
     case_id: str
 
 
@@ -62,7 +63,7 @@ class RunCommandMeta:
 class RunScopeVariantMeta:
     """Metadata describing a run-scope variant."""
 
-    variant_id: str
+    variant_id: RunScopeVariantId
     include_berth: bool
     include_branch: bool
     run_cwd_kind: RunCwdKind
@@ -96,7 +97,7 @@ RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (variant.include_berth, variant.include_branch): variant.slug
     for variant in RUN_SCOPE_VARIANTS
 }
-RUN_SCOPE_VARIANT_INDEX: dict[str, int] = {
+RUN_SCOPE_VARIANT_INDEX: dict[RunScopeVariantId, int] = {
     variant.variant_id: index for index, variant in enumerate(RUN_SCOPE_VARIANTS)
 }
 
