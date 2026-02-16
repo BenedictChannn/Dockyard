@@ -119,3 +119,34 @@ def test_harbor_sorting_places_unknown_status_after_known_statuses(tmp_path) -> 
 
     rows = store.list_harbor()
     assert [row["repo_id"] for row in rows] == ["red", "green", "mystery"]
+
+
+def test_harbor_stale_filter_ignores_invalid_timestamps(tmp_path) -> None:
+    """Stale filtering should skip rows with invalid timestamp values."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.upsert_berth(Berth(repo_id="invalid", name="Invalid", root_path="/tmp/invalid", remote_url=None))
+    store.upsert_berth(Berth(repo_id="valid", name="Valid", root_path="/tmp/valid", remote_url=None))
+
+    store.upsert_slip(
+        Slip(
+            repo_id="invalid",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="not-a-timestamp",
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="valid",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="2000-01-01T00:00:00+00:00",
+        )
+    )
+
+    stale_rows = store.list_harbor(stale_days=1)
+    assert [row["repo_id"] for row in stale_rows] == ["valid"]
