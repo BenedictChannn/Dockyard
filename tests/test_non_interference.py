@@ -398,51 +398,31 @@ def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
     )
 
     assert not marker.exists()
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
     trimmed_berth = f"  {git_repo.name}  "
     trimmed_branch = f"  {base_branch}  "
 
-    _run(["python3", "-m", "dockyard", "r", trimmed_berth], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "r", trimmed_berth, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "r", trimmed_berth, "--handoff"], cwd=tmp_path, env=env)
-    _run(
-        ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "undock", trimmed_berth], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "undock", trimmed_berth, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "undock", trimmed_berth, "--handoff"], cwd=tmp_path, env=env)
-    _run(
-        ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
+    _run_commands(
+        [
+            ["python3", "-m", "dockyard", "r", trimmed_berth],
+            ["python3", "-m", "dockyard", "r", trimmed_berth, "--json"],
+            ["python3", "-m", "dockyard", "r", trimmed_berth, "--handoff"],
+            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch],
+            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--json"],
+            ["python3", "-m", "dockyard", "r", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--json"],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--handoff"],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--json"],
+            ["python3", "-m", "dockyard", "undock", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
+        ],
         cwd=tmp_path,
         env=env,
     )
 
     assert not marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
@@ -490,33 +470,25 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
     )
 
     assert not marker.exists()
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
     trimmed_berth = f"  {git_repo.name}  "
     trimmed_branch = f"  {base_branch}  "
 
-    _run(["python3", "-m", "dockyard", "resume", trimmed_berth], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", trimmed_berth, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", trimmed_berth, "--handoff"], cwd=tmp_path, env=env)
-    _run(
-        ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
+    _run_commands(
+        [
+            ["python3", "-m", "dockyard", "resume", trimmed_berth],
+            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--json"],
+            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--handoff"],
+            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch],
+            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--json"],
+            ["python3", "-m", "dockyard", "resume", trimmed_berth, "--branch", trimmed_branch, "--handoff"],
+        ],
         cwd=tmp_path,
         env=env,
     )
 
     assert not marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
