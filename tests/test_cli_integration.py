@@ -938,6 +938,65 @@ def test_save_alias_s_unsupported_template_extension_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_alias_s_with_json_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should support JSON templates in no-prompt mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_s_save_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Alias s template checkpoint objective",
+                "decisions": "Alias s template decisions block",
+                "next_steps": ["Alias s template next step 1", "Alias s template next step 2"],
+                "risks_review": "Alias s template risk notes",
+                "resume_commands": ["echo alias-s-template-cmd"],
+                "tags": ["alias-s-template", "mvp"],
+                "links": ["https://example.com/alias-s-template-doc"],
+                "verification": {
+                    "tests_run": True,
+                    "tests_command": "pytest -q",
+                    "build_ok": True,
+                    "build_command": "echo build",
+                    "lint_ok": False,
+                    "smoke_ok": False,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert resume_payload["objective"] == "Alias s template checkpoint objective"
+    assert resume_payload["next_steps"] == ["Alias s template next step 1", "Alias s template next step 2"]
+    assert resume_payload["verification"]["tests_run"] is True
+    assert resume_payload["verification"]["build_ok"] is True
+    assert resume_payload["verification"]["lint_ok"] is False
+
+    links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/alias-s-template-doc" in links_output
+    tagged_rows = json.loads(
+        _run_dock(["ls", "--tag", "alias-s-template", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
+
+
 def test_save_alias_s_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """Save alias `s` should accept TOML templates in no-prompt mode."""
     env = dict(os.environ)
@@ -1642,6 +1701,65 @@ def test_save_alias_dock_unsupported_template_extension_is_actionable(
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "Template must be .json or .toml" in output
     assert "Traceback" not in output
+
+
+def test_save_alias_dock_with_json_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """Dock alias should support JSON templates in no-prompt mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_dock_save_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Dock alias template checkpoint objective",
+                "decisions": "Dock alias template decisions block",
+                "next_steps": ["Dock alias template next step 1", "Dock alias template next step 2"],
+                "risks_review": "Dock alias template risk notes",
+                "resume_commands": ["echo alias-dock-template-cmd"],
+                "tags": ["alias-dock-template", "mvp"],
+                "links": ["https://example.com/alias-dock-template-doc"],
+                "verification": {
+                    "tests_run": True,
+                    "tests_command": "pytest -q",
+                    "build_ok": True,
+                    "build_command": "echo build",
+                    "lint_ok": False,
+                    "smoke_ok": False,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    resume_payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert resume_payload["objective"] == "Dock alias template checkpoint objective"
+    assert resume_payload["next_steps"] == ["Dock alias template next step 1", "Dock alias template next step 2"]
+    assert resume_payload["verification"]["tests_run"] is True
+    assert resume_payload["verification"]["build_ok"] is True
+    assert resume_payload["verification"]["lint_ok"] is False
+
+    links_output = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "https://example.com/alias-dock-template-doc" in links_output
+    tagged_rows = json.loads(
+        _run_dock(["ls", "--tag", "alias-dock-template", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
 
 
 def test_save_alias_dock_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
