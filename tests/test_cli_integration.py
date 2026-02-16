@@ -15,6 +15,7 @@ import pytest
 RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
+RUN_COMMAND_IDS = ["resume", "r_alias", "undock_alias"]
 
 
 def _run_dock(
@@ -2385,7 +2386,7 @@ def test_save_editor_trims_outer_blank_lines(
             ["echo undock-one", "echo undock-two"],
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_executes_commands_on_success(
     git_repo: Path,
@@ -2437,7 +2438,7 @@ def test_run_default_scope_executes_commands_on_success(
             "echo undock-should-not-run",
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_stops_on_failure(
     git_repo: Path,
