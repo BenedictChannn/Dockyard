@@ -93,11 +93,6 @@ SaveEditorScenario = tuple[str, str, str, str]
 SaveTemplateScenario = tuple[str, str, str]
 
 
-def _scope_label(scope_id: str) -> str:
-    """Return human-readable scope label derived from scope ID."""
-    return scope_id.replace("_", " ")
-
-
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     """Return scope descriptor text for run-scenario metadata strings."""
     if include_berth and include_branch:
