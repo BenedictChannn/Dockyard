@@ -4971,6 +4971,59 @@ def test_harbor_alias_renders_unknown_status_text(git_repo: Path, tmp_path: Path
     assert json_rows[0]["status"] == "paused"
 
 
+def test_harbor_alias_maps_short_status_token(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should map short status token values to known badges."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor short status token baseline",
+            "--decisions",
+            "Map short status tokens in harbor rendering",
+            "--next-step",
+            "run harbor",
+            "--risks",
+            "none",
+            "--command",
+            "echo harbor",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ? WHERE branch = ?",
+        (" y ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
+    assert " Y " in f" {output} "
+    json_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(json_rows) == 1
+    assert json_rows[0]["status"] == " y "
+
+
 def test_harbor_alias_compacts_multiline_branch_text(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should compact multiline branch values in table output."""
     env = dict(os.environ)
