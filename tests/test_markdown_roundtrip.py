@@ -133,6 +133,7 @@ None
 *`echo tight-quoted-bullet`
 1. echo numbered-bullet
 2)echo numbered-tight
+(3)echo numbered-paren
 - `echo quoted`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
@@ -159,6 +160,7 @@ None
         "echo tight-quoted-bullet",
         "echo numbered-bullet",
         "echo numbered-tight",
+        "echo numbered-paren",
         "echo quoted",
     ]
 
@@ -286,6 +288,7 @@ Decision text
 ## Next Steps
 1)First compact step
 2.Second compact step
+(3)Third compact step
 ## Risks/Review Needed
 None
 ## Resume Commands
@@ -309,6 +312,7 @@ None
     assert parsed["next_steps"] == [
         "First compact step",
         "Second compact step",
+        "Third compact step",
     ]
 
 

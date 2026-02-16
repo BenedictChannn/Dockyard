@@ -175,7 +175,7 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
         stripped = line.strip()
         if not stripped:
             continue
-        match = re.match(r"^(?:\d+[.)]|[-*+])\s*(.*)$", stripped)
+        match = re.match(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$", stripped)
         if match:
             item = _strip_checklist_prefix(match.group(1).strip())
             if item:
@@ -188,7 +188,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
-        match = re.match(r"^(?:[-*+]|\d+[.)])\s*(.*)$", stripped)
+        match = re.match(r"^(?:[-*+]|\d+[.)]|\(\d+\))\s*(.*)$", stripped)
         if not match:
             continue
         command = match.group(1).strip()
