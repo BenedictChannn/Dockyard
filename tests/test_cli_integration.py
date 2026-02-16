@@ -492,6 +492,16 @@ def test_run_dock_helper_accepts_expected_nonzero_exit_code(tmp_path: Path) -> N
     assert result.returncode == 2
 
 
+def test_run_dock_helper_defaults_to_zero_exit_code(tmp_path: Path) -> None:
+    """Run helper should default to expecting successful zero exit code."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["--help"], cwd=tmp_path, env=env)
+    assert result.returncode == 0
+    assert "Usage:" in result.stdout
+
+
 def test_run_dock_helper_raises_on_unexpected_exit_code(tmp_path: Path) -> None:
     """Run helper should raise assertion when return code mismatches expectation."""
     env = dict(os.environ)
