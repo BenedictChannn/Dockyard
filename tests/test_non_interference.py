@@ -8,12 +8,14 @@ import re
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
 CommandMatrix = list[list[str]]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
+RunCwdKind = Literal["repo", "tmp"]
 
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
@@ -39,6 +41,11 @@ def _run_commands(commands: CommandMatrix, cwd: Path, env: dict[str, str]) -> No
     """
     for command in commands:
         _run(command, cwd=cwd, env=env)
+
+
+def _resolve_run_cwd(git_repo: Path, tmp_path: Path, run_cwd_kind: RunCwdKind) -> Path:
+    """Resolve command working directory from run-scope selector."""
+    return git_repo if run_cwd_kind == "repo" else tmp_path
 
 
 def _assert_repo_clean(git_repo: Path) -> None:
@@ -1119,10 +1126,9 @@ def test_resume_read_paths_do_not_execute_saved_commands(
     decisions: str,
     next_step: str,
     commands_builder: Callable[[Path], CommandMatrix],
-    run_cwd_kind: str,
+    run_cwd_kind: RunCwdKind,
 ) -> None:
     """Resume read-only path variants must never execute stored commands."""
-    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
         tmp_path,
@@ -1131,7 +1137,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(
         decisions=decisions,
         next_step=next_step,
         commands=commands_builder(git_repo),
-        run_cwd=run_cwd,
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
     )
 
 
@@ -1170,20 +1176,19 @@ def test_review_and_link_commands_do_not_modify_repo(
     objective: str,
     decisions: str,
     next_step: str,
-    run_cwd_kind: str,
+    run_cwd_kind: RunCwdKind,
     metadata_builder: MetadataCommandBuilder,
     review_add_builder: ReviewAddCommandBuilder,
 ) -> None:
     """Review/link metadata paths must not alter repository tree/index."""
     base_branch = _current_branch(git_repo)
-    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _assert_review_link_commands_do_not_modify_repo(
         git_repo,
         tmp_path,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        run_cwd=run_cwd,
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
         metadata_commands=metadata_builder(git_repo, base_branch),
         review_add_command=review_add_builder(git_repo, base_branch),
     )
