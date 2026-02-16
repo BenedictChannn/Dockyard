@@ -76,6 +76,7 @@ class RunScopeVariantMeta:
 class RunDefaultSuccessCaseMeta:
     """Scenario metadata for default-scope run success tests."""
 
+    case_id: str
     command_name: RunCommandName
     objective: str
     decisions: str
@@ -87,6 +88,7 @@ class RunDefaultSuccessCaseMeta:
 class RunDefaultFailureCaseMeta:
     """Scenario metadata for default-scope run failure tests."""
 
+    case_id: str
     command_name: RunCommandName
     objective: str
     decisions: str
@@ -99,6 +101,7 @@ class RunDefaultFailureCaseMeta:
 class RunBranchSuccessCaseMeta:
     """Scenario metadata for branch-aware run success tests."""
 
+    case_id: str
     command_name: RunCommandName
     include_berth: bool
     include_branch: bool
@@ -113,6 +116,7 @@ class RunBranchSuccessCaseMeta:
 class RunBranchFailureCaseMeta:
     """Scenario metadata for branch-aware run failure tests."""
 
+    case_id: str
     command_name: RunCommandName
     include_berth: bool
     include_branch: bool
@@ -128,6 +132,7 @@ class RunBranchFailureCaseMeta:
 class RunNoCommandCaseMeta:
     """Scenario metadata for scoped no-command run tests."""
 
+    case_id: str
     command_name: RunCommandName
     include_berth: bool
     include_branch: bool
@@ -204,12 +209,6 @@ RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     )
 )
 
-
-RUN_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_COMMAND_CASES, get_id=attrgetter("case_id"))
-RUN_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_SCOPE_CASES, get_id=attrgetter("case_id"))
-RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_SCOPE_CASES, get_id=attrgetter("case_id"))
-
-
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     """Return scope descriptor text for run-scenario metadata strings."""
     return RUN_SCOPE_DESCRIPTOR_BY_FLAGS[(include_berth, include_branch)]
@@ -264,6 +263,7 @@ def _build_default_run_success_scenarios(
     """
     return tuple(
         RunDefaultSuccessCaseMeta(
+            case_id=case.case_id,
             command_name=case.name,
             objective=f"{case.label} run success objective",
             decisions=f"Validate {case.label} run success-path behavior",
@@ -287,6 +287,7 @@ def _build_default_run_failure_scenarios(
     """
     return tuple(
         RunDefaultFailureCaseMeta(
+            case_id=case.case_id,
             command_name=case.name,
             objective=f"{case.label} run failure objective",
             decisions=f"Validate {case.label} run stop-on-failure behavior",
@@ -311,6 +312,7 @@ def _build_branch_run_success_scenarios(
     """
     return tuple(
         RunBranchSuccessCaseMeta(
+            case_id=case.case_id,
             command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
@@ -340,6 +342,7 @@ def _build_branch_run_failure_scenarios(
     """
     return tuple(
         RunBranchFailureCaseMeta(
+            case_id=case.case_id,
             command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
@@ -365,6 +368,7 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """
     return tuple(
         RunNoCommandCaseMeta(
+            case_id=case.case_id,
             command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
@@ -391,6 +395,26 @@ RUN_BRANCH_FAILURE_CASES: tuple[RunBranchFailureCaseMeta, ...] = _build_branch_r
 )
 RUN_NO_COMMAND_CASES: tuple[RunNoCommandCaseMeta, ...] = _build_no_command_run_scope_scenarios(
     RUN_SCOPE_CASES,
+)
+RUN_DEFAULT_SUCCESS_IDS: tuple[str, ...] = _case_ids(
+    RUN_DEFAULT_SUCCESS_CASES,
+    get_id=attrgetter("case_id"),
+)
+RUN_DEFAULT_FAILURE_IDS: tuple[str, ...] = _case_ids(
+    RUN_DEFAULT_FAILURE_CASES,
+    get_id=attrgetter("case_id"),
+)
+RUN_BRANCH_SUCCESS_IDS: tuple[str, ...] = _case_ids(
+    RUN_BRANCH_SUCCESS_CASES,
+    get_id=attrgetter("case_id"),
+)
+RUN_BRANCH_FAILURE_IDS: tuple[str, ...] = _case_ids(
+    RUN_BRANCH_FAILURE_CASES,
+    get_id=attrgetter("case_id"),
+)
+RUN_NO_COMMAND_IDS: tuple[str, ...] = _case_ids(
+    RUN_NO_COMMAND_CASES,
+    get_id=attrgetter("case_id"),
 )
 
 
@@ -2740,7 +2764,7 @@ def test_save_editor_trims_outer_blank_lines(
 @pytest.mark.parametrize(
     "case",
     RUN_DEFAULT_SUCCESS_CASES,
-    ids=RUN_COMMAND_IDS,
+    ids=RUN_DEFAULT_SUCCESS_IDS,
 )
 def test_run_default_scope_executes_commands_on_success(
     git_repo: Path,
@@ -2763,7 +2787,7 @@ def test_run_default_scope_executes_commands_on_success(
 @pytest.mark.parametrize(
     "case",
     RUN_DEFAULT_FAILURE_CASES,
-    ids=RUN_COMMAND_IDS,
+    ids=RUN_DEFAULT_FAILURE_IDS,
 )
 def test_run_default_scope_stops_on_failure(
     git_repo: Path,
@@ -2836,7 +2860,7 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
 @pytest.mark.parametrize(
     "case",
     RUN_BRANCH_SUCCESS_CASES,
-    ids=RUN_BRANCH_SCOPE_IDS,
+    ids=RUN_BRANCH_SUCCESS_IDS,
 )
 def test_run_branch_scopes_execute_commands_on_success(
     git_repo: Path,
@@ -2861,7 +2885,7 @@ def test_run_branch_scopes_execute_commands_on_success(
 @pytest.mark.parametrize(
     "case",
     RUN_BRANCH_FAILURE_CASES,
-    ids=RUN_BRANCH_SCOPE_IDS,
+    ids=RUN_BRANCH_FAILURE_IDS,
 )
 def test_run_branch_scopes_stop_on_failure(
     git_repo: Path,
@@ -3182,7 +3206,7 @@ def _assert_run_no_commands_noop_for_scope(
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_CASES,
-    ids=RUN_SCOPE_IDS,
+    ids=RUN_NO_COMMAND_IDS,
 )
 def test_run_scopes_with_no_commands_are_noop_success(
     git_repo: Path,
