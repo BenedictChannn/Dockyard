@@ -1469,6 +1469,49 @@ def test_resume_output_handles_empty_next_steps_payload(
     assert payload["next_steps"] == []
 
 
+def test_resume_output_compacts_multiline_summary_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume output should compact multiline objective and next-step text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Line one\nLine two",
+            "--decisions",
+            "Normalize multiline summary fields",
+            "--next-step",
+            "Step one\nStep two",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume"], cwd=git_repo, env=env)
+    assert "Objective: Line one Line two" in result.stdout
+    assert "1. Step one Step two" in result.stdout
+
+
 def test_resume_by_berth_from_outside_repo_with_handoff(
     git_repo: Path,
     tmp_path: Path,
