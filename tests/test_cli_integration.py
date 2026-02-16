@@ -15,29 +15,111 @@ import pytest
 RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
+RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RUN_COMMAND_IDS = ["resume", "r_alias", "undock_alias"]
-RUN_SCOPE_IDS = [
-    "resume_default",
-    "r_default",
-    "undock_default",
-    "resume_berth",
-    "r_berth",
-    "undock_berth",
-    "resume_branch",
-    "r_branch",
-    "undock_branch",
-    "resume_berth_branch",
-    "r_berth_branch",
-    "undock_berth_branch",
+RUN_SCOPE_CASES: list[RunScopeCase] = [
+    ("resume", False, False, "repo", "resume_default"),
+    ("r", False, False, "repo", "r_default"),
+    ("undock", False, False, "repo", "undock_default"),
+    ("resume", True, False, "tmp", "resume_berth"),
+    ("r", True, False, "tmp", "r_berth"),
+    ("undock", True, False, "tmp", "undock_berth"),
+    ("resume", False, True, "repo", "resume_branch"),
+    ("r", False, True, "repo", "r_branch"),
+    ("undock", False, True, "repo", "undock_branch"),
+    ("resume", True, True, "tmp", "resume_berth_branch"),
+    ("r", True, True, "tmp", "r_berth_branch"),
+    ("undock", True, True, "tmp", "undock_berth_branch"),
 ]
-RUN_BRANCH_SCOPE_IDS = [
-    "resume_branch",
-    "r_branch",
-    "undock_branch",
-    "resume_berth_branch",
-    "r_berth_branch",
-    "undock_berth_branch",
-]
+RUN_BRANCH_SCOPE_CASES = [case for case in RUN_SCOPE_CASES if case[2]]
+RUN_SCOPE_IDS = [case[4] for case in RUN_SCOPE_CASES]
+RUN_BRANCH_SCOPE_IDS = [case[4] for case in RUN_BRANCH_SCOPE_CASES]
+RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
+RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str, str]
+RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
+
+
+def _build_branch_run_success_scenarios(cases: list[RunScopeCase]) -> list[RunBranchSuccessScenario]:
+    """Build branch-targeted run success scenarios from shared scope metadata.
+
+    Args:
+        cases: Run-scope metadata tuples with branch-targeted scope settings.
+
+    Returns:
+        Parameter tuples for branch-scope run-success tests.
+    """
+    scenarios: list[RunBranchSuccessScenario] = []
+    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
+        scope_label = scope_id.replace("_", " ")
+        command_label = scope_id.replace("_", "-")
+        scenarios.append(
+            (
+                command_name,
+                include_berth,
+                include_branch,
+                run_cwd_kind,
+                f"{scope_label} run success objective",
+                f"Validate {scope_label} run success-path behavior",
+                f"run {scope_label}",
+                [f"echo {command_label}-run-one", f"echo {command_label}-run-two"],
+            ),
+        )
+    return scenarios
+
+
+def _build_branch_run_failure_scenarios(cases: list[RunScopeCase]) -> list[RunBranchFailureScenario]:
+    """Build branch-targeted run failure scenarios from shared scope metadata.
+
+    Args:
+        cases: Run-scope metadata tuples with branch-targeted scope settings.
+
+    Returns:
+        Parameter tuples for branch-scope stop-on-failure tests.
+    """
+    scenarios: list[RunBranchFailureScenario] = []
+    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
+        scope_label = scope_id.replace("_", " ")
+        command_label = scope_id.replace("_", "-")
+        scenarios.append(
+            (
+                command_name,
+                include_berth,
+                include_branch,
+                run_cwd_kind,
+                f"{scope_label} run failure objective",
+                f"Validate {scope_label} stop-on-failure behavior",
+                f"run {scope_label}",
+                f"echo {command_label}-first",
+                f"echo {command_label}-should-not-run",
+            ),
+        )
+    return scenarios
+
+
+def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
+    """Build no-command run scenarios from shared scope metadata.
+
+    Args:
+        cases: Run-scope metadata tuples.
+
+    Returns:
+        Parameter tuples for no-command run-path tests.
+    """
+    scenarios: list[RunNoCommandScenario] = []
+    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
+        scope_label = scope_id.replace("_", " ")
+        scenarios.append(
+            (
+                command_name,
+                include_berth,
+                include_branch,
+                run_cwd_kind,
+                f"No command {scope_label} run",
+                f"Ensure {scope_label} run path handles empty command list",
+                f"run {scope_label} with run",
+            ),
+        )
+    return scenarios
 
 
 def _run_dock(
@@ -2546,68 +2628,7 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
         "next_step",
         "resume_commands",
     ),
-    [
-        (
-            "resume",
-            False,
-            True,
-            "repo",
-            "Resume run branch success objective",
-            "Validate branch-scoped run success-path behavior",
-            "run resume branch",
-            ["echo resume-branch-run-one", "echo resume-branch-run-two"],
-        ),
-        (
-            "r",
-            False,
-            True,
-            "repo",
-            "Resume alias run branch success objective",
-            "Validate alias branch-scoped run success-path behavior",
-            "run alias branch",
-            ["echo alias-branch-run-one", "echo alias-branch-run-two"],
-        ),
-        (
-            "undock",
-            False,
-            True,
-            "repo",
-            "Undock alias run branch success objective",
-            "Validate undock branch-scoped run success-path behavior",
-            "run undock branch",
-            ["echo undock-branch-run-one", "echo undock-branch-run-two"],
-        ),
-        (
-            "resume",
-            True,
-            True,
-            "tmp",
-            "Resume berth+branch run success objective",
-            "Validate berth+branch run success-path behavior",
-            "run resume berth+branch",
-            ["echo resume-berth-branch-run-one", "echo resume-berth-branch-run-two"],
-        ),
-        (
-            "r",
-            True,
-            True,
-            "tmp",
-            "Resume alias berth+branch run success objective",
-            "Validate alias berth+branch run success-path behavior",
-            "run r berth+branch",
-            ["echo alias-berth-branch-run-one", "echo alias-berth-branch-run-two"],
-        ),
-        (
-            "undock",
-            True,
-            True,
-            "tmp",
-            "Undock alias berth+branch run success objective",
-            "Validate undock berth+branch run success-path behavior",
-            "run undock berth+branch",
-            ["echo undock-berth-branch-run-one", "echo undock-berth-branch-run-two"],
-        ),
-    ],
+    _build_branch_run_success_scenarios(RUN_BRANCH_SCOPE_CASES),
     ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_execute_commands_on_success(
@@ -2649,74 +2670,7 @@ def test_run_branch_scopes_execute_commands_on_success(
         "first_command",
         "skipped_command",
     ),
-    [
-        (
-            "resume",
-            False,
-            True,
-            "repo",
-            "Resume run branch failure objective",
-            "Validate branch-scoped stop-on-failure behavior",
-            "run resume branch",
-            "echo resume-branch-first",
-            "echo resume-branch-should-not-run",
-        ),
-        (
-            "r",
-            False,
-            True,
-            "repo",
-            "Resume alias run branch failure objective",
-            "Validate alias branch-scoped stop-on-failure behavior",
-            "run alias branch",
-            "echo alias-branch-first",
-            "echo alias-branch-should-not-run",
-        ),
-        (
-            "undock",
-            False,
-            True,
-            "repo",
-            "Undock alias run branch failure objective",
-            "Validate undock branch-scoped stop-on-failure behavior",
-            "run undock branch",
-            "echo undock-branch-first",
-            "echo undock-branch-should-not-run",
-        ),
-        (
-            "resume",
-            True,
-            True,
-            "tmp",
-            "Resume berth+branch run failure objective",
-            "Validate berth+branch stop-on-failure behavior",
-            "run resume berth+branch",
-            "echo resume-berth-branch-first",
-            "echo resume-berth-branch-should-not-run",
-        ),
-        (
-            "r",
-            True,
-            True,
-            "tmp",
-            "Resume alias berth+branch run failure objective",
-            "Validate alias berth+branch stop-on-failure behavior",
-            "run r berth+branch",
-            "echo alias-berth-branch-first",
-            "echo alias-berth-branch-should-not-run",
-        ),
-        (
-            "undock",
-            True,
-            True,
-            "tmp",
-            "Undock alias berth+branch run failure objective",
-            "Validate undock berth+branch stop-on-failure behavior",
-            "run undock berth+branch",
-            "echo undock-berth-branch-first",
-            "echo undock-berth-branch-should-not-run",
-        ),
-    ],
+    _build_branch_run_failure_scenarios(RUN_BRANCH_SCOPE_CASES),
     ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_stop_on_failure(
@@ -3053,116 +3007,7 @@ def _assert_run_no_commands_noop_for_scope(
         "decisions",
         "next_step",
     ),
-    [
-        (
-            "resume",
-            False,
-            False,
-            "repo",
-            "No command resume run",
-            "Ensure run path handles empty command list",
-            "resume with run",
-        ),
-        (
-            "r",
-            False,
-            False,
-            "repo",
-            "No command resume alias run",
-            "Ensure alias run path handles empty command list",
-            "run r --run",
-        ),
-        (
-            "undock",
-            False,
-            False,
-            "repo",
-            "No command undock alias run",
-            "Ensure undock alias run path handles empty command list",
-            "run undock --run",
-        ),
-        (
-            "resume",
-            True,
-            False,
-            "tmp",
-            "No command resume berth run",
-            "Ensure berth run path handles empty command list",
-            "run resume berth with run",
-        ),
-        (
-            "r",
-            True,
-            False,
-            "tmp",
-            "No command resume alias berth run",
-            "Ensure alias berth run path handles empty command list",
-            "run r berth with run",
-        ),
-        (
-            "undock",
-            True,
-            False,
-            "tmp",
-            "No command undock alias berth run",
-            "Ensure undock berth run path handles empty command list",
-            "run undock berth with run",
-        ),
-        (
-            "resume",
-            False,
-            True,
-            "repo",
-            "No command resume branch run",
-            "Ensure branch run path handles empty command list",
-            "run resume branch with run",
-        ),
-        (
-            "r",
-            False,
-            True,
-            "repo",
-            "No command resume alias branch run",
-            "Ensure alias branch run path handles empty command list",
-            "run r branch with run",
-        ),
-        (
-            "undock",
-            False,
-            True,
-            "repo",
-            "No command undock alias branch run",
-            "Ensure undock branch run path handles empty command list",
-            "run undock branch with run",
-        ),
-        (
-            "resume",
-            True,
-            True,
-            "tmp",
-            "No command resume berth branch run",
-            "Ensure berth+branch run path handles empty command list",
-            "run resume berth+branch with run",
-        ),
-        (
-            "r",
-            True,
-            True,
-            "tmp",
-            "No command resume alias berth branch run",
-            "Ensure alias berth+branch run path handles empty command list",
-            "run r berth+branch with run",
-        ),
-        (
-            "undock",
-            True,
-            True,
-            "tmp",
-            "No command undock alias berth branch run",
-            "Ensure undock berth+branch run path handles empty command list",
-            "run undock berth+branch with run",
-        ),
-    ],
+    _build_no_command_run_scope_scenarios(RUN_SCOPE_CASES),
     ids=RUN_SCOPE_IDS,
 )
 def test_run_scopes_with_no_commands_are_noop_success(
