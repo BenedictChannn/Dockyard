@@ -131,6 +131,8 @@ None
 + echo plus-bullet
 -echo tight-bullet
 *`echo tight-quoted-bullet`
+1. echo numbered-bullet
+2)echo numbered-tight
 - `echo quoted`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
@@ -155,6 +157,8 @@ None
         "echo plus-bullet",
         "echo tight-bullet",
         "echo tight-quoted-bullet",
+        "echo numbered-bullet",
+        "echo numbered-tight",
         "echo quoted",
     ]
 

@@ -188,7 +188,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
-        match = re.match(r"^[-*+]\s*(.*)$", stripped)
+        match = re.match(r"^(?:[-*+]|\d+[.)])\s*(.*)$", stripped)
         if not match:
             continue
         command = match.group(1).strip()
