@@ -631,6 +631,107 @@ def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_pat
     assert status_after == ""
 
 
+def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Alias `s` editor save flow should not alter project tree/index."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    editor_script = tmp_path / "alias_s_editor.sh"
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "printf 'Alias s editor decisions for non-interference\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "s",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Alias s editor non-interference objective",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
+def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Alias `dock` template save flow should not alter project tree/index."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "save_alias_dock_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Template alias dock non-interference objective",
+                "decisions": "Template decisions",
+                "next_steps": ["Run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo noop"],
+                "verification": {"tests_run": True, "build_ok": True},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = dict(os.environ)
