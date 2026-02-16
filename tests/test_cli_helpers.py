@@ -8,6 +8,7 @@ import pytest
 
 import dockyard.cli as cli_module
 from dockyard.cli import (
+    _coerce_text_items,
     _comma_or_pipe_values,
     _emit_json,
     _normalize_editor_text,
@@ -193,3 +194,15 @@ def test_safe_preview_uses_fallback_for_blank_values() -> None:
     """Safe preview helper should return fallback when compact text is blank."""
     preview = _safe_preview("   ", fallback="(unknown)")
     assert preview == "(unknown)"
+
+
+def test_coerce_text_items_handles_scalar_and_filters_blank_values() -> None:
+    """Coercion helper should normalize scalar values and drop blanks."""
+    assert _coerce_text_items("single") == ["single"]
+    assert _coerce_text_items("   ") == []
+
+
+def test_coerce_text_items_handles_mixed_iterables() -> None:
+    """Coercion helper should coerce iterable items and skip blank entries."""
+    values = ["alpha", 42, "   ", None]
+    assert _coerce_text_items(values) == ["alpha", "42"]

@@ -960,6 +960,59 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
     assert "$ echo run-one echo run-two -> exit 0" in run_result.stdout
 
 
+def test_resume_handles_scalar_list_payload_fields(git_repo: Path, tmp_path: Path) -> None:
+    """Resume handoff/run should coerce scalar list payloads safely."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Scalar list payload baseline",
+            "--decisions",
+            "Mutate list fields to scalar strings",
+            "--next-step",
+            "seed step",
+            "--risks",
+            "none",
+            "--command",
+            "echo seed",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET next_steps_json = ?, resume_commands_json = ?",
+        (json.dumps("step one\nstep two"), json.dumps("echo run-one\necho run-two")),
+    )
+    conn.commit()
+    conn.close()
+
+    handoff_output = _run_dock(["resume", "--handoff"], cwd=git_repo, env=env).stdout
+    assert "  - step one step two" in handoff_output
+
+    run_output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
+    assert "$ echo run-one echo run-two -> exit 0" in run_output
+    assert "$ e -> exit" not in run_output
+
+
 def test_resume_run_with_no_commands_is_noop_success(
     git_repo: Path,
     tmp_path: Path,
@@ -3990,6 +4043,63 @@ def test_review_open_falls_back_for_blank_metadata_fields(
     assert "severity: (unknown)" in opened
     assert "status: (unknown)" in opened
     assert "reason: (none)" in opened
+
+
+def test_review_open_handles_scalar_files_payload(git_repo: Path, tmp_path: Path) -> None:
+    """Review open should coerce scalar files payload to a single file string."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Scalar files payload baseline",
+            "--decisions",
+            "Mutate review files to scalar string",
+            "--next-step",
+            "run review open",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "files scalar", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE review_items SET files_json = ? WHERE id = ?",
+        (json.dumps("src/scalar.py"), review_id),
+    )
+    conn.commit()
+    conn.close()
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "files: src/scalar.py" in opened
 
 
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:

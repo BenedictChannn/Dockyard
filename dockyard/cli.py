@@ -83,6 +83,27 @@ def _safe_preview(value: Any, max_length: int = 200, fallback: str = "") -> str:
     return escape(fallback) if fallback else ""
 
 
+def _coerce_text_items(value: Any) -> list[str]:
+    """Coerce list-like/scalar values into non-empty text items."""
+    if value is None:
+        return []
+    raw_items: list[Any]
+    if isinstance(value, list):
+        raw_items = value
+    elif isinstance(value, tuple | set):
+        raw_items = list(value)
+    else:
+        raw_items = [value]
+    items: list[str] = []
+    for item in raw_items:
+        if item is None:
+            continue
+        text = str(item)
+        if text.strip():
+            items.append(text)
+    return items
+
+
 def _normalize_editor_text(raw: str) -> str:
     """Normalize editor text by dropping scaffold comments and outer blanks.
 
@@ -556,8 +577,8 @@ def resume_command(
         )
 
     if handoff:
-        handoff_next_steps = checkpoint.next_steps or ["(none recorded)"]
-        handoff_commands = checkpoint.resume_commands or ["(none recorded)"]
+        handoff_next_steps = _coerce_text_items(checkpoint.next_steps) or ["(none recorded)"]
+        handoff_commands = _coerce_text_items(checkpoint.resume_commands) or ["(none recorded)"]
         handoff_block = "\n".join(
             [
                 "### Dockyard Handoff",
@@ -579,7 +600,8 @@ def resume_command(
             berth_record = store.resolve_berth(checkpoint.repo_id)
         if not berth_record:
             raise DockyardError("Cannot resolve repository root for --run execution.")
-        success, results = run_commands(checkpoint.resume_commands, cwd=berth_record.root_path)
+        run_labels = _coerce_text_items(checkpoint.resume_commands)
+        success, results = run_commands(run_labels, cwd=berth_record.root_path)
         for cmd, code in results:
             console.print(f"$ {_safe_preview(cmd, 240, fallback='(empty)')} -> exit {code}")
         if not success:
@@ -757,7 +779,7 @@ def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) ->
                     f"status: {_safe_preview(item.status, 40, fallback='(unknown)')}",
                     f"reason: {_safe_preview(item.reason, 240, fallback='(none)')}",
                     f"notes: {_safe_preview(item.notes or '', 240)}",
-                    f"files: {_safe_preview(', '.join(item.files) if item.files else '', 240)}",
+                    f"files: {_safe_preview(', '.join(_coerce_text_items(item.files)), 240)}",
                 ]
             ),
             title="Review Item",
