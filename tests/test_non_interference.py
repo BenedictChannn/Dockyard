@@ -359,14 +359,6 @@ def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tupl
 
 
 SAVE_COMMAND_IDS: tuple[str, ...] = _case_ids(SAVE_COMMAND_CASES, get_id=attrgetter("case_id"))
-RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _case_ids(
-    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
-    get_id=attrgetter("case_id"),
-)
-RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _case_ids(
-    RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH,
-    get_id=attrgetter("case_id"),
-)
 
 
 def _build_no_command_run_scope_scenarios(
