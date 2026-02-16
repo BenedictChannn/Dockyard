@@ -20,6 +20,9 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
+SaveCommandName = Literal["save", "s", "dock"]
+DashboardCommandName = Literal["ls", "harbor"]
+SearchCommandName = Literal["search", "f"]
 
 
 @dataclass(frozen=True)
@@ -39,7 +42,7 @@ MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder,
 class SaveCommandMeta:
     """Metadata describing a save command token."""
 
-    name: str
+    name: SaveCommandName
     slug: str
     case_id: str
 
@@ -152,9 +155,9 @@ RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCaseMeta, ...] = tuple(
 )
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 RunOptInMutationScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str]
-SaveNoPromptScenario = tuple[str, str, str, str, str, str, str]
-SaveEditorScenario = tuple[str, str, str, str]
-SaveTemplateScenario = tuple[str, str, str]
+SaveNoPromptScenario = tuple[SaveCommandName, str, str, str, str, str, str]
+SaveEditorScenario = tuple[SaveCommandName, str, str, str]
+SaveTemplateScenario = tuple[SaveCommandName, str, str]
 
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
@@ -602,7 +605,7 @@ def _assert_opt_in_run_without_commands_for_scope(
     git_repo: Path,
     tmp_path: Path,
     *,
-    command_name: str,
+    command_name: RunCommandName,
     include_berth: bool,
     include_branch: bool,
     run_cwd_kind: RunCwdKind,
@@ -632,7 +635,7 @@ def _assert_opt_in_run_mutates_for_scope(
     git_repo: Path,
     tmp_path: Path,
     *,
-    command_name: str,
+    command_name: RunCommandName,
     include_berth: bool,
     include_branch: bool,
     run_cwd_kind: RunCwdKind,
@@ -661,7 +664,7 @@ def _assert_opt_in_run_mutates_for_scope(
 
 
 def _resume_read_variants(
-    command_name: str,
+    command_name: RunCommandName,
     *,
     berth: str | None = None,
     branch: str | None = None,
@@ -998,7 +1001,7 @@ METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case.case_id for case in METADATA_SC
 def test_save_no_prompt_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: str,
+    command_name: SaveCommandName,
     objective: str,
     decisions: str,
     next_step: str,
@@ -1058,7 +1061,7 @@ def _build_in_repo_read_only_commands(base_branch: str) -> CommandMatrix:
 
 
 def _build_dashboard_read_commands(
-    command_name: str,
+    command_name: DashboardCommandName,
     *,
     include_non_json_tag_combo: bool = False,
 ) -> CommandMatrix:
@@ -1101,7 +1104,7 @@ def _build_dashboard_read_commands(
     return commands
 
 
-def _build_search_read_commands(command_name: str, repo_name: str, base_branch: str) -> CommandMatrix:
+def _build_search_read_commands(command_name: SearchCommandName, repo_name: str, base_branch: str) -> CommandMatrix:
     """Build search/f read-only command matrix."""
     commands: CommandMatrix = [
         ["python3", "-m", "dockyard", command_name, "baseline"],
@@ -1321,7 +1324,7 @@ def test_review_and_link_commands_do_not_modify_repo(
 def test_save_editor_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: str,
+    command_name: SaveCommandName,
     script_name: str,
     decisions_text: str,
     objective: str,
@@ -1378,7 +1381,7 @@ def test_save_editor_flows_do_not_modify_repo(
 def test_save_template_flows_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: str,
+    command_name: SaveCommandName,
     template_name: str,
     objective: str,
 ) -> None:
@@ -1434,7 +1437,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
 def test_run_scopes_without_commands_keep_repo_clean(
     git_repo: Path,
     tmp_path: Path,
-    command_name: str,
+    command_name: RunCommandName,
     include_berth: bool,
     include_branch: bool,
     run_cwd_kind: RunCwdKind,
@@ -1473,7 +1476,7 @@ def test_run_scopes_without_commands_keep_repo_clean(
 def test_run_scopes_opt_in_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    command_name: str,
+    command_name: RunCommandName,
     include_berth: bool,
     include_branch: bool,
     run_cwd_kind: RunCwdKind,
