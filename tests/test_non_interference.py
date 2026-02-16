@@ -1004,38 +1004,45 @@ def _build_metadata_commands_root_override(git_repo: Path, _base_branch: str) ->
 
 def _build_review_add_command_in_repo(_git_repo: Path, _base_branch: str) -> RunCommand:
     """Build in-repo review-add command."""
-    return [
-        "python3",
-        "-m",
-        "dockyard",
-        "review",
-        "add",
-        "--reason",
-        "manual",
-        "--severity",
-        "low",
-    ]
+    return _build_review_add_command(reason="manual")
 
 
 def _build_review_add_command_root_override(git_repo: Path, base_branch: str) -> RunCommand:
     """Build root-override review-add command."""
-    return [
+    return _build_review_add_command(
+        reason="manual-root-override",
+        repo=git_repo.name,
+        branch=base_branch,
+        notes="outside repo invocation",
+    )
+
+
+def _build_review_add_command(
+    *,
+    reason: str,
+    repo: str | None = None,
+    branch: str | None = None,
+    notes: str | None = None,
+) -> RunCommand:
+    """Build review-add command with optional scoped arguments."""
+    command: list[str] = [
         "python3",
         "-m",
         "dockyard",
         "review",
         "add",
         "--reason",
-        "manual-root-override",
+        reason,
         "--severity",
         "low",
-        "--repo",
-        git_repo.name,
-        "--branch",
-        base_branch,
-        "--notes",
-        "outside repo invocation",
     ]
+    if repo is not None:
+        command.extend(["--repo", repo])
+    if branch is not None:
+        command.extend(["--branch", branch])
+    if notes is not None:
+        command.extend(["--notes", notes])
+    return command
 
 
 def _build_resume_read_path_scenarios(
