@@ -68,14 +68,11 @@ def pair_scope_cases_with_context(
     Returns:
         Tuples containing the original scope case and derived context metadata.
     """
-    return tuple(
-        (
-            case,
-            context_builder(
-                case.command_name,
-                case.include_berth,
-                case.include_branch,
-            ),
-        )
-        for case in cases
+    return pair_with_context(
+        cases,
+        context_builder=lambda case: context_builder(
+            case.command_name,
+            case.include_berth,
+            case.include_branch,
+        ),
     )
