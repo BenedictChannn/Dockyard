@@ -116,6 +116,12 @@ RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (variant.include_berth, variant.include_branch): variant.descriptor
     for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
 }
+RUN_SCOPE_RANK_BY_FLAGS: dict[tuple[bool, bool], int] = {
+    (False, False): 0,
+    (False, True): 1,
+    (True, False): 2,
+    (True, True): 3,
+}
 
 
 def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:
@@ -127,14 +133,7 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int
     Returns:
         Tuple sorted by scope family then command ordering.
     """
-    if not case.include_berth and not case.include_branch:
-        scope_rank = 0
-    elif case.include_branch and not case.include_berth:
-        scope_rank = 1
-    elif case.include_berth and not case.include_branch:
-        scope_rank = 2
-    else:
-        scope_rank = 3
+    scope_rank = RUN_SCOPE_RANK_BY_FLAGS[(case.include_berth, case.include_branch)]
     return (scope_rank, RUN_SCOPE_COMMAND_ORDER[case.command_name])
 
 
