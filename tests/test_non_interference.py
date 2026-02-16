@@ -18,6 +18,8 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 SAVE_COMMAND_IDS = ["save", "s_alias", "dock_alias"]
+RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
+METADATA_SCOPE_IDS = ["in_repo", "root_override"]
 RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [
     "resume_default",
     "r_default",
@@ -945,7 +947,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
             "tmp",
         ),
     ],
-    ids=["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"],
+    ids=RESUME_READ_PATH_IDS,
 )
 def test_resume_read_paths_do_not_execute_saved_commands(
     git_repo: Path,
@@ -997,7 +999,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(
             _build_review_add_command_root_override,
         ),
     ],
-    ids=["in_repo", "root_override"],
+    ids=METADATA_SCOPE_IDS,
 )
 def test_review_and_link_commands_do_not_modify_repo(
     git_repo: Path,
