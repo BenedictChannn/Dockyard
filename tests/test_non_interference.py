@@ -1045,6 +1045,51 @@ def _build_review_add_command(
     return command
 
 
+def test_build_review_add_command_omits_optional_scope_args() -> None:
+    """Review-add builder should include only required arguments by default."""
+    command = _build_review_add_command(reason="manual")
+
+    assert command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "add",
+        "--reason",
+        "manual",
+        "--severity",
+        "low",
+    ]
+
+
+def test_build_review_add_command_includes_optional_scope_args() -> None:
+    """Review-add builder should append optional scope arguments in order."""
+    command = _build_review_add_command(
+        reason="manual-root-override",
+        repo="demo-repo",
+        branch="feature/demo",
+        notes="outside repo invocation",
+    )
+
+    assert command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "add",
+        "--reason",
+        "manual-root-override",
+        "--severity",
+        "low",
+        "--repo",
+        "demo-repo",
+        "--branch",
+        "feature/demo",
+        "--notes",
+        "outside repo invocation",
+    ]
+
+
 def _build_resume_read_path_scenarios(
     cases: Sequence[ResumeReadPathMeta],
 ) -> tuple[ResumeReadPathScenarioMeta, ...]:
