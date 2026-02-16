@@ -723,6 +723,8 @@ Risk text
 * [x] python3 -m dockyard ls
 1. [X] echo numbered
 2) [x]echo-literal-no-separator
+- `[x] echo quoted`
+- `[x]echo quoted-literal-no-separator`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
 `head`: abc (subject)
@@ -744,4 +746,6 @@ Risk text
         "python3 -m dockyard ls",
         "echo numbered",
         "[x]echo-literal-no-separator",
+        "echo quoted",
+        "[x]echo quoted-literal-no-separator",
     ]
