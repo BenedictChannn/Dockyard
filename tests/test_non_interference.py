@@ -122,7 +122,7 @@ def _save_checkpoint(
     decisions: str,
     next_step: str,
     risks: str,
-    command: str = "echo noop",
+    command: str | None = "echo noop",
     extra_args: list[str] | None = None,
 ) -> None:
     """Create a no-prompt checkpoint with shared verification defaults.
@@ -134,7 +134,7 @@ def _save_checkpoint(
         decisions: Save decisions text.
         next_step: Save next-step text.
         risks: Save risks/review-needed text.
-        command: Resume command text captured in checkpoint.
+        command: Optional resume command text captured in checkpoint.
         extra_args: Optional additional CLI args appended to save command.
     """
     save_command = [
@@ -153,8 +153,6 @@ def _save_checkpoint(
         next_step,
         "--risks",
         risks,
-        "--command",
-        command,
         "--tests-run",
         "--tests-command",
         "pytest -q",
@@ -165,6 +163,8 @@ def _save_checkpoint(
         "--smoke-fail",
         "--no-auto-review",
     ]
+    if command is not None:
+        save_command.extend(["--command", command])
     if extra_args:
         save_command.extend(extra_args)
     _run(save_command, cwd=git_repo, env=env)
@@ -256,6 +256,42 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
         decisions=decisions,
         next_step=next_step,
     )
+
+
+def _assert_opt_in_run_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    run_command: list[str],
+    run_cwd: Path,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """Assert explicit run mode with no commands leaves repo unchanged.
+
+    Args:
+        git_repo: Repository path to inspect for mutations.
+        tmp_path: Temporary path used for Dockyard home.
+        run_command: Dockyard CLI command to execute (must include ``--run``).
+        run_cwd: Working directory from which to execute ``run_command``.
+        objective: Checkpoint objective text for setup save.
+        decisions: Checkpoint decisions text for setup save.
+        next_step: Checkpoint next-step text for setup save.
+    """
+    env = _dockyard_env(tmp_path)
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        risks="none",
+        command=None,
+    )
+    _assert_repo_clean(git_repo)
+    _run(run_command, cwd=run_cwd, env=env)
+    _assert_repo_clean(git_repo)
 
 
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
@@ -1036,6 +1072,51 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
     )
 
     _assert_repo_clean(git_repo)
+
+
+def test_resume_run_without_commands_keeps_repo_clean(git_repo: Path, tmp_path: Path) -> None:
+    """Primary `resume --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "resume", "--run"],
+        run_cwd=git_repo,
+        objective="Resume run no-commands baseline",
+        decisions="Verify resume --run no-op path remains non-mutating",
+        next_step="run resume --run",
+    )
+
+
+def test_resume_alias_run_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `r --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "r", "--run"],
+        run_cwd=git_repo,
+        objective="Resume alias run no-commands baseline",
+        decisions="Verify r --run no-op path remains non-mutating",
+        next_step="run r --run",
+    )
+
+
+def test_undock_alias_run_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `undock --run` with no commands must not mutate repository."""
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "undock", "--run"],
+        run_cwd=git_repo,
+        objective="Undock alias run no-commands baseline",
+        decisions="Verify undock --run no-op path remains non-mutating",
+        next_step="run undock --run",
+    )
 
 
 def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
