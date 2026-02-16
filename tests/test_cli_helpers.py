@@ -235,6 +235,13 @@ def test_normalize_non_empty_option_rejects_blank_values() -> None:
     assert "--root must be a non-empty string." in str(err.value)
 
 
+def test_normalize_non_empty_option_supports_custom_field_labels() -> None:
+    """Non-empty option normalizer should preserve custom field labels."""
+    with pytest.raises(cli_module.typer.BadParameter) as err:
+        _normalize_non_empty_option("   ", "Review ID")
+    assert "Review ID must be a non-empty string." in str(err.value)
+
+
 def test_normalize_text_values_trims_and_filters_blank_entries() -> None:
     """List-value normalizer should trim entries and drop blanks."""
     values = [" alpha ", "   ", "beta", "\n", "gamma "]

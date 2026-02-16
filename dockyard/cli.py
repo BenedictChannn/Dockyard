@@ -585,13 +585,11 @@ def resume_command(
 ) -> None:
     """Resume latest checkpoint for current repo or selected berth."""
     store, _ = _store()
-    normalized_berth = _normalize_optional_text(berth)
+    normalized_berth = _normalize_non_empty_option(berth, "Berth")
     normalized_branch = _normalize_non_empty_option(branch, "--branch")
 
     repo_id: str | None = None
     berth_record = None
-    if berth is not None and normalized_berth is None:
-        raise typer.BadParameter("Berth must be a non-empty string.")
     if normalized_berth:
         berth_record = store.resolve_berth(normalized_berth)
         if not berth_record:
@@ -699,10 +697,8 @@ def search_command(
         raise typer.BadParameter("Query must be a non-empty string.")
     limit = _require_minimum_int(limit, minimum=1, field_name="--limit") or 20
     normalized_tag = _normalize_non_empty_option(tag, "--tag")
-    repo_filter = _normalize_optional_text(repo)
+    repo_filter = _normalize_non_empty_option(repo, "--repo")
     normalized_branch = _normalize_non_empty_option(branch, "--branch")
-    if repo and repo_filter is None:
-        raise typer.BadParameter("--repo must be a non-empty string.")
     if repo_filter:
         berth = store.resolve_berth(repo_filter)
         if berth:
@@ -811,9 +807,7 @@ def review_add(
 @review_app.command("done")
 def review_done(review_id: str = typer.Argument(..., help="Review item ID.")) -> None:
     """Mark review item as done."""
-    normalized_review_id = _normalize_optional_text(review_id)
-    if normalized_review_id is None:
-        raise typer.BadParameter("Review ID must be a non-empty string.")
+    normalized_review_id = _normalize_non_empty_option(review_id, "Review ID")
     store, _ = _store()
     review = store.get_review(normalized_review_id)
     if not review:
@@ -827,9 +821,7 @@ def review_done(review_id: str = typer.Argument(..., help="Review item ID.")) ->
 @review_app.command("open")
 def review_open(review_id: str = typer.Argument(..., help="Review item ID.")) -> None:
     """Show review details and associated checkpoint context."""
-    normalized_review_id = _normalize_optional_text(review_id)
-    if normalized_review_id is None:
-        raise typer.BadParameter("Review ID must be a non-empty string.")
+    normalized_review_id = _normalize_non_empty_option(review_id, "Review ID")
     store, _ = _store()
     item = store.get_review(normalized_review_id)
     if not item:
