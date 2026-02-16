@@ -4567,6 +4567,51 @@ def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
     assert json.loads(result.stdout) == []
 
 
+def test_search_filtered_no_matches_json_returns_empty_array(git_repo: Path, tmp_path: Path) -> None:
+    """Filtered JSON search output should remain [] when no rows survive."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filtered no-match json objective",
+            "--decisions",
+            "Filtered no-match json decisions",
+            "--next-step",
+            "run filtered search json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "present-tag",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Filtered no-match json objective", "--tag", "missing-tag", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+
+
 def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path) -> None:
     """Search snippets should surface matches from risks text."""
     env = dict(os.environ)
