@@ -112,7 +112,8 @@ Useful flags:
 - Handoff shows `(none recorded)` placeholders when no next steps or commands
   are recorded.
 - Handoff renders blank objective/risks values as `(none)`, and `--run`
-  ignores blank command entries after normalization.
+  trims command whitespace while ignoring blank command entries after
+  normalization.
 - `--run` is always explicit opt-in, including BERTH/`--branch` variants
   (for example: `resume my-berth --branch main --run`).
 - If no commands are recorded, run mode is a safe no-op (no command rows are

@@ -96,7 +96,8 @@ Notes:
   `(none recorded)` placeholders.
 - Blank objective/risks values in handoff render as `(none)` for explicitness.
 - `--run` command labels in output are compacted to one-line previews.
-- `--run` ignores blank command entries after payload normalization.
+- `--run` trims surrounding whitespace from command entries and ignores blanks
+  after payload normalization.
 - `--run` is explicit opt-in: `resume --run`, `r --run`, and
   `undock --run` may mutate repo files depending on recorded commands.
 - Opt-in mutation semantics also apply when BERTH and/or `--branch` are used
