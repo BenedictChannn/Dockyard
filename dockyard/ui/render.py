@@ -34,6 +34,17 @@ def _label_text(value: Any, max_length: int) -> str:
     return preview if preview else "(unknown)"
 
 
+def _coerce_text_items(value: Any) -> list[str]:
+    """Coerce mixed values to a list of text items."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, tuple | set):
+        return [str(item) for item in value]
+    return [str(value)]
+
+
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
@@ -89,11 +100,12 @@ def print_resume(
         f"Objective: {_preview_text(checkpoint.objective, 200)}",
         "Next Steps:",
     ]
-    if checkpoint.next_steps:
+    next_steps = _coerce_text_items(checkpoint.next_steps)
+    if next_steps:
         summary_lines.extend(
             [
                 f"  {index + 1}. {_preview_text(step, 200)}"
-                for index, step in enumerate(checkpoint.next_steps)
+                for index, step in enumerate(next_steps)
             ]
         )
     else:
@@ -117,14 +129,19 @@ def print_resume(
         )
     )
 
-    touched = "\n".join(f"- {path}" for path in checkpoint.touched_files[:20]) or "(none)"
+    touched_files = _coerce_text_items(checkpoint.touched_files)
+    touched = "\n".join(f"- {_preview_text(path, 240)}" for path in touched_files[:20]) or "(none)"
     console.print(Panel.fit(touched, title="Touched Files", border_style="magenta"))
 
-    diff_text = checkpoint.diff_stat_text.strip() or "(no diff)"
+    if checkpoint.diff_stat_text is None:
+        diff_text = "(no diff)"
+    else:
+        diff_text = str(checkpoint.diff_stat_text).strip() or "(no diff)"
     console.print(Panel.fit(diff_text, title="Diff Stat", border_style="green"))
 
-    if checkpoint.resume_commands:
-        commands = "\n".join(f"$ {command}" for command in checkpoint.resume_commands)
+    resume_commands = _coerce_text_items(checkpoint.resume_commands)
+    if resume_commands:
+        commands = "\n".join(f"$ {command}" for command in resume_commands)
     else:
         commands = "(no commands recorded)"
     console.print(Panel.fit(commands, title="Resume Commands", border_style="blue"))

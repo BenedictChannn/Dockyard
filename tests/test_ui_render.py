@@ -133,6 +133,22 @@ def test_print_resume_uses_unknown_labels_for_blank_project_or_branch() -> None:
     assert "Project/Branch: (unknown) / (unknown)" in output
 
 
+def test_print_resume_handles_non_list_resume_payload_fields() -> None:
+    """Resume renderer should tolerate scalar/None list-like payload fields."""
+    checkpoint = _checkpoint()
+    checkpoint.next_steps = "single-step"  # type: ignore[assignment]
+    checkpoint.touched_files = None  # type: ignore[assignment]
+    checkpoint.diff_stat_text = None  # type: ignore[assignment]
+    checkpoint.resume_commands = "echo resume"  # type: ignore[assignment]
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "1. single-step" in output
+    assert "(no diff)" in output
+    assert "$ echo resume" in output
+    assert "Touched Files" in output
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)
