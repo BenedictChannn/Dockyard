@@ -2333,31 +2333,105 @@ def test_save_editor_trims_outer_blank_lines(
     assert payload["decisions"] == "Core decision line"
 
 
-def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run must stop at first failing command."""
-    _assert_run_stops_on_first_failure(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
+    [
+        (
+            "resume",
+            "Run success path",
+            "Verify all commands execute when successful",
+            "Run resume --run",
+            ["echo first-ok", "echo second-ok"],
+        ),
+        (
+            "r",
+            "Resume alias run success objective",
+            "Validate run alias success-path parity",
+            "run alias",
+            ["echo alias-run-one", "echo alias-run-two"],
+        ),
+        (
+            "undock",
+            "Undock run success objective",
+            "Validate undock --run alias path",
+            "run undock alias",
+            ["echo undock-one", "echo undock-two"],
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_default_scope_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    resume_commands: list[str],
+) -> None:
+    """`<command> --run` should execute all recorded commands."""
+    _assert_run_executes_commands_on_success(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Check run ordering",
-        decisions="Run list should stop on first failing command",
-        next_step="Observe command exit sequence",
-        first_command="echo first",
-        skipped_command="echo should-not-run",
-        run_args=["resume", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=resume_commands,
+        run_args=[command_name, "--run"],
         run_cwd=git_repo,
     )
 
 
-def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run should execute all commands when none fail."""
-    _assert_run_executes_commands_on_success(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
+    [
+        (
+            "resume",
+            "Check run ordering",
+            "Run list should stop on first failing command",
+            "Observe command exit sequence",
+            "echo first",
+            "echo should-not-run",
+        ),
+        (
+            "r",
+            "Resume alias run failure objective",
+            "Validate run alias stop-on-failure parity",
+            "run alias",
+            "echo alias-first",
+            "echo alias-should-not-run",
+        ),
+        (
+            "undock",
+            "Undock run failure objective",
+            "Validate failure-stop behavior on undock alias",
+            "run undock alias",
+            "echo undock-first",
+            "echo undock-should-not-run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_default_scope_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    first_command: str,
+    skipped_command: str,
+) -> None:
+    """`<command> --run` should stop execution on first failing command."""
+    _assert_run_stops_on_first_failure(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Run success path",
-        decisions="Verify all commands execute when successful",
-        next_step="Run resume --run",
-        resume_commands=["echo first-ok", "echo second-ok"],
-        run_args=["resume", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        first_command=first_command,
+        skipped_command=skipped_command,
+        run_args=[command_name, "--run"],
         run_cwd=git_repo,
     )
 
@@ -2409,23 +2483,6 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
 
     run_result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
     assert "$ echo run-one echo run-two -> exit 0" in run_result.stdout
-
-
-def test_resume_alias_run_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Resume alias should execute all commands on successful run."""
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume alias run success objective",
-        decisions="Validate run alias success-path parity",
-        next_step="run alias",
-        resume_commands=["echo alias-run-one", "echo alias-run-two"],
-        run_args=["r", "--run"],
-        run_cwd=git_repo,
-    )
 
 
 @pytest.mark.parametrize(
@@ -2635,24 +2692,6 @@ def test_run_berth_branch_scope_stops_on_failure(
         skipped_command=skipped_command,
         run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
         run_cwd=tmp_path,
-    )
-
-
-def test_resume_alias_run_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Resume alias should stop on first failing command."""
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume alias run failure objective",
-        decisions="Validate run alias stop-on-failure parity",
-        next_step="run alias",
-        first_command="echo alias-first",
-        skipped_command="echo alias-should-not-run",
-        run_args=["r", "--run"],
-        run_cwd=git_repo,
     )
 
 
@@ -5599,41 +5638,6 @@ def test_undock_alias_branch_flag_accepts_trimmed_value(
     )
     assert selected["branch"] == branch
     assert selected["objective"] == "Undock trimmed branch objective"
-
-
-def test_undock_alias_run_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Undock alias should execute all commands when run succeeds."""
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock run success objective",
-        decisions="Validate undock --run alias path",
-        next_step="run undock alias",
-        resume_commands=["echo undock-one", "echo undock-two"],
-        run_args=["undock", "--run"],
-        run_cwd=git_repo,
-    )
-
-
-def test_undock_alias_run_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Undock alias should stop on first failing command."""
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock run failure objective",
-        decisions="Validate failure-stop behavior on undock alias",
-        next_step="run undock alias",
-        first_command="echo undock-first",
-        skipped_command="echo undock-should-not-run",
-        run_args=["undock", "--run"],
-        run_cwd=git_repo,
-    )
 
 
 def test_undock_alias_supports_handoff_and_json_for_explicit_berth(
