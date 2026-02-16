@@ -6,7 +6,7 @@ import json
 import os
 import re
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -19,11 +19,11 @@ ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 SaveCommandCase = tuple[str, str, str]
-SAVE_COMMAND_CASES: list[SaveCommandCase] = [
+SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
     ("save", "save", "save"),
     ("s", "alias_s", "s_alias"),
     ("dock", "alias_dock", "dock_alias"),
-]
+)
 SAVE_COMMAND_IDS = [case[2] for case in SAVE_COMMAND_CASES]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
@@ -52,7 +52,7 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, in
     return (scope_rank, RUN_SCOPE_COMMAND_ORDER[command_name])
 
 
-RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
+RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCase, ...] = (
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
     ("undock", False, False, "repo", "undock_default"),
@@ -65,10 +65,12 @@ RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
     ("resume", True, True, "tmp", "resume_berth_branch"),
     ("r", True, True, "tmp", "r_berth_branch"),
     ("undock", True, True, "tmp", "undock_berth_branch"),
-]
-RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: list[RunScopeCase] = sorted(
-    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
-    key=_run_scope_branch_before_berth_sort_key,
+)
+RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCase, ...] = tuple(
+    sorted(
+        RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+        key=_run_scope_branch_before_berth_sort_key,
+    ),
 )
 RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH]
 RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH]
@@ -84,7 +86,7 @@ def _scope_label(scope_id: str) -> str:
     return scope_id.replace("_", " ")
 
 
-def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
     """Build no-command run-scope scenarios from shared scope metadata.
 
     Args:
@@ -111,7 +113,7 @@ def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[Run
 
 
 def _build_opt_in_mutation_run_scope_scenarios(
-    cases: list[RunScopeCase],
+    cases: Sequence[RunScopeCase],
 ) -> list[RunOptInMutationScenario]:
     """Build opt-in mutation run-scope scenarios from shared scope metadata.
 
@@ -139,7 +141,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
     return scenarios
 
 
-def _build_save_no_prompt_scenarios(cases: list[SaveCommandCase]) -> list[SaveNoPromptScenario]:
+def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveNoPromptScenario]:
     """Build no-prompt save scenarios from shared command metadata.
 
     Args:
@@ -164,7 +166,7 @@ def _build_save_no_prompt_scenarios(cases: list[SaveCommandCase]) -> list[SaveNo
     return scenarios
 
 
-def _build_save_editor_scenarios(cases: list[SaveCommandCase]) -> list[SaveEditorScenario]:
+def _build_save_editor_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveEditorScenario]:
     """Build save/editor scenarios from shared command metadata.
 
     Args:
@@ -186,7 +188,7 @@ def _build_save_editor_scenarios(cases: list[SaveCommandCase]) -> list[SaveEdito
     return scenarios
 
 
-def _build_save_template_scenarios(cases: list[SaveCommandCase]) -> list[SaveTemplateScenario]:
+def _build_save_template_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveTemplateScenario]:
     """Build save/template scenarios from shared command metadata.
 
     Args:
