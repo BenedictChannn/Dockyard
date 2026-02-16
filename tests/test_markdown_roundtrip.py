@@ -129,6 +129,8 @@ None
 - python3 -m dockyard ls
 * echo star-bullet
 + echo plus-bullet
+-echo tight-bullet
+*`echo tight-quoted-bullet`
 - `echo quoted`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
@@ -151,6 +153,8 @@ None
         "python3 -m dockyard ls",
         "echo star-bullet",
         "echo plus-bullet",
+        "echo tight-bullet",
+        "echo tight-quoted-bullet",
         "echo quoted",
     ]
 
