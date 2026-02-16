@@ -17,12 +17,12 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
-RunCommandCase = tuple[str, str, str]
+RunCommandCase = tuple[str, str, str, str]
 RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
 RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
-    ("resume", "resume", "resume"),
-    ("r", "r", "r_alias"),
-    ("undock", "undock", "undock_alias"),
+    ("resume", "resume", "resume", "resume"),
+    ("r", "r", "r_alias", "resume alias"),
+    ("undock", "undock", "undock_alias", "undock alias"),
 )
 RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
@@ -82,13 +82,13 @@ def _build_default_run_success_scenarios(
         Parameter tuples for default-scope run success tests.
     """
     scenarios: list[RunDefaultSuccessScenario] = []
-    for command_name, case_label, _case_id in cases:
+    for command_name, case_label, _case_id, display_label in cases:
         scenarios.append(
             (
                 command_name,
-                f"{case_label} run success objective",
-                f"Validate {case_label} run success-path behavior",
-                f"run {case_label}",
+                f"{display_label} run success objective",
+                f"Validate {display_label} run success-path behavior",
+                f"run {display_label}",
                 [f"echo {case_label}-run-one", f"echo {case_label}-run-two"],
             ),
         )
@@ -107,13 +107,13 @@ def _build_default_run_failure_scenarios(
         Parameter tuples for default-scope run stop-on-failure tests.
     """
     scenarios: list[RunDefaultFailureScenario] = []
-    for command_name, case_label, _case_id in cases:
+    for command_name, case_label, _case_id, display_label in cases:
         scenarios.append(
             (
                 command_name,
-                f"{case_label} run failure objective",
-                f"Validate {case_label} run stop-on-failure behavior",
-                f"run {case_label}",
+                f"{display_label} run failure objective",
+                f"Validate {display_label} run stop-on-failure behavior",
+                f"run {display_label}",
                 f"echo {case_label}-first",
                 f"echo {case_label}-should-not-run",
             ),
