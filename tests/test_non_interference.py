@@ -1021,3 +1021,67 @@ def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
     assert marker.exists()
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert "undock_alias_run_opt_in_marker.txt" in status_after
+
+
+def test_resume_run_opt_in_with_trimmed_berth_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Primary `resume <berth> --run` may mutate repo when explicitly opted-in."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / "resume_run_with_berth_opt_in_marker.txt"
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Resume berth run opt-in mutation baseline",
+        decisions="Verify resume <berth> --run may execute mutating commands",
+        next_step="run resume <berth> --run",
+        risks="none",
+        command=f"touch {marker}",
+    )
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+
+    _run(
+        ["python3", "-m", "dockyard", "resume", f"  {git_repo.name}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+    )
+
+    assert marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert "resume_run_with_berth_opt_in_marker.txt" in status_after
+
+
+def test_resume_alias_run_opt_in_with_trimmed_berth_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `r <berth> --run` may mutate repo when explicitly opted-in."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / "resume_alias_run_with_berth_opt_in_marker.txt"
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Resume alias berth run opt-in mutation baseline",
+        decisions="Verify r <berth> --run may execute mutating commands",
+        next_step="run r <berth> --run",
+        risks="none",
+        command=f"touch {marker}",
+    )
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+
+    _run(
+        ["python3", "-m", "dockyard", "r", f"  {git_repo.name}  ", "--run"],
+        cwd=tmp_path,
+        env=env,
+    )
+
+    assert marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert "resume_alias_run_with_berth_opt_in_marker.txt" in status_after
