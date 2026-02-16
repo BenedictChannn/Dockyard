@@ -17,37 +17,97 @@ RunCommand = list[str]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
+RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 SAVE_COMMAND_IDS = ["save", "s_alias", "dock_alias"]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
-RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [
-    "resume_default",
-    "r_default",
-    "undock_default",
-    "resume_berth",
-    "r_berth",
-    "undock_berth",
-    "resume_branch",
-    "r_branch",
-    "undock_branch",
-    "resume_berth_branch",
-    "r_berth_branch",
-    "undock_berth_branch",
+RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
+    ("resume", False, False, "repo", "resume_default"),
+    ("r", False, False, "repo", "r_default"),
+    ("undock", False, False, "repo", "undock_default"),
+    ("resume", True, False, "tmp", "resume_berth"),
+    ("r", True, False, "tmp", "r_berth"),
+    ("undock", True, False, "tmp", "undock_berth"),
+    ("resume", False, True, "repo", "resume_branch"),
+    ("r", False, True, "repo", "r_branch"),
+    ("undock", False, True, "repo", "undock_branch"),
+    ("resume", True, True, "tmp", "resume_berth_branch"),
+    ("r", True, True, "tmp", "r_berth_branch"),
+    ("undock", True, True, "tmp", "undock_berth_branch"),
 ]
-RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [
-    "resume_default",
-    "r_default",
-    "undock_default",
-    "resume_branch",
-    "r_branch",
-    "undock_branch",
-    "resume_berth",
-    "r_berth",
-    "undock_berth",
-    "resume_berth_branch",
-    "r_berth_branch",
-    "undock_berth_branch",
+RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: list[RunScopeCase] = [
+    ("resume", False, False, "repo", "resume_default"),
+    ("r", False, False, "repo", "r_default"),
+    ("undock", False, False, "repo", "undock_default"),
+    ("resume", False, True, "repo", "resume_branch"),
+    ("r", False, True, "repo", "r_branch"),
+    ("undock", False, True, "repo", "undock_branch"),
+    ("resume", True, False, "tmp", "resume_berth"),
+    ("r", True, False, "tmp", "r_berth"),
+    ("undock", True, False, "tmp", "undock_berth"),
+    ("resume", True, True, "tmp", "resume_berth_branch"),
+    ("r", True, True, "tmp", "r_berth_branch"),
+    ("undock", True, True, "tmp", "undock_berth_branch"),
 ]
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH]
+RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH]
+RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
+RunOptInMutationScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str]
+
+
+def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
+    """Build no-command run-scope scenarios from shared scope metadata.
+
+    Args:
+        cases: Scope metadata tuples containing command/scope configuration.
+
+    Returns:
+        Parameter tuples for no-command run-scope tests.
+    """
+    scenarios: list[RunNoCommandScenario] = []
+    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
+        scope_label = scope_id.replace("_", " ")
+        scenarios.append(
+            (
+                command_name,
+                include_berth,
+                include_branch,
+                run_cwd_kind,
+                f"{scope_label} run no-commands baseline",
+                f"Verify {scope_label} --run no-op path remains non-mutating",
+                f"run {scope_label} --run",
+            ),
+        )
+    return scenarios
+
+
+def _build_opt_in_mutation_run_scope_scenarios(
+    cases: list[RunScopeCase],
+) -> list[RunOptInMutationScenario]:
+    """Build opt-in mutation run-scope scenarios from shared scope metadata.
+
+    Args:
+        cases: Scope metadata tuples containing command/scope configuration.
+
+    Returns:
+        Parameter tuples for opt-in mutation run-scope tests.
+    """
+    scenarios: list[RunOptInMutationScenario] = []
+    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
+        scope_label = scope_id.replace("_", " ")
+        scenarios.append(
+            (
+                command_name,
+                include_berth,
+                include_branch,
+                run_cwd_kind,
+                f"{scope_id}_opt_in_marker.txt",
+                f"{scope_label} opt-in mutation baseline",
+                f"Verify {scope_label} --run may execute mutating commands",
+                f"run {scope_label} --run",
+            ),
+        )
+    return scenarios
 
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
@@ -1163,116 +1223,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
         "decisions",
         "next_step",
     ),
-    [
-        (
-            "resume",
-            False,
-            False,
-            "repo",
-            "Resume run no-commands baseline",
-            "Verify resume --run no-op path remains non-mutating",
-            "run resume --run",
-        ),
-        (
-            "r",
-            False,
-            False,
-            "repo",
-            "Resume alias run no-commands baseline",
-            "Verify r --run no-op path remains non-mutating",
-            "run r --run",
-        ),
-        (
-            "undock",
-            False,
-            False,
-            "repo",
-            "Undock alias run no-commands baseline",
-            "Verify undock --run no-op path remains non-mutating",
-            "run undock --run",
-        ),
-        (
-            "resume",
-            True,
-            False,
-            "tmp",
-            "Resume berth run no-commands baseline",
-            "Verify resume <berth> --run no-op path remains non-mutating",
-            "run resume <berth> --run",
-        ),
-        (
-            "r",
-            True,
-            False,
-            "tmp",
-            "Resume alias berth run no-commands baseline",
-            "Verify r <berth> --run no-op path remains non-mutating",
-            "run r <berth> --run",
-        ),
-        (
-            "undock",
-            True,
-            False,
-            "tmp",
-            "Undock alias berth run no-commands baseline",
-            "Verify undock <berth> --run no-op path remains non-mutating",
-            "run undock <berth> --run",
-        ),
-        (
-            "resume",
-            False,
-            True,
-            "repo",
-            "Resume branch run no-commands baseline",
-            "Verify resume --branch <name> --run no-op path is non-mutating",
-            "run resume --branch <name> --run",
-        ),
-        (
-            "r",
-            False,
-            True,
-            "repo",
-            "Resume alias branch run no-commands baseline",
-            "Verify r --branch <name> --run no-op path is non-mutating",
-            "run r --branch <name> --run",
-        ),
-        (
-            "undock",
-            False,
-            True,
-            "repo",
-            "Undock alias branch run no-commands baseline",
-            "Verify undock --branch <name> --run no-op path is non-mutating",
-            "run undock --branch <name> --run",
-        ),
-        (
-            "resume",
-            True,
-            True,
-            "tmp",
-            "Resume berth+branch run no-commands baseline",
-            "Verify resume <berth> --branch <name> --run no-op is non-mutating",
-            "run resume <berth> --branch <name> --run",
-        ),
-        (
-            "r",
-            True,
-            True,
-            "tmp",
-            "Resume alias berth+branch run no-commands baseline",
-            "Verify r <berth> --branch <name> --run no-op is non-mutating",
-            "run r <berth> --branch <name> --run",
-        ),
-        (
-            "undock",
-            True,
-            True,
-            "tmp",
-            "Undock alias berth+branch run no-commands baseline",
-            "Verify undock <berth> --branch <name> --run no-op is non-mutating",
-            "run undock <berth> --branch <name> --run",
-        ),
-    ],
+    _build_no_command_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH),
     ids=RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH,
 )
 def test_run_scopes_without_commands_keep_repo_clean(
@@ -1311,128 +1262,7 @@ def test_run_scopes_without_commands_keep_repo_clean(
         "decisions",
         "next_step",
     ),
-    [
-        (
-            "resume",
-            False,
-            False,
-            "repo",
-            "resume_run_opt_in_marker.txt",
-            "Resume run opt-in mutation baseline",
-            "Verify explicit --run path may execute mutating commands",
-            "run resume --run",
-        ),
-        (
-            "r",
-            False,
-            False,
-            "repo",
-            "resume_alias_run_opt_in_marker.txt",
-            "Resume alias run opt-in mutation baseline",
-            "Verify r --run may execute mutating commands",
-            "run r --run",
-        ),
-        (
-            "undock",
-            False,
-            False,
-            "repo",
-            "undock_alias_run_opt_in_marker.txt",
-            "Undock alias run opt-in mutation baseline",
-            "Verify undock --run may execute mutating commands",
-            "run undock --run",
-        ),
-        (
-            "resume",
-            False,
-            True,
-            "repo",
-            "resume_run_with_branch_opt_in_marker.txt",
-            "Resume branch run opt-in mutation baseline",
-            "Verify resume --branch <name> --run may execute mutating commands",
-            "run resume --branch <name> --run",
-        ),
-        (
-            "r",
-            False,
-            True,
-            "repo",
-            "resume_alias_run_with_branch_opt_in_marker.txt",
-            "Resume alias branch run opt-in mutation baseline",
-            "Verify r --branch <name> --run may execute mutating commands",
-            "run r --branch <name> --run",
-        ),
-        (
-            "undock",
-            False,
-            True,
-            "repo",
-            "undock_alias_run_with_branch_opt_in_marker.txt",
-            "Undock alias branch run opt-in mutation baseline",
-            "Verify undock --branch <name> --run may execute mutating commands",
-            "run undock --branch <name> --run",
-        ),
-        (
-            "resume",
-            True,
-            False,
-            "tmp",
-            "resume_run_with_berth_opt_in_marker.txt",
-            "Resume berth run opt-in mutation baseline",
-            "Verify resume <berth> --run may execute mutating commands",
-            "run resume <berth> --run",
-        ),
-        (
-            "r",
-            True,
-            False,
-            "tmp",
-            "resume_alias_run_with_berth_opt_in_marker.txt",
-            "Resume alias berth run opt-in mutation baseline",
-            "Verify r <berth> --run may execute mutating commands",
-            "run r <berth> --run",
-        ),
-        (
-            "undock",
-            True,
-            False,
-            "tmp",
-            "undock_alias_run_opt_in_marker.txt",
-            "Undock alias run opt-in mutation baseline",
-            "Verify undock --run with berth may execute mutating commands",
-            "run undock <berth> --run",
-        ),
-        (
-            "resume",
-            True,
-            True,
-            "tmp",
-            "resume_run_with_berth_branch_opt_in_marker.txt",
-            "Resume berth+branch run opt-in mutation baseline",
-            "Verify resume <berth> --branch <branch> --run may mutate repo",
-            "run resume <berth> --branch <branch> --run",
-        ),
-        (
-            "r",
-            True,
-            True,
-            "tmp",
-            "resume_alias_run_with_berth_branch_opt_in_marker.txt",
-            "Resume alias berth+branch run opt-in mutation baseline",
-            "Verify r <berth> --branch <branch> --run may mutate repo",
-            "run r <berth> --branch <branch> --run",
-        ),
-        (
-            "undock",
-            True,
-            True,
-            "tmp",
-            "undock_alias_run_with_berth_branch_opt_in_marker.txt",
-            "Undock alias berth+branch run opt-in mutation baseline",
-            "Verify undock <berth> --branch <branch> --run may mutate repo",
-            "run undock <berth> --branch <branch> --run",
-        ),
-    ],
+    _build_opt_in_mutation_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH),
     ids=RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH,
 )
 def test_run_scopes_opt_in_can_modify_repo(
