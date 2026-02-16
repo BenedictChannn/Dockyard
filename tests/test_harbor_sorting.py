@@ -244,3 +244,5 @@ def test_harbor_sorting_handles_mixed_updated_at_types(tmp_path) -> None:
     rows = store.list_harbor()
     assert len(rows) == 2
     assert {row["repo_id"] for row in rows} == {"numeric", "text"}
+
+

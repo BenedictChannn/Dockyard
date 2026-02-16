@@ -624,11 +624,16 @@ class SQLiteStore:
             results = filtered
 
         severity_rank = {"red": 3, "yellow": 2, "green": 1}
+        def _updated_sort_key(entry: dict[str, Any]) -> str:
+            """Return a stable updated-at key for mixed payload types."""
+            updated_at = entry.get("updated_at", "")
+            return updated_at if isinstance(updated_at, str) else str(updated_at)
+
         results.sort(
             key=lambda entry: (
                 -entry["open_review_count"],
                 -severity_rank.get(entry["status"], 0),
-                entry["updated_at"],
+                _updated_sort_key(entry),
             )
         )
         if limit is not None:
