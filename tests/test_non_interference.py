@@ -318,6 +318,96 @@ def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_pat
     assert status_after == ""
 
 
+def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Berth-targeted alias read paths must not execute stored commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / "dockyard_alias_berth_resume_should_not_run.txt"
+    marker_command = f"touch {marker}"
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias berth command safety baseline",
+            "--decisions",
+            "Ensure alias berth read paths do not execute stored commands",
+            "--next-step",
+            "Inspect alias berth resume output",
+            "--risks",
+            "none",
+            "--command",
+            marker_command,
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    assert not marker.exists()
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(["python3", "-m", "dockyard", "r", git_repo.name], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "r", git_repo.name, "--json"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "r", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
+    _run(
+        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(
+        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(
+        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--handoff"],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(["python3", "-m", "dockyard", "undock", git_repo.name], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "undock", git_repo.name, "--json"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "undock", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
+    _run(
+        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(
+        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    _run(
+        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--handoff"],
+        cwd=tmp_path,
+        env=env,
+    )
+
+    assert not marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
 def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Dockyard metadata mutations must not alter repository working tree."""
     env = dict(os.environ)
@@ -482,6 +572,50 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
             "-m",
             "dockyard",
             "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_after == ""
+
+
+def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Alias `s` template save flow should not alter project tree/index."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "save_alias_s_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Template alias s non-interference objective",
+                "decisions": "Template decisions",
+                "next_steps": ["Run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo noop"],
+                "verification": {"tests_run": True, "build_ok": True},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert status_before == ""
+
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "s",
             "--root",
             str(git_repo),
             "--template",
