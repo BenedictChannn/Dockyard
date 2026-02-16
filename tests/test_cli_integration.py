@@ -95,6 +95,48 @@ class RunDefaultFailureCaseMeta:
     skipped_command: str
 
 
+@dataclass(frozen=True)
+class RunBranchSuccessCaseMeta:
+    """Scenario metadata for branch-aware run success tests."""
+
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    objective: str
+    decisions: str
+    next_step: str
+    resume_commands: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RunBranchFailureCaseMeta:
+    """Scenario metadata for branch-aware run failure tests."""
+
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    objective: str
+    decisions: str
+    next_step: str
+    first_command: str
+    skipped_command: str
+
+
+@dataclass(frozen=True)
+class RunNoCommandCaseMeta:
+    """Scenario metadata for scoped no-command run tests."""
+
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    objective: str
+    decisions: str
+    next_step: str
+
+
 RUN_COMMAND_CASES: tuple[RunCommandMeta, ...] = (
     RunCommandMeta(name="resume", slug="resume", case_id="resume", label="resume"),
     RunCommandMeta(name="r", slug="r", case_id="r_alias", label="resume alias"),
@@ -161,9 +203,6 @@ RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
         key=_run_scope_case_branch_sort_key,
     )
 )
-RunBranchSuccessScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, RunCommands]
-RunBranchFailureScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, str, str]
-RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
 
 
 RUN_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_COMMAND_CASES, get_id=attrgetter("case_id"))
@@ -242,7 +281,9 @@ def _build_default_run_failure_scenarios(
     )
 
 
-def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunBranchSuccessScenario]:
+def _build_branch_run_success_scenarios(
+    cases: Sequence[RunScopeCaseMeta],
+) -> tuple[RunBranchSuccessCaseMeta, ...]:
     """Build branch-targeted run success scenarios from shared scope metadata.
 
     Args:
@@ -251,32 +292,34 @@ def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     Returns:
         Parameter entries for branch-scope run-success tests.
     """
-    scenarios: list[RunBranchSuccessScenario] = []
-    for case in cases:
-        context = _run_scope_context(
-            case.command_name,
+    return tuple(
+        RunBranchSuccessCaseMeta(
+            command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
-        )
-        scenarios.append(
-            (
-                case.command_name,
-                case.include_berth,
-                case.include_branch,
-                case.run_cwd_kind,
-                f"{context.phrase} run success objective",
-                f"Validate {context.phrase} run success-path behavior",
-                f"run {context.phrase}",
-                [
-                    f"echo {case.command_name}-{context.scope_slug}-run-one",
-                    f"echo {case.command_name}-{context.scope_slug}-run-two",
-                ],
+            run_cwd_kind=case.run_cwd_kind,
+            objective=f"{context.phrase} run success objective",
+            decisions=f"Validate {context.phrase} run success-path behavior",
+            next_step=f"run {context.phrase}",
+            resume_commands=(
+                f"echo {case.command_name}-{context.scope_slug}-run-one",
+                f"echo {case.command_name}-{context.scope_slug}-run-two",
             ),
         )
-    return scenarios
+        for case in cases
+        for context in (
+            _run_scope_context(
+                case.command_name,
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
+            ),
+        )
+    )
 
 
-def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunBranchFailureScenario]:
+def _build_branch_run_failure_scenarios(
+    cases: Sequence[RunScopeCaseMeta],
+) -> tuple[RunBranchFailureCaseMeta, ...]:
     """Build branch-targeted run failure scenarios from shared scope metadata.
 
     Args:
@@ -285,30 +328,30 @@ def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     Returns:
         Parameter entries for branch-scope stop-on-failure tests.
     """
-    scenarios: list[RunBranchFailureScenario] = []
-    for case in cases:
-        context = _run_scope_context(
-            case.command_name,
+    return tuple(
+        RunBranchFailureCaseMeta(
+            command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
+            run_cwd_kind=case.run_cwd_kind,
+            objective=f"{context.phrase} run failure objective",
+            decisions=f"Validate {context.phrase} stop-on-failure behavior",
+            next_step=f"run {context.phrase}",
+            first_command=f"echo {case.command_name}-{context.scope_slug}-first",
+            skipped_command=f"echo {case.command_name}-{context.scope_slug}-should-not-run",
         )
-        scenarios.append(
-            (
+        for case in cases
+        for context in (
+            _run_scope_context(
                 case.command_name,
-                case.include_berth,
-                case.include_branch,
-                case.run_cwd_kind,
-                f"{context.phrase} run failure objective",
-                f"Validate {context.phrase} stop-on-failure behavior",
-                f"run {context.phrase}",
-                f"echo {case.command_name}-{context.scope_slug}-first",
-                f"echo {case.command_name}-{context.scope_slug}-should-not-run",
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
             ),
         )
-    return scenarios
+    )
 
 
-def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> tuple[RunNoCommandCaseMeta, ...]:
     """Build no-command run scenarios from shared scope metadata.
 
     Args:
@@ -317,25 +360,25 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     Returns:
         Parameter entries for no-command run-path tests.
     """
-    scenarios: list[RunNoCommandScenario] = []
-    for case in cases:
-        context = _run_scope_context(
-            case.command_name,
+    return tuple(
+        RunNoCommandCaseMeta(
+            command_name=case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
+            run_cwd_kind=case.run_cwd_kind,
+            objective=f"No command {context.phrase} run",
+            decisions=f"Ensure {context.phrase} run path handles empty command list",
+            next_step=f"run {context.phrase} with run",
         )
-        scenarios.append(
-            (
+        for case in cases
+        for context in (
+            _run_scope_context(
                 case.command_name,
-                case.include_berth,
-                case.include_branch,
-                case.run_cwd_kind,
-                f"No command {context.phrase} run",
-                f"Ensure {context.phrase} run path handles empty command list",
-                f"run {context.phrase} with run",
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
             ),
         )
-    return scenarios
+    )
 
 
 RUN_DEFAULT_SUCCESS_CASES: tuple[RunDefaultSuccessCaseMeta, ...] = _build_default_run_success_scenarios(
@@ -343,6 +386,15 @@ RUN_DEFAULT_SUCCESS_CASES: tuple[RunDefaultSuccessCaseMeta, ...] = _build_defaul
 )
 RUN_DEFAULT_FAILURE_CASES: tuple[RunDefaultFailureCaseMeta, ...] = _build_default_run_failure_scenarios(
     RUN_COMMAND_CASES,
+)
+RUN_BRANCH_SUCCESS_CASES: tuple[RunBranchSuccessCaseMeta, ...] = _build_branch_run_success_scenarios(
+    RUN_BRANCH_SCOPE_CASES,
+)
+RUN_BRANCH_FAILURE_CASES: tuple[RunBranchFailureCaseMeta, ...] = _build_branch_run_failure_scenarios(
+    RUN_BRANCH_SCOPE_CASES,
+)
+RUN_NO_COMMAND_CASES: tuple[RunNoCommandCaseMeta, ...] = _build_no_command_run_scope_scenarios(
+    RUN_SCOPE_CASES,
 )
 
 
@@ -2786,87 +2838,53 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "include_berth",
-        "include_branch",
-        "run_cwd_kind",
-        "objective",
-        "decisions",
-        "next_step",
-        "resume_commands",
-    ),
-    _build_branch_run_success_scenarios(RUN_BRANCH_SCOPE_CASES),
+    "case",
+    RUN_BRANCH_SUCCESS_CASES,
     ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_execute_commands_on_success(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    include_berth: bool,
-    include_branch: bool,
-    run_cwd_kind: RunCwdKind,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    resume_commands: RunCommands,
+    case: RunBranchSuccessCaseMeta,
 ) -> None:
     """Branch-scoped run variants should execute recorded commands."""
     _assert_run_executes_commands_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=include_berth,
-        include_branch=include_branch,
-        run_cwd_kind=run_cwd_kind,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        resume_commands=resume_commands,
+        command_name=case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
+        run_cwd_kind=case.run_cwd_kind,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        resume_commands=list(case.resume_commands),
     )
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "include_berth",
-        "include_branch",
-        "run_cwd_kind",
-        "objective",
-        "decisions",
-        "next_step",
-        "first_command",
-        "skipped_command",
-    ),
-    _build_branch_run_failure_scenarios(RUN_BRANCH_SCOPE_CASES),
+    "case",
+    RUN_BRANCH_FAILURE_CASES,
     ids=RUN_BRANCH_SCOPE_IDS,
 )
 def test_run_branch_scopes_stop_on_failure(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    include_berth: bool,
-    include_branch: bool,
-    run_cwd_kind: RunCwdKind,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    first_command: str,
-    skipped_command: str,
+    case: RunBranchFailureCaseMeta,
 ) -> None:
     """Branch-scoped run variants should stop on first failing command."""
     _assert_run_stops_on_failure_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=include_berth,
-        include_branch=include_branch,
-        run_cwd_kind=run_cwd_kind,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        first_command=first_command,
-        skipped_command=skipped_command,
+        command_name=case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
+        run_cwd_kind=case.run_cwd_kind,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        first_command=case.first_command,
+        skipped_command=case.skipped_command,
     )
 
 
@@ -3166,40 +3184,26 @@ def _assert_run_no_commands_noop_for_scope(
 
 
 @pytest.mark.parametrize(
-    (
-        "command_name",
-        "include_berth",
-        "include_branch",
-        "run_cwd_kind",
-        "objective",
-        "decisions",
-        "next_step",
-    ),
-    _build_no_command_run_scope_scenarios(RUN_SCOPE_CASES),
+    "case",
+    RUN_NO_COMMAND_CASES,
     ids=RUN_SCOPE_IDS,
 )
 def test_run_scopes_with_no_commands_are_noop_success(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    include_berth: bool,
-    include_branch: bool,
-    run_cwd_kind: RunCwdKind,
-    objective: str,
-    decisions: str,
-    next_step: str,
+    case: RunNoCommandCaseMeta,
 ) -> None:
     """Run scope variants should no-op when no commands are recorded."""
     _assert_run_no_commands_noop_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        command_name=command_name,
-        include_berth=include_berth,
-        include_branch=include_branch,
-        run_cwd_kind=run_cwd_kind,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
+        command_name=case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
+        run_cwd_kind=case.run_cwd_kind,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
     )
 
 
