@@ -62,6 +62,13 @@ def test_format_age_accepts_naive_iso_timestamps() -> None:
     assert age[-1] in {"s", "m", "h", "d"}
 
 
+def test_format_age_accepts_whitespace_normalized_timestamps() -> None:
+    """Whitespace-normalized timestamps should still parse for age."""
+    age = format_age("2020-01-01\n00:00:00+00:00")
+    assert age != "unknown"
+    assert age[-1] in {"s", "m", "h", "d"}
+
+
 def test_format_age_supports_day_scale_output() -> None:
     """Past timestamps should support compact day-scale output."""
     assert format_age("2000-01-01T00:00:00+00:00").endswith("d")
@@ -121,6 +128,16 @@ def test_print_resume_bounds_long_summary_fields() -> None:
     output = console.export_text()
     assert "x" * 201 not in output
     assert "y" * 201 not in output
+
+
+def test_print_resume_compacts_multiline_checkpoint_timestamp() -> None:
+    """Resume summary should compact multiline checkpoint timestamps."""
+    checkpoint = _checkpoint()
+    checkpoint.created_at = "2026-01-01\n00:00:00+00:00"
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "Last Checkpoint: 2026-01-01 00:00:00+00:00 (" in output
 
 
 def test_print_resume_uses_unknown_labels_for_blank_project_or_branch() -> None:

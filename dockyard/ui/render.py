@@ -50,7 +50,7 @@ def _coerce_text_items(value: Any) -> list[str]:
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
-        then = datetime.fromisoformat(timestamp_iso)
+        then = datetime.fromisoformat(" ".join(str(timestamp_iso).split()))
     except (TypeError, ValueError):
         return "unknown"
     if then.tzinfo is None:
@@ -98,7 +98,10 @@ def print_resume(
             "Project/Branch: "
             f"{_label_text(project_name, 120)} / {_label_text(checkpoint.branch, 120)}"
         ),
-        f"Last Checkpoint: {checkpoint.created_at} ({format_age(checkpoint.created_at)} ago)",
+        (
+            "Last Checkpoint: "
+            f"{_preview_text(checkpoint.created_at, 120)} ({format_age(checkpoint.created_at)} ago)"
+        ),
         f"Objective: {_preview_text(checkpoint.objective, 200)}",
         "Next Steps:",
     ]
