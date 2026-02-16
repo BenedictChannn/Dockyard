@@ -7,6 +7,7 @@ import os
 import re
 import sqlite3
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -17,13 +18,13 @@ RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RunCommandCase = tuple[str, str, str]
-RUN_COMMAND_CASES: list[RunCommandCase] = [
+RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("resume", "resume", "resume"),
     ("r", "r", "r_alias"),
     ("undock", "undock", "undock_alias"),
-]
+)
 RUN_COMMAND_IDS = [case[2] for case in RUN_COMMAND_CASES]
-RUN_SCOPE_CASES: list[RunScopeCase] = [
+RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = (
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
     ("undock", False, False, "repo", "undock_default"),
@@ -36,8 +37,8 @@ RUN_SCOPE_CASES: list[RunScopeCase] = [
     ("resume", True, True, "tmp", "resume_berth_branch"),
     ("r", True, True, "tmp", "r_berth_branch"),
     ("undock", True, True, "tmp", "undock_berth_branch"),
-]
-RUN_BRANCH_SCOPE_CASES = [case for case in RUN_SCOPE_CASES if case[2]]
+)
+RUN_BRANCH_SCOPE_CASES = tuple(case for case in RUN_SCOPE_CASES if case[2])
 RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
 RunDefaultFailureScenario = tuple[str, str, str, str, str, str]
 RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
@@ -45,7 +46,7 @@ RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 
 
-def _scope_ids(cases: list[RunScopeCase]) -> list[str]:
+def _scope_ids(cases: Sequence[RunScopeCase]) -> list[str]:
     """Return pytest ID labels derived from run-scope case metadata."""
     return [case[4] for case in cases]
 
@@ -64,7 +65,9 @@ def _scope_command_label(scope_id: str) -> str:
     return scope_id.replace("_", "-")
 
 
-def _build_default_run_success_scenarios(cases: list[RunCommandCase]) -> list[RunDefaultSuccessScenario]:
+def _build_default_run_success_scenarios(
+    cases: Sequence[RunCommandCase],
+) -> list[RunDefaultSuccessScenario]:
     """Build default-scope run success scenarios from command metadata.
 
     Args:
@@ -87,7 +90,9 @@ def _build_default_run_success_scenarios(cases: list[RunCommandCase]) -> list[Ru
     return scenarios
 
 
-def _build_default_run_failure_scenarios(cases: list[RunCommandCase]) -> list[RunDefaultFailureScenario]:
+def _build_default_run_failure_scenarios(
+    cases: Sequence[RunCommandCase],
+) -> list[RunDefaultFailureScenario]:
     """Build default-scope run failure scenarios from command metadata.
 
     Args:
@@ -111,7 +116,7 @@ def _build_default_run_failure_scenarios(cases: list[RunCommandCase]) -> list[Ru
     return scenarios
 
 
-def _build_branch_run_success_scenarios(cases: list[RunScopeCase]) -> list[RunBranchSuccessScenario]:
+def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCase]) -> list[RunBranchSuccessScenario]:
     """Build branch-targeted run success scenarios from shared scope metadata.
 
     Args:
@@ -139,7 +144,7 @@ def _build_branch_run_success_scenarios(cases: list[RunScopeCase]) -> list[RunBr
     return scenarios
 
 
-def _build_branch_run_failure_scenarios(cases: list[RunScopeCase]) -> list[RunBranchFailureScenario]:
+def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCase]) -> list[RunBranchFailureScenario]:
     """Build branch-targeted run failure scenarios from shared scope metadata.
 
     Args:
@@ -168,7 +173,7 @@ def _build_branch_run_failure_scenarios(cases: list[RunScopeCase]) -> list[RunBr
     return scenarios
 
 
-def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
     """Build no-command run scenarios from shared scope metadata.
 
     Args:
