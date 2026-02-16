@@ -911,6 +911,19 @@ def test_resume_read_variants_respects_json_handoff_and_branch_flags() -> None:
         _dockyard_command("resume", "demo-repo", "--branch", "main", "--handoff"),
     ]
 
+    assert _resume_read_variants(
+        "resume",
+        berth="demo-repo",
+        branch="main",
+        include_json=True,
+        include_handoff=False,
+    ) == [
+        _dockyard_command("resume", "demo-repo"),
+        _dockyard_command("resume", "demo-repo", "--json"),
+        _dockyard_command("resume", "demo-repo", "--branch", "main"),
+        _dockyard_command("resume", "demo-repo", "--branch", "main", "--json"),
+    ]
+
 
 def _assert_resume_read_paths_do_not_execute_saved_commands(
     git_repo: Path,
