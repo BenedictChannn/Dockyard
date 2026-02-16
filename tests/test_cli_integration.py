@@ -2428,233 +2428,212 @@ def test_resume_alias_run_executes_commands_on_success(
     )
 
 
-def test_resume_run_with_branch_executes_commands_on_success(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
+    [
+        (
+            "resume",
+            "Resume run branch success objective",
+            "Validate branch-scoped run success-path behavior",
+            "run resume branch",
+            ["echo resume-branch-run-one", "echo resume-branch-run-two"],
+        ),
+        (
+            "r",
+            "Resume alias run branch success objective",
+            "Validate alias branch-scoped run success-path behavior",
+            "run alias branch",
+            ["echo alias-branch-run-one", "echo alias-branch-run-two"],
+        ),
+        (
+            "undock",
+            "Undock alias run branch success objective",
+            "Validate undock branch-scoped run success-path behavior",
+            "run undock branch",
+            ["echo undock-branch-run-one", "echo undock-branch-run-two"],
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_branch_scope_executes_commands_on_success(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    resume_commands: list[str],
 ) -> None:
-    """Resume run with branch filter should execute all successful commands."""
+    """`<command> --branch <name> --run` should execute recorded commands."""
     branch = _git_current_branch(git_repo)
     _assert_run_executes_commands_on_success(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Resume run branch success objective",
-        decisions="Validate branch-scoped run success-path behavior",
-        next_step="run resume branch",
-        resume_commands=["echo resume-branch-run-one", "echo resume-branch-run-two"],
-        run_args=["resume", "--branch", f"  {branch}  ", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=resume_commands,
+        run_args=[command_name, "--branch", f"  {branch}  ", "--run"],
         run_cwd=git_repo,
     )
 
 
-def test_resume_alias_run_with_branch_executes_commands_on_success(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
+    [
+        (
+            "resume",
+            "Resume berth+branch run success objective",
+            "Validate berth+branch run success-path behavior",
+            "run resume berth+branch",
+            ["echo resume-berth-branch-run-one", "echo resume-berth-branch-run-two"],
+        ),
+        (
+            "r",
+            "Resume alias berth+branch run success objective",
+            "Validate alias berth+branch run success-path behavior",
+            "run r berth+branch",
+            ["echo alias-berth-branch-run-one", "echo alias-berth-branch-run-two"],
+        ),
+        (
+            "undock",
+            "Undock alias berth+branch run success objective",
+            "Validate undock berth+branch run success-path behavior",
+            "run undock berth+branch",
+            ["echo undock-berth-branch-run-one", "echo undock-berth-branch-run-two"],
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_berth_branch_scope_executes_commands_on_success(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    resume_commands: list[str],
 ) -> None:
-    """Resume alias run with branch filter should execute commands."""
+    """`<command> <berth> --branch <name> --run` should execute commands."""
     branch = _git_current_branch(git_repo)
     _assert_run_executes_commands_on_success(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Resume alias run branch success objective",
-        decisions="Validate alias branch-scoped run success-path behavior",
-        next_step="run alias branch",
-        resume_commands=["echo alias-branch-run-one", "echo alias-branch-run-two"],
-        run_args=["r", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=git_repo,
-    )
-
-
-def test_undock_alias_run_with_branch_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Undock alias run with branch filter should execute commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock alias run branch success objective",
-        decisions="Validate undock branch-scoped run success-path behavior",
-        next_step="run undock branch",
-        resume_commands=["echo undock-branch-run-one", "echo undock-branch-run-two"],
-        run_args=["undock", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=git_repo,
-    )
-
-
-def test_resume_run_with_berth_and_branch_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`resume <berth> --branch <name> --run` should execute commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume berth+branch run success objective",
-        decisions="Validate berth+branch run success-path behavior",
-        next_step="run resume berth+branch",
-        resume_commands=[
-            "echo resume-berth-branch-run-one",
-            "echo resume-berth-branch-run-two",
-        ],
-        run_args=["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=resume_commands,
+        run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
         run_cwd=tmp_path,
     )
 
 
-def test_resume_alias_run_with_berth_and_branch_executes_commands_on_success(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
+    [
+        (
+            "resume",
+            "Resume run branch failure objective",
+            "Validate branch-scoped stop-on-failure behavior",
+            "run resume branch",
+            "echo resume-branch-first",
+            "echo resume-branch-should-not-run",
+        ),
+        (
+            "r",
+            "Resume alias run branch failure objective",
+            "Validate alias branch-scoped stop-on-failure behavior",
+            "run alias branch",
+            "echo alias-branch-first",
+            "echo alias-branch-should-not-run",
+        ),
+        (
+            "undock",
+            "Undock alias run branch failure objective",
+            "Validate undock branch-scoped stop-on-failure behavior",
+            "run undock branch",
+            "echo undock-branch-first",
+            "echo undock-branch-should-not-run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_branch_scope_stops_on_failure(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    first_command: str,
+    skipped_command: str,
 ) -> None:
-    """`r <berth> --branch <name> --run` should execute commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume alias berth+branch run success objective",
-        decisions="Validate alias berth+branch run success-path behavior",
-        next_step="run r berth+branch",
-        resume_commands=[
-            "echo alias-berth-branch-run-one",
-            "echo alias-berth-branch-run-two",
-        ],
-        run_args=["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=tmp_path,
-    )
-
-
-def test_undock_alias_run_with_berth_and_branch_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`undock <berth> --branch <name> --run` should execute commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock alias berth+branch run success objective",
-        decisions="Validate undock berth+branch run success-path behavior",
-        next_step="run undock berth+branch",
-        resume_commands=[
-            "echo undock-berth-branch-run-one",
-            "echo undock-berth-branch-run-two",
-        ],
-        run_args=["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=tmp_path,
-    )
-
-
-def test_resume_run_with_branch_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Resume run with branch filter should stop on first failure."""
+    """`<command> --branch <name> --run` should stop after first failure."""
     branch = _git_current_branch(git_repo)
     _assert_run_stops_on_first_failure(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Resume run branch failure objective",
-        decisions="Validate branch-scoped stop-on-failure behavior",
-        next_step="run resume branch",
-        first_command="echo resume-branch-first",
-        skipped_command="echo resume-branch-should-not-run",
-        run_args=["resume", "--branch", f"  {branch}  ", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        first_command=first_command,
+        skipped_command=skipped_command,
+        run_args=[command_name, "--branch", f"  {branch}  ", "--run"],
         run_cwd=git_repo,
     )
 
 
-def test_resume_alias_run_with_branch_stops_on_failure(
+@pytest.mark.parametrize(
+    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
+    [
+        (
+            "resume",
+            "Resume berth+branch run failure objective",
+            "Validate berth+branch stop-on-failure behavior",
+            "run resume berth+branch",
+            "echo resume-berth-branch-first",
+            "echo resume-berth-branch-should-not-run",
+        ),
+        (
+            "r",
+            "Resume alias berth+branch run failure objective",
+            "Validate alias berth+branch stop-on-failure behavior",
+            "run r berth+branch",
+            "echo alias-berth-branch-first",
+            "echo alias-berth-branch-should-not-run",
+        ),
+        (
+            "undock",
+            "Undock alias berth+branch run failure objective",
+            "Validate undock berth+branch stop-on-failure behavior",
+            "run undock berth+branch",
+            "echo undock-berth-branch-first",
+            "echo undock-berth-branch-should-not-run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_berth_branch_scope_stops_on_failure(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    first_command: str,
+    skipped_command: str,
 ) -> None:
-    """Resume alias run with branch filter should stop on first failure."""
+    """`<command> <berth> --branch <name> --run` should stop on first failure."""
     branch = _git_current_branch(git_repo)
     _assert_run_stops_on_first_failure(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="Resume alias run branch failure objective",
-        decisions="Validate alias branch-scoped stop-on-failure behavior",
-        next_step="run alias branch",
-        first_command="echo alias-branch-first",
-        skipped_command="echo alias-branch-should-not-run",
-        run_args=["r", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=git_repo,
-    )
-
-
-def test_undock_alias_run_with_branch_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Undock alias run with branch filter should stop on first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock alias run branch failure objective",
-        decisions="Validate undock branch-scoped stop-on-failure behavior",
-        next_step="run undock branch",
-        first_command="echo undock-branch-first",
-        skipped_command="echo undock-branch-should-not-run",
-        run_args=["undock", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=git_repo,
-    )
-
-
-def test_resume_run_with_berth_and_branch_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`resume <berth> --branch <name> --run` should stop on first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume berth+branch run failure objective",
-        decisions="Validate berth+branch stop-on-failure behavior",
-        next_step="run resume berth+branch",
-        first_command="echo resume-berth-branch-first",
-        skipped_command="echo resume-berth-branch-should-not-run",
-        run_args=["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=tmp_path,
-    )
-
-
-def test_resume_alias_run_with_berth_and_branch_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`r <berth> --branch <name> --run` should stop on first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Resume alias berth+branch run failure objective",
-        decisions="Validate alias berth+branch stop-on-failure behavior",
-        next_step="run r berth+branch",
-        first_command="echo alias-berth-branch-first",
-        skipped_command="echo alias-berth-branch-should-not-run",
-        run_args=["r", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
-        run_cwd=tmp_path,
-    )
-
-
-def test_undock_alias_run_with_berth_and_branch_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """`undock <berth> --branch <name> --run` should stop on first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective="Undock alias berth+branch run failure objective",
-        decisions="Validate undock berth+branch stop-on-failure behavior",
-        next_step="run undock berth+branch",
-        first_command="echo undock-berth-branch-first",
-        skipped_command="echo undock-berth-branch-should-not-run",
-        run_args=["undock", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        first_command=first_command,
+        skipped_command=skipped_command,
+        run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
         run_cwd=tmp_path,
     )
 
