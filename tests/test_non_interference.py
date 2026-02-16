@@ -118,6 +118,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _run(["python3", "-m", "dockyard", "resume", git_repo.name], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "r"], cwd=git_repo, env=env)
     _run(["python3", "-m", "dockyard", "undock"], cwd=git_repo, env=env)
     _run(["python3", "-m", "dockyard", "ls"], cwd=tmp_path, env=env)
