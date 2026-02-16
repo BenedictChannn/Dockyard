@@ -889,6 +889,138 @@ def test_save_alias_s_unsupported_template_extension_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_alias_s_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should accept TOML templates in no-prompt mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_s_save_template.toml"
+    template_path.write_text(
+        "\n".join(
+            [
+                'objective = "Alias s TOML objective"',
+                'decisions = "Alias s TOML decisions"',
+                'risks_review = "Alias s TOML risk"',
+                'next_steps = ["Alias s TOML next"]',
+                "",
+                "[verification]",
+                "tests_run = true",
+                "build_ok = true",
+                "lint_ok = false",
+                "smoke_ok = false",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == "Alias s TOML objective"
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+
+
+def test_save_alias_s_template_path_accepts_trimmed_value(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should trim whitespace around template path values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_s_trimmed_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Alias s trimmed template objective",
+                "decisions": "Template path trimming behavior",
+                "next_steps": ["run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo alias-s-trimmed-template"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            f"  {template_path}  ",
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == "Alias s trimmed template objective"
+
+
+def test_save_alias_s_template_bool_like_strings_are_coerced(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should coerce bool-like verification template values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_s_bool_like_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Alias s bool-like objective",
+                "decisions": "Use string booleans in template",
+                "next_steps": ["Run resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "build_ok": "1",
+                    "lint_ok": "no",
+                    "smoke_ok": "false",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -1412,6 +1544,138 @@ def test_save_alias_dock_unsupported_template_extension_is_actionable(
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "Template must be .json or .toml" in output
     assert "Traceback" not in output
+
+
+def test_save_alias_dock_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
+    """Dock alias should accept TOML templates in no-prompt mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_dock_save_template.toml"
+    template_path.write_text(
+        "\n".join(
+            [
+                'objective = "Dock alias TOML objective"',
+                'decisions = "Dock alias TOML decisions"',
+                'risks_review = "Dock alias TOML risk"',
+                'next_steps = ["Dock alias TOML next"]',
+                "",
+                "[verification]",
+                "tests_run = true",
+                "build_ok = true",
+                "lint_ok = false",
+                "smoke_ok = false",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == "Dock alias TOML objective"
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+
+
+def test_save_alias_dock_template_path_accepts_trimmed_value(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should trim whitespace around template path values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_dock_trimmed_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Dock alias trimmed template objective",
+                "decisions": "Template path trimming behavior",
+                "next_steps": ["run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo alias-dock-trimmed-template"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            f"  {template_path}  ",
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == "Dock alias trimmed template objective"
+
+
+def test_save_alias_dock_template_bool_like_strings_are_coerced(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should coerce bool-like verification template values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "alias_dock_bool_like_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Dock alias bool-like objective",
+                "decisions": "Use string booleans in template",
+                "next_steps": ["Run resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "build_ok": "1",
+                    "lint_ok": "no",
+                    "smoke_ok": "false",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
 
 
 def test_save_verification_text_fields_are_normalized(git_repo: Path, tmp_path: Path) -> None:
