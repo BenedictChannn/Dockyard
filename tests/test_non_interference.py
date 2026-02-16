@@ -20,6 +20,7 @@ ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
+RunScopeCommandCase = tuple[str, str]
 SaveCommandCase = tuple[str, str, str]
 ResumeReadPathCase = tuple[str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeCase = tuple[str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
@@ -31,9 +32,14 @@ SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
     ("dock", "alias_dock", "dock_alias"),
 )
 SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in SAVE_COMMAND_CASES)
-RUN_SCOPE_COMMANDS: tuple[str, ...] = ("resume", "r", "undock")
+RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandCase, ...] = (
+    ("resume", "resume"),
+    ("r", "resume alias"),
+    ("undock", "undock alias"),
+)
+RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
-RUN_SCOPE_COMMAND_LABELS = {"resume": "resume", "r": "resume alias", "undock": "undock alias"}
+RUN_SCOPE_COMMAND_LABELS = {command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES}
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
     ("default", False, False, "repo"),
     ("berth", True, False, "tmp"),
