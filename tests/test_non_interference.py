@@ -939,3 +939,28 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
     )
 
     _assert_repo_clean(git_repo)
+
+
+def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run is explicit opt-in and may mutate repository files."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    marker = git_repo / "resume_run_opt_in_marker.txt"
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Resume run opt-in mutation baseline",
+        decisions="Verify explicit --run path may execute mutating commands",
+        next_step="run resume --run",
+        risks="none",
+        command=f"touch {marker}",
+    )
+    assert not marker.exists()
+    _assert_repo_clean(git_repo)
+
+    _run(["python3", "-m", "dockyard", "resume", "--run"], cwd=git_repo, env=env)
+
+    assert marker.exists()
+    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
+    assert "resume_run_opt_in_marker.txt" in status_after
