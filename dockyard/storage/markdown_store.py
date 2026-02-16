@@ -156,6 +156,8 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
 def _normalize_section_heading(title: str) -> str:
     """Normalize markdown section heading text for key lookups."""
     collapsed = " ".join(title.split())
+    if collapsed.endswith(":"):
+        collapsed = collapsed[:-1].rstrip()
     return re.sub(r"\s*/\s*", "/", collapsed)
 
 
