@@ -4648,6 +4648,57 @@ def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     assert len(rows) >= 1
 
 
+def test_ls_stale_handles_naive_updated_timestamp(git_repo: Path, tmp_path: Path) -> None:
+    """Stale filtering should handle naive updated timestamps without crashing."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Naive stale timestamp baseline",
+            "--decisions",
+            "Ensure stale filter supports naive timestamps",
+            "--next-step",
+            "run ls stale 1",
+            "--risks",
+            "none",
+            "--command",
+            "echo stale",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET updated_at = ? WHERE branch = ?",
+        ("2000-01-01T00:00:00", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    rows = json.loads(_run_dock(["ls", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["branch"] == branch
+
+
 def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
     """Combined ls filters should still obey limit and tag constraints."""
     env = dict(os.environ)
