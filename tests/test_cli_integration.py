@@ -1430,6 +1430,17 @@ def test_resume_rejects_blank_berth_argument(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_resume_alias_rejects_blank_berth_argument(tmp_path: Path) -> None:
+    """Resume alias should reject blank berth argument values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["r", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Berth must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_resume_rejects_blank_branch_option(git_repo: Path, tmp_path: Path) -> None:
     """Resume should reject blank --branch option values."""
     env = dict(os.environ)
@@ -2387,6 +2398,48 @@ def test_resume_by_berth_accepts_trimmed_lookup_value(
 
     result = _run_dock(["resume", f"  {git_repo.name}  "], cwd=tmp_path, env=env)
     assert "Trimmed berth resume objective" in result.stdout
+
+
+def test_resume_alias_accepts_trimmed_berth_lookup_value(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume alias should resolve berth lookup after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias trimmed berth objective",
+            "--decisions",
+            "Resolve alias berth value with surrounding whitespace",
+            "--next-step",
+            "resume outside repo via alias",
+            "--risks",
+            "none",
+            "--command",
+            "echo continue",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["r", f"  {git_repo.name}  "], cwd=tmp_path, env=env)
+    assert "Alias trimmed berth objective" in result.stdout
 
 
 def test_resume_branch_flag_selects_requested_branch(
