@@ -20,7 +20,17 @@ MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
-RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
+
+
+@dataclass(frozen=True)
+class RunScopeCaseMeta:
+    """Metadata describing a command scoped run scenario."""
+
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    case_id: str
 ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 
@@ -103,7 +113,7 @@ RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
 }
 
 
-def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, int]:
+def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:
     """Return sort key that prioritizes branch-only scopes before berth-only.
 
     Args:
@@ -112,30 +122,29 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, in
     Returns:
         Tuple sorted by scope family then command ordering.
     """
-    command_name, include_berth, include_branch, _run_cwd_kind, _scope_id = case
-    if not include_berth and not include_branch:
+    if not case.include_berth and not case.include_branch:
         scope_rank = 0
-    elif include_branch and not include_berth:
+    elif case.include_branch and not case.include_berth:
         scope_rank = 1
-    elif include_berth and not include_branch:
+    elif case.include_berth and not case.include_branch:
         scope_rank = 2
     else:
         scope_rank = 3
-    return (scope_rank, RUN_SCOPE_COMMAND_ORDER[command_name])
+    return (scope_rank, RUN_SCOPE_COMMAND_ORDER[case.command_name])
 
 
-RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCase, ...] = tuple(
-    (
-        command_name,
-        variant.include_berth,
-        variant.include_branch,
-        variant.run_cwd_kind,
-        f"{command_name}_{variant.variant_id}",
+RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCaseMeta, ...] = tuple(
+    RunScopeCaseMeta(
+        command_name=command_name,
+        include_berth=variant.include_berth,
+        include_branch=variant.include_branch,
+        run_cwd_kind=variant.run_cwd_kind,
+        case_id=f"{command_name}_{variant.variant_id}",
     )
     for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
     for command_name in RUN_SCOPE_COMMANDS
 )
-RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCase, ...] = tuple(
+RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCaseMeta, ...] = tuple(
     sorted(
         RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
         key=_run_scope_branch_before_berth_sort_key,
@@ -153,16 +162,16 @@ def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
     return RUN_SCOPE_DESCRIPTOR_BY_FLAGS[(include_berth, include_branch)]
 
 
-def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
+def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:
     """Return pytest ID labels derived from run-scope metadata."""
-    return tuple(case[4] for case in cases)
+    return tuple(case.case_id for case in cases)
 
 
 RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
 RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
 
 
-def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunNoCommandScenario]:
     """Build no-command run-scope scenarios from shared scope metadata.
 
     Args:
@@ -172,15 +181,15 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list
         Parameter tuples for no-command run-scope tests.
     """
     scenarios: list[RunNoCommandScenario] = []
-    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
-        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
+    for case in cases:
+        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
+        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
         scenarios.append(
             (
-                command_name,
-                include_berth,
-                include_branch,
-                run_cwd_kind,
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+                case.run_cwd_kind,
                 f"{command_label} {scope_descriptor} run no-commands baseline",
                 f"Verify {command_label} {scope_descriptor} --run no-op path remains non-mutating",
                 f"run {command_label} {scope_descriptor} --run",
@@ -190,7 +199,7 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list
 
 
 def _build_opt_in_mutation_run_scope_scenarios(
-    cases: Sequence[RunScopeCase],
+    cases: Sequence[RunScopeCaseMeta],
 ) -> list[RunOptInMutationScenario]:
     """Build opt-in mutation run-scope scenarios from shared scope metadata.
 
@@ -201,16 +210,16 @@ def _build_opt_in_mutation_run_scope_scenarios(
         Parameter tuples for opt-in mutation run-scope tests.
     """
     scenarios: list[RunOptInMutationScenario] = []
-    for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
-        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
+    for case in cases:
+        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
+        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
         scenarios.append(
             (
-                command_name,
-                include_berth,
-                include_branch,
-                run_cwd_kind,
-                f"{scope_id}_opt_in_marker.txt",
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+                case.run_cwd_kind,
+                f"{case.case_id}_opt_in_marker.txt",
                 f"{command_label} {scope_descriptor} opt-in mutation baseline",
                 f"Verify {command_label} {scope_descriptor} --run may execute mutating commands",
                 f"run {command_label} {scope_descriptor} --run",
