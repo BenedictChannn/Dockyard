@@ -628,6 +628,42 @@ Risk text
     assert parsed["resume_commands"] == ["pytest -q"]
 
 
+def test_markdown_parser_accepts_singular_section_heading_aliases() -> None:
+    """Parser should accept singular heading aliases for known section labels."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decision/Finding
+Decision text
+## Next Step
+1. Keep moving
+## Risk/Review Needed
+Risk text
+## Resume Command
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["objective"] == "Objective text"
+    assert parsed["decisions"] == "Decision text"
+    assert parsed["next_steps"] == ["Keep moving"]
+    assert parsed["risks_review"] == "Risk text"
+    assert parsed["resume_commands"] == ["pytest -q"]
+
+
 def test_markdown_parser_stops_list_section_capture_on_unknown_heading() -> None:
     """Unknown headings should terminate list sections to avoid entry leakage."""
     markdown = """# Checkpoint

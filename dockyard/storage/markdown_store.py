@@ -11,9 +11,15 @@ from dockyard.models import Checkpoint
 SECTION_FIELD_MAP: dict[str, str] = {
     "objective": "objective",
     "decisions/findings": "decisions",
+    "decision/findings": "decisions",
+    "decisions/finding": "decisions",
+    "decision/finding": "decisions",
     "next steps": "next_steps",
+    "next step": "next_steps",
     "risks/review needed": "risks_review",
+    "risk/review needed": "risks_review",
     "resume commands": "resume_commands",
+    "resume command": "resume_commands",
 }
 FREEFORM_SECTION_FIELDS: set[str] = {"objective", "decisions", "risks_review"}
 
