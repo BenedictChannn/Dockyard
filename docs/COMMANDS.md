@@ -101,6 +101,8 @@ Notes:
   `undock --run` may mutate repo files depending on recorded commands.
 - Opt-in mutation semantics also apply when BERTH and/or `--branch` are used
   with `--run` (e.g., `resume <berth> --branch <name> --run`).
+- If no resume commands are recorded, `--run` is a no-op success for
+  `resume`, `r`, and `undock` (no command execution rows are emitted).
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 

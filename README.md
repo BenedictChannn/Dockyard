@@ -115,6 +115,8 @@ Useful flags:
   ignores blank command entries after normalization.
 - `--run` is always explicit opt-in, including BERTH/`--branch` variants
   (for example: `resume my-berth --branch main --run`).
+- If no commands are recorded, run mode is a safe no-op (no command rows are
+  executed) for `resume`, `r`, and `undock`.
 - BERTH argument values are trimmed; blank BERTH values are rejected.
 - `--branch` values are trimmed; blank values are rejected.
 
