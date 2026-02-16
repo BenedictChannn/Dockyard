@@ -88,6 +88,62 @@ def _write_non_interference_template(template_path: Path, objective: str) -> Non
     )
 
 
+def _save_checkpoint(
+    git_repo: Path,
+    env: dict[str, str],
+    *,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    risks: str,
+    command: str = "echo noop",
+    extra_args: list[str] | None = None,
+) -> None:
+    """Create a no-prompt checkpoint with shared verification defaults.
+
+    Args:
+        git_repo: Target repository root for `dockyard save --root`.
+        env: Environment variables used for subprocess execution.
+        objective: Save objective text.
+        decisions: Save decisions text.
+        next_step: Save next-step text.
+        risks: Save risks/review-needed text.
+        command: Resume command text captured in checkpoint.
+        extra_args: Optional additional CLI args appended to save command.
+    """
+    save_command = [
+        "python3",
+        "-m",
+        "dockyard",
+        "save",
+        "--root",
+        str(git_repo),
+        "--no-prompt",
+        "--objective",
+        objective,
+        "--decisions",
+        decisions,
+        "--next-step",
+        next_step,
+        "--risks",
+        risks,
+        "--command",
+        command,
+        "--tests-run",
+        "--tests-command",
+        "pytest -q",
+        "--build-ok",
+        "--build-command",
+        "echo build",
+        "--lint-fail",
+        "--smoke-fail",
+        "--no-auto-review",
+    ]
+    if extra_args:
+        save_command.extend(extra_args)
+    _run(save_command, cwd=git_repo, env=env)
+
+
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
     """Saving checkpoint should not alter tracked files or git index."""
     env = dict(os.environ)
@@ -137,39 +193,15 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Read-only command baseline",
-            "--decisions",
-            "Validate non-mutating command paths",
-            "--next-step",
-            "Run resume and harbor commands",
-            "--risks",
-            "None",
-            "--command",
-            "echo do-not-run",
-            "--tag",
-            "baseline",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Read-only command baseline",
+        decisions="Validate non-mutating command paths",
+        next_step="Run resume and harbor commands",
+        risks="None",
+        command="echo do-not-run",
+        extra_args=["--tag", "baseline"],
     )
 
     _assert_repo_clean(git_repo)
@@ -283,37 +315,14 @@ def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_pat
     marker = git_repo / "dockyard_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Resume command safety baseline",
-            "--decisions",
-            "Ensure resume read paths do not execute stored commands",
-            "--next-step",
-            "Inspect resume output",
-            "--risks",
-            "none",
-            "--command",
-            marker_command,
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Resume command safety baseline",
+        decisions="Ensure resume read paths do not execute stored commands",
+        next_step="Inspect resume output",
+        risks="none",
+        command=marker_command,
     )
 
     assert not marker.exists()
@@ -340,37 +349,14 @@ def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
     marker_command = f"touch {marker}"
     base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Alias berth command safety baseline",
-            "--decisions",
-            "Ensure alias berth read paths do not execute stored commands",
-            "--next-step",
-            "Inspect alias berth resume output",
-            "--risks",
-            "none",
-            "--command",
-            marker_command,
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Alias berth command safety baseline",
+        decisions="Ensure alias berth read paths do not execute stored commands",
+        next_step="Inspect alias berth resume output",
+        risks="none",
+        command=marker_command,
     )
 
     assert not marker.exists()
@@ -409,37 +395,14 @@ def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
     marker_command = f"touch {marker}"
     base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Alias trimmed berth command safety baseline",
-            "--decisions",
-            "Ensure trimmed alias berth read paths do not execute stored commands",
-            "--next-step",
-            "Inspect trimmed alias berth resume output",
-            "--risks",
-            "none",
-            "--command",
-            marker_command,
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Alias trimmed berth command safety baseline",
+        decisions="Ensure trimmed alias berth read paths do not execute stored commands",
+        next_step="Inspect trimmed alias berth resume output",
+        risks="none",
+        command=marker_command,
     )
 
     assert not marker.exists()
@@ -481,37 +444,14 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
     marker_command = f"touch {marker}"
     base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Primary trimmed berth command safety baseline",
-            "--decisions",
-            "Ensure trimmed primary berth read paths do not execute commands",
-            "--next-step",
-            "Inspect trimmed primary berth resume output",
-            "--risks",
-            "none",
-            "--command",
-            marker_command,
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Primary trimmed berth command safety baseline",
+        decisions="Ensure trimmed primary berth read paths do not execute commands",
+        next_step="Inspect trimmed primary berth resume output",
+        risks="none",
+        command=marker_command,
     )
 
     assert not marker.exists()
@@ -541,37 +481,13 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Mutation command baseline",
-            "--decisions",
-            "Validate review/link non-interference",
-            "--next-step",
-            "Run link and review commands",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Mutation command baseline",
+        decisions="Validate review/link non-interference",
+        next_step="Run link and review commands",
+        risks="none",
     )
 
     _assert_repo_clean(git_repo)
@@ -621,37 +537,13 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Root override mutation baseline",
-            "--decisions",
-            "Validate root override review/link non-interference",
-            "--next-step",
-            "Run root override metadata commands",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Root override mutation baseline",
+        decisions="Validate root override review/link non-interference",
+        next_step="Run root override metadata commands",
+        risks="none",
     )
 
     _assert_repo_clean(git_repo)
