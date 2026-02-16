@@ -4513,6 +4513,51 @@ def test_search_no_matches_is_informative(tmp_path: Path) -> None:
     assert "No checkpoint matches found." in result.stdout
 
 
+def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Path) -> None:
+    """Search should keep no-match guidance when filters eliminate results."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filtered no-match objective",
+            "--decisions",
+            "Filtered no-match decisions",
+            "--next-step",
+            "run filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "present-tag",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["search", "Filtered no-match objective", "--tag", "missing-tag"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+
+
 def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
     """JSON search output should remain machine-parseable when empty."""
     env = dict(os.environ)
