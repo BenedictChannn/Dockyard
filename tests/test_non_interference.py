@@ -11,6 +11,10 @@ from pathlib import Path
 
 import pytest
 
+CommandMatrix = list[list[str]]
+MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
+ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
+
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     """Run subprocess command and return stdout."""
@@ -25,7 +29,7 @@ def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> st
     return result.stdout.strip()
 
 
-def _run_commands(commands: list[list[str]], cwd: Path, env: dict[str, str]) -> None:
+def _run_commands(commands: CommandMatrix, cwd: Path, env: dict[str, str]) -> None:
     """Run a sequence of commands in a shared working directory.
 
     Args:
@@ -551,7 +555,7 @@ def _resume_read_variants(
     branch: str | None = None,
     include_json: bool = True,
     include_handoff: bool = True,
-) -> list[list[str]]:
+) -> CommandMatrix:
     """Build read-only resume command variants for a command token.
 
     Args:
@@ -591,7 +595,7 @@ def _assert_resume_read_paths_do_not_execute_saved_commands(
     objective: str,
     decisions: str,
     next_step: str,
-    commands: list[list[str]],
+    commands: CommandMatrix,
     run_cwd: Path,
 ) -> None:
     """Assert resume read paths never execute stored resume commands.
@@ -627,7 +631,7 @@ def _assert_resume_read_paths_do_not_execute_saved_commands(
     _assert_repo_clean(git_repo)
 
 
-def _build_resume_read_commands_in_repo(git_repo: Path) -> list[list[str]]:
+def _build_resume_read_commands_in_repo(git_repo: Path) -> CommandMatrix:
     """Build in-repo resume read-only command matrix."""
     return [
         *_resume_read_variants("resume"),
@@ -636,7 +640,7 @@ def _build_resume_read_commands_in_repo(git_repo: Path) -> list[list[str]]:
     ]
 
 
-def _build_resume_read_commands_alias_berth(git_repo: Path) -> list[list[str]]:
+def _build_resume_read_commands_alias_berth(git_repo: Path) -> CommandMatrix:
     """Build berth-targeted alias resume read-only command matrix."""
     base_branch = _current_branch(git_repo)
     return [
@@ -645,7 +649,7 @@ def _build_resume_read_commands_alias_berth(git_repo: Path) -> list[list[str]]:
     ]
 
 
-def _build_resume_read_commands_alias_trimmed_berth(git_repo: Path) -> list[list[str]]:
+def _build_resume_read_commands_alias_trimmed_berth(git_repo: Path) -> CommandMatrix:
     """Build trimmed berth/branch alias resume read-only command matrix."""
     base_branch = _current_branch(git_repo)
     trimmed_berth = f"  {git_repo.name}  "
@@ -656,7 +660,7 @@ def _build_resume_read_commands_alias_trimmed_berth(git_repo: Path) -> list[list
     ]
 
 
-def _build_resume_read_commands_primary_trimmed_berth(git_repo: Path) -> list[list[str]]:
+def _build_resume_read_commands_primary_trimmed_berth(git_repo: Path) -> CommandMatrix:
     """Build trimmed berth/branch primary resume read-only command matrix."""
     base_branch = _current_branch(git_repo)
     trimmed_berth = f"  {git_repo.name}  "
@@ -672,7 +676,7 @@ def _assert_review_link_commands_do_not_modify_repo(
     decisions: str,
     next_step: str,
     run_cwd: Path,
-    metadata_commands: list[list[str]],
+    metadata_commands: CommandMatrix,
     review_add_command: list[str],
 ) -> None:
     """Assert review/link metadata commands keep project repo unchanged.
@@ -708,15 +712,14 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def _build_metadata_commands_in_repo(git_repo: Path, base_branch: str) -> list[list[str]]:
+def _build_metadata_commands_in_repo(git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build in-repo review/link metadata command list."""
-    del base_branch
+    del git_repo
     return [["python3", "-m", "dockyard", "link", "https://example.com/non-interference"]]
 
 
-def _build_metadata_commands_root_override(git_repo: Path, base_branch: str) -> list[list[str]]:
+def _build_metadata_commands_root_override(git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build root-override review/link metadata command list."""
-    del base_branch
     return [
         [
             "python3",
@@ -731,10 +734,8 @@ def _build_metadata_commands_root_override(git_repo: Path, base_branch: str) -> 
     ]
 
 
-def _build_review_add_command_in_repo(git_repo: Path, base_branch: str) -> list[str]:
+def _build_review_add_command_in_repo(_git_repo: Path, _base_branch: str) -> list[str]:
     """Build in-repo review-add command."""
-    del git_repo
-    del base_branch
     return [
         "python3",
         "-m",
@@ -1035,7 +1036,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(
     objective: str,
     decisions: str,
     next_step: str,
-    commands_builder: Callable[[Path], list[list[str]]],
+    commands_builder: Callable[[Path], CommandMatrix],
     run_cwd_kind: str,
 ) -> None:
     """Resume read-only path variants must never execute stored commands."""
@@ -1088,8 +1089,8 @@ def test_review_and_link_commands_do_not_modify_repo(
     decisions: str,
     next_step: str,
     run_cwd_kind: str,
-    metadata_builder: Callable[[Path, str], list[list[str]]],
-    review_add_builder: Callable[[Path, str], list[str]],
+    metadata_builder: MetadataCommandBuilder,
+    review_add_builder: ReviewAddCommandBuilder,
 ) -> None:
     """Review/link metadata paths must not alter repository tree/index."""
     base_branch = _current_branch(git_repo)
