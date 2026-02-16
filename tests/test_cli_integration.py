@@ -2673,6 +2673,11 @@ def test_review_cli_list_prioritizes_high_severity(git_repo: Path, tmp_path: Pat
     assert len(lines) >= 2
     assert "high_item" in lines[0]
     assert "low_item" in lines[1]
+    review_list_output = _run_dock(["review", "list"], cwd=tmp_path, env=env).stdout
+    list_lines = [line for line in review_list_output.splitlines() if line.strip()]
+    assert len(list_lines) >= 2
+    assert "high_item" in list_lines[0]
+    assert "low_item" in list_lines[1]
 
 
 def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path) -> None:
