@@ -266,3 +266,39 @@ None
         "First parenthesized step",
         "Second parenthesized step",
     ]
+
+
+def test_markdown_parser_accepts_numbered_next_steps_without_space() -> None:
+    """Parser should support numbered next-step markers without delimiter spacing."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1)First compact step
+2.Second compact step
+## Risks/Review Needed
+None
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["next_steps"] == [
+        "First compact step",
+        "Second compact step",
+    ]
