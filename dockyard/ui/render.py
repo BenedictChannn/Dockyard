@@ -12,6 +12,15 @@ from rich.table import Table
 from dockyard.models import Checkpoint
 
 
+def _display_berth_label(row: dict[str, Any]) -> str:
+    """Return berth label fallback chain for render rows."""
+    for key in ("berth_name", "repo_id"):
+        value = row.get(key)
+        if value is not None and str(value).strip():
+            return str(value)
+    return "(unknown)"
+
+
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
@@ -111,7 +120,7 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
 
     status_badge = {"green": "[green]G[/green]", "yellow": "[yellow]Y[/yellow]", "red": "[red]R[/red]"}
     for row in rows:
-        berth = row.get("berth_name") or row.get("repo_id", "(unknown)")
+        berth = _display_berth_label(row)
         branch = row.get("branch", "")
         status = row.get("status", "unknown")
         next_steps = row.get("next_steps")
@@ -146,7 +155,7 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
     table.add_column("Timestamp")
     table.add_column("Snippet")
     for row in rows:
-        berth = row.get("berth_name") or row.get("repo_id", "(unknown)")
+        berth = _display_berth_label(row)
         branch = row.get("branch", "")
         created_at = row.get("created_at", "")
         snippet = row.get("snippet") or ""
