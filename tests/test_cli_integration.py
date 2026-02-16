@@ -4657,6 +4657,9 @@ def test_harbor_alias_renders_unknown_status_text(git_repo: Path, tmp_path: Path
 
     output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
     assert "paused" in output
+    json_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(json_rows) == 1
+    assert json_rows[0]["status"] == "paused"
 
 
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
