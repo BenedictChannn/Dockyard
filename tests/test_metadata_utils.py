@@ -42,3 +42,24 @@ def test_pair_with_context_renders_context_for_each_case() -> None:
         (cases[0], "context::alpha"),
         (cases[1], "context::beta"),
     )
+
+
+def test_case_ids_returns_empty_tuple_for_empty_input() -> None:
+    """case_ids should return an empty tuple for empty case collections."""
+    assert case_ids(()) == ()
+
+
+def test_pair_with_context_preserves_order_for_empty_and_non_empty() -> None:
+    """pair_with_context should preserve case ordering in output pairs."""
+    empty_pairs = pair_with_context((), context_builder=lambda _: "unused")
+    assert empty_pairs == ()
+
+    cases = (
+        _CaseMeta(case_id="case_z", label="zeta"),
+        _CaseMeta(case_id="case_a", label="alpha"),
+    )
+    paired = pair_with_context(cases, context_builder=lambda case: case.label.upper())
+    assert paired == (
+        (cases[0], "ZETA"),
+        (cases[1], "ALPHA"),
+    )
