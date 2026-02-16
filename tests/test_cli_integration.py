@@ -4919,6 +4919,56 @@ def test_harbor_alias_renders_unknown_status_text(git_repo: Path, tmp_path: Path
     assert json_rows[0]["status"] == "paused"
 
 
+def test_harbor_alias_compacts_multiline_branch_text(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should compact multiline branch values in table output."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor multiline branch baseline",
+            "--decisions",
+            "Normalize multiline branch text in harbor output",
+            "--next-step",
+            "run harbor",
+            "--risks",
+            "none",
+            "--command",
+            "echo harbor",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET branch = ? WHERE branch = ?",
+        ("feature/\nharbor", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
+    assert "feature/ harbor" in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
