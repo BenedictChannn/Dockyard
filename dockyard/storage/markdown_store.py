@@ -160,7 +160,9 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
             continue
         match = re.match(r"^\d+\.\s+(.*)$", stripped)
         if match:
-            results.append(match.group(1).strip())
+            item = match.group(1).strip()
+            if item:
+                results.append(item)
     return results
 
 
