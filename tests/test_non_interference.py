@@ -109,6 +109,21 @@ class MetadataScopeMeta:
     review_add_builder: ReviewAddCommandBuilder
 
 
+@dataclass(frozen=True)
+class DashboardReadVariantMeta:
+    """Metadata describing a dashboard read-command argument suffix."""
+
+    args_suffix: tuple[str, ...]
+    include_only_when_requested: bool = False
+
+
+@dataclass(frozen=True)
+class SearchReadVariantMeta:
+    """Metadata describing a search read-command argument suffix."""
+
+    args_suffix_template: tuple[str, ...]
+
+
 SAVE_COMMAND_CASES: tuple[SaveCommandMeta, ...] = (
     SaveCommandMeta("save", "save", "save"),
     SaveCommandMeta("s", "alias_s", "s_alias"),
@@ -140,6 +155,64 @@ RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyTyp
 )
 RUN_SCOPE_VARIANT_RANK: Mapping[RunScopeVariantId, int] = MappingProxyType(
     {variant.variant_id: variant.sort_rank for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH}
+)
+SEARCH_REPO_PLACEHOLDER = "{repo_name}"
+SEARCH_BRANCH_PLACEHOLDER = "{base_branch}"
+DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
+    DashboardReadVariantMeta(()),
+    DashboardReadVariantMeta(("--json",)),
+    DashboardReadVariantMeta(("--limit", "1", "--json")),
+    DashboardReadVariantMeta(("--stale", "0", "--json")),
+    DashboardReadVariantMeta(("--tag", "baseline", "--json")),
+    DashboardReadVariantMeta(("--tag", "baseline", "--stale", "0", "--limit", "1", "--json")),
+    DashboardReadVariantMeta(
+        ("--tag", "baseline", "--stale", "0", "--limit", "1"),
+        include_only_when_requested=True,
+    ),
+)
+SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
+    SearchReadVariantMeta(("baseline",)),
+    SearchReadVariantMeta(("baseline", "--json")),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline")),
+    SearchReadVariantMeta(("baseline", "--tag", "missing-tag")),
+    SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER)),
+    SearchReadVariantMeta(("baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER)),
+    SearchReadVariantMeta(
+        ("baseline", "--tag", "baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER),
+    ),
+    SearchReadVariantMeta(
+        ("baseline", "--tag", "baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json"),
+    ),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--json")),
+    SearchReadVariantMeta(
+        (
+            "baseline",
+            "--tag",
+            "baseline",
+            "--repo",
+            SEARCH_REPO_PLACEHOLDER,
+            "--branch",
+            SEARCH_BRANCH_PLACEHOLDER,
+            "--json",
+        ),
+    ),
+    SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json")),
+)
+SEARCH_ALIAS_EXTRA_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
+    SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--json")),
+    SearchReadVariantMeta(("baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json")),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER)),
+    SearchReadVariantMeta(
+        (
+            "baseline",
+            "--tag",
+            "baseline",
+            "--repo",
+            SEARCH_REPO_PLACEHOLDER,
+            "--branch",
+            SEARCH_BRANCH_PLACEHOLDER,
+        ),
+    ),
 )
 
 
@@ -1100,114 +1173,63 @@ def _build_dashboard_read_commands(
     include_non_json_tag_combo: bool = False,
 ) -> CommandMatrix:
     """Build ls/harbor read-only command matrix."""
-    commands: CommandMatrix = [
-        ["python3", "-m", "dockyard", command_name],
-        ["python3", "-m", "dockyard", command_name, "--json"],
-        ["python3", "-m", "dockyard", command_name, "--limit", "1", "--json"],
-        ["python3", "-m", "dockyard", command_name, "--stale", "0", "--json"],
-        ["python3", "-m", "dockyard", command_name, "--tag", "baseline", "--json"],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "--tag",
-            "baseline",
-            "--stale",
-            "0",
-            "--limit",
-            "1",
-            "--json",
-        ],
-    ]
-    if include_non_json_tag_combo:
-        commands.append(
-            [
-                "python3",
-                "-m",
-                "dockyard",
-                command_name,
-                "--tag",
-                "baseline",
-                "--stale",
-                "0",
-                "--limit",
-                "1",
-            ],
-        )
+    commands: CommandMatrix = []
+    for variant in DASHBOARD_READ_VARIANTS:
+        if variant.include_only_when_requested and not include_non_json_tag_combo:
+            continue
+        commands.append(["python3", "-m", "dockyard", command_name, *variant.args_suffix])
     return commands
+
+
+def _render_search_args_suffix(
+    args_suffix_template: tuple[str, ...],
+    *,
+    repo_name: str,
+    base_branch: str,
+) -> list[str]:
+    """Resolve search command placeholder args for scenario rendering."""
+    resolved_args: list[str] = []
+    for arg in args_suffix_template:
+        if arg == SEARCH_REPO_PLACEHOLDER:
+            resolved_args.append(repo_name)
+        elif arg == SEARCH_BRANCH_PLACEHOLDER:
+            resolved_args.append(base_branch)
+        else:
+            resolved_args.append(arg)
+    return resolved_args
+
+
+def _build_search_read_command(
+    command_name: SearchCommandName,
+    *,
+    args_suffix_template: tuple[str, ...],
+    repo_name: str,
+    base_branch: str,
+) -> RunCommand:
+    """Build a single search/f read command from template metadata."""
+    return [
+        "python3",
+        "-m",
+        "dockyard",
+        command_name,
+        *_render_search_args_suffix(
+            args_suffix_template,
+            repo_name=repo_name,
+            base_branch=base_branch,
+        ),
+    ]
 
 
 def _build_search_read_commands(command_name: SearchCommandName, repo_name: str, base_branch: str) -> CommandMatrix:
     """Build search/f read-only command matrix."""
     commands: CommandMatrix = [
-        ["python3", "-m", "dockyard", command_name, "baseline"],
-        ["python3", "-m", "dockyard", command_name, "baseline", "--json"],
-        ["python3", "-m", "dockyard", command_name, "baseline", "--tag", "baseline"],
-        ["python3", "-m", "dockyard", command_name, "baseline", "--tag", "missing-tag"],
-        ["python3", "-m", "dockyard", command_name, "baseline", "--repo", repo_name],
-        ["python3", "-m", "dockyard", command_name, "baseline", "--branch", base_branch],
-        [
-            "python3",
-            "-m",
-            "dockyard",
+        _build_search_read_command(
             command_name,
-            "baseline",
-            "--tag",
-            "baseline",
-            "--branch",
-            base_branch,
-        ],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "baseline",
-            "--tag",
-            "baseline",
-            "--branch",
-            base_branch,
-            "--json",
-        ],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "baseline",
-            "--tag",
-            "baseline",
-            "--repo",
-            repo_name,
-            "--json",
-        ],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "baseline",
-            "--tag",
-            "baseline",
-            "--repo",
-            repo_name,
-            "--branch",
-            base_branch,
-            "--json",
-        ],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "baseline",
-            "--repo",
-            repo_name,
-            "--branch",
-            base_branch,
-            "--json",
-        ],
+            args_suffix_template=variant.args_suffix_template,
+            repo_name=repo_name,
+            base_branch=base_branch,
+        )
+        for variant in SEARCH_READ_VARIANTS
     ]
     if command_name == "f":
         commands.extend(_build_search_alias_extra_read_commands(repo_name=repo_name, base_branch=base_branch))
@@ -1217,32 +1239,13 @@ def _build_search_read_commands(command_name: SearchCommandName, repo_name: str,
 def _build_search_alias_extra_read_commands(*, repo_name: str, base_branch: str) -> CommandMatrix:
     """Build additional alias-only search read commands."""
     return [
-        ["python3", "-m", "dockyard", "f", "baseline", "--repo", repo_name, "--json"],
-        ["python3", "-m", "dockyard", "f", "baseline", "--branch", base_branch, "--json"],
-        [
-            "python3",
-            "-m",
-            "dockyard",
+        _build_search_read_command(
             "f",
-            "baseline",
-            "--tag",
-            "baseline",
-            "--repo",
-            repo_name,
-        ],
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "f",
-            "baseline",
-            "--tag",
-            "baseline",
-            "--repo",
-            repo_name,
-            "--branch",
-            base_branch,
-        ],
+            args_suffix_template=variant.args_suffix_template,
+            repo_name=repo_name,
+            base_branch=base_branch,
+        )
+        for variant in SEARCH_ALIAS_EXTRA_READ_VARIANTS
     ]
 
 
