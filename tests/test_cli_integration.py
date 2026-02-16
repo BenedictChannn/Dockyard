@@ -5021,6 +5021,56 @@ def test_harbor_alias_compacts_multiline_branch_text(git_repo: Path, tmp_path: P
     assert "feature/ harbor" in output
 
 
+def test_harbor_alias_falls_back_for_blank_branch_text(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should show unknown label when slip branch is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor blank branch baseline",
+            "--decisions",
+            "Fallback branch rendering should remain explicit",
+            "--next-step",
+            "run harbor",
+            "--risks",
+            "none",
+            "--command",
+            "echo harbor",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET branch = ? WHERE branch = ?",
+        ("   ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
+    assert "(unknown)" in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
@@ -5457,6 +5507,55 @@ def test_search_output_falls_back_for_blank_timestamp(
     conn.close()
 
     result = _run_dock(["search", "Search blank timestamp objective"], cwd=tmp_path, env=env)
+    assert "(unknown)" in result.stdout
+
+
+def test_search_output_falls_back_for_blank_branch(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search output should show unknown branch when checkpoint branch is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Search blank branch objective",
+            "--decisions",
+            "Verify fallback branch rendering for search",
+            "--next-step",
+            "run search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE checkpoints SET branch = ?", ("   ",))
+    conn.commit()
+    conn.close()
+
+    result = _run_dock(["search", "Search blank branch objective"], cwd=tmp_path, env=env)
     assert "(unknown)" in result.stdout
 
 
