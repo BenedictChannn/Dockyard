@@ -176,6 +176,20 @@ def test_print_resume_handles_non_list_resume_payload_fields() -> None:
     assert "Touched Files" in output
 
 
+def test_print_resume_escapes_markup_like_text_fields() -> None:
+    """Resume rendering should preserve literal bracketed text values."""
+    checkpoint = _checkpoint()
+    checkpoint.objective = "[red]objective[/red]"
+    checkpoint.decisions = "[bold]decision[/bold]"
+    checkpoint.next_steps = ["[green]step[/green]"]
+    console = Console(record=True, width=160)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "Objective: [red]objective[/red]" in output
+    assert "[bold]decision[/bold]" in output
+    assert "1. [green]step[/green]" in output
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)
@@ -558,6 +572,27 @@ def test_print_harbor_falls_back_to_unknown_for_none_status() -> None:
     )
     output = console.export_text()
     assert "unknown" in output
+
+
+def test_print_harbor_escapes_markup_like_unknown_status_text() -> None:
+    """Unknown status values should preserve literal bracketed text."""
+    console = Console(record=True, width=160)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-status",
+                "branch": "main",
+                "status": "[red]paused[/red]",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "[red]paused[/red]" in output
 
 
 def test_print_harbor_falls_back_to_repo_id_without_berth_name() -> None:

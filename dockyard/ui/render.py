@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
@@ -33,7 +34,7 @@ def _preview_text(value: Any, max_length: int) -> str:
 def _label_text(value: Any, max_length: int) -> str:
     """Return compact label text with unknown fallback."""
     preview = _preview_text(value, max_length)
-    return preview if preview else "(unknown)"
+    return escape(preview if preview else "(unknown)")
 
 
 def _coerce_text_items(value: Any) -> list[str]:
@@ -61,7 +62,7 @@ def _render_status_badge(status: Any) -> str:
     }
     if normalized in badge_map:
         return badge_map[normalized]
-    return raw or "unknown"
+    return escape(raw) if raw else "unknown"
 
 
 def format_age(timestamp_iso: Any) -> str:
@@ -119,14 +120,14 @@ def print_resume(
             "Last Checkpoint: "
             f"{_label_text(checkpoint.created_at, 120)} ({format_age(checkpoint.created_at)} ago)"
         ),
-        f"Objective: {_preview_text(checkpoint.objective, 200)}",
+        f"Objective: {escape(_preview_text(checkpoint.objective, 200))}",
         "Next Steps:",
     ]
     next_steps = _coerce_text_items(checkpoint.next_steps)
     if next_steps:
         summary_lines.extend(
             [
-                f"  {index + 1}. {_preview_text(step, 200)}"
+                f"  {index + 1}. {escape(_preview_text(step, 200))}"
                 for index, step in enumerate(next_steps)
             ]
         )
@@ -138,32 +139,34 @@ def print_resume(
 
     console.print(
         Panel.fit(
-            checkpoint.decisions or "(none)",
+            escape(str(checkpoint.decisions)) if checkpoint.decisions else "(none)",
             title="Decisions / Findings",
             border_style="cyan",
         )
     )
     console.print(
         Panel.fit(
-            checkpoint.risks_review or "(none)",
+            escape(str(checkpoint.risks_review)) if checkpoint.risks_review else "(none)",
             title="Risks / Review Needed",
             border_style="yellow",
         )
     )
 
     touched_files = _coerce_text_items(checkpoint.touched_files)
-    touched = "\n".join(f"- {_preview_text(path, 240)}" for path in touched_files[:20]) or "(none)"
+    touched = "\n".join(
+        f"- {escape(_preview_text(path, 240))}" for path in touched_files[:20]
+    ) or "(none)"
     console.print(Panel.fit(touched, title="Touched Files", border_style="magenta"))
 
     if checkpoint.diff_stat_text is None:
         diff_text = "(no diff)"
     else:
         diff_text = str(checkpoint.diff_stat_text).strip() or "(no diff)"
-    console.print(Panel.fit(diff_text, title="Diff Stat", border_style="green"))
+    console.print(Panel.fit(escape(diff_text), title="Diff Stat", border_style="green"))
 
     resume_commands = _coerce_text_items(checkpoint.resume_commands)
     if resume_commands:
-        commands = "\n".join(f"$ {command}" for command in resume_commands)
+        commands = "\n".join(f"$ {escape(command)}" for command in resume_commands)
     else:
         commands = "(no commands recorded)"
     console.print(Panel.fit(commands, title="Resume Commands", border_style="blue"))
@@ -192,11 +195,11 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
         else:
             next_step = objective
         table.add_row(
-            str(berth),
+            escape(str(berth)),
             _label_text(branch, 120),
             _render_status_badge(status),
             format_age(row.get("updated_at")),
-            _preview_text(next_step, 60),
+            escape(_preview_text(next_step, 60)),
             str(row.get("open_review_count", 0)),
         )
     console.print(table)
@@ -220,9 +223,9 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
         if not isinstance(snippet, str):
             snippet = str(snippet)
         table.add_row(
-            str(berth),
+            escape(str(berth)),
             _label_text(branch, 120),
             _label_text(created_at, 120),
-            _preview_text(snippet, 120),
+            escape(_preview_text(snippet, 120)),
         )
     console.print(table)
