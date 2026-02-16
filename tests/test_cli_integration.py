@@ -8,6 +8,7 @@ import re
 import sqlite3
 import subprocess
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -18,41 +19,61 @@ RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
-RunCommandCase = tuple[RunCommandName, str, str, str]
-RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str, str]
-RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
-    ("resume", "resume", "resume", "resume"),
-    ("r", "r", "r_alias", "resume alias"),
-    ("undock", "undock", "undock_alias", "undock alias"),
+@dataclass(frozen=True)
+class RunCommandMeta:
+    """Metadata describing a run-enabled command token."""
+
+    name: RunCommandName
+    slug: str
+    case_id: str
+    label: str
+
+
+@dataclass(frozen=True)
+class RunScopeVariantMeta:
+    """Metadata describing a run-scope variant."""
+
+    variant_id: str
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    descriptor: str
+    slug: str
+
+
+RUN_COMMAND_CASES: tuple[RunCommandMeta, ...] = (
+    RunCommandMeta(name="resume", slug="resume", case_id="resume", label="resume"),
+    RunCommandMeta(name="r", slug="r", case_id="r_alias", label="resume alias"),
+    RunCommandMeta(name="undock", slug="undock", case_id="undock_alias", label="undock alias"),
 )
-RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
-RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
+RUN_COMMAND_IDS: tuple[str, ...] = tuple(case.case_id for case in RUN_COMMAND_CASES)
+RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
-    command_name: label for command_name, _slug, _case_id, label in RUN_COMMAND_CASES
+    case.name: case.label for case in RUN_COMMAND_CASES
 }
-RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
-    ("default", False, False, "repo", "default", "default"),
-    ("berth", True, False, "tmp", "berth", "berth"),
-    ("branch", False, True, "repo", "branch", "branch"),
-    ("berth_branch", True, True, "tmp", "berth+branch", "berth-branch"),
+RUN_SCOPE_VARIANTS: tuple[RunScopeVariantMeta, ...] = (
+    RunScopeVariantMeta("default", False, False, "repo", "default", "default"),
+    RunScopeVariantMeta("berth", True, False, "tmp", "berth", "berth"),
+    RunScopeVariantMeta("branch", False, True, "repo", "branch", "branch"),
+    RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch", "berth-branch"),
 )
 RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (include_berth, include_branch): descriptor
-    for _variant_id, include_berth, include_branch, _run_cwd_kind, descriptor, _slug in RUN_SCOPE_VARIANTS
+    (variant.include_berth, variant.include_branch): variant.descriptor
+    for variant in RUN_SCOPE_VARIANTS
 }
 RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (include_berth, include_branch): slug
-    for _variant_id, include_berth, include_branch, _run_cwd_kind, _descriptor, slug in RUN_SCOPE_VARIANTS
+    (variant.include_berth, variant.include_branch): variant.slug
+    for variant in RUN_SCOPE_VARIANTS
 }
 RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(
     (
         command_name,
-        include_berth,
-        include_branch,
-        run_cwd_kind,
-        f"{command_name}_{variant_id}",
+        variant.include_berth,
+        variant.include_branch,
+        variant.run_cwd_kind,
+        f"{command_name}_{variant.variant_id}",
     )
-    for variant_id, include_berth, include_branch, run_cwd_kind, _descriptor, _slug in RUN_SCOPE_VARIANTS
+    for variant in RUN_SCOPE_VARIANTS
     for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(case for case in RUN_SCOPE_CASES if case[2])
@@ -83,7 +104,7 @@ def _run_scope_slug(include_berth: bool, include_branch: bool) -> str:
 
 
 def _build_default_run_success_scenarios(
-    cases: Sequence[RunCommandCase],
+    cases: Sequence[RunCommandMeta],
 ) -> list[RunDefaultSuccessScenario]:
     """Build default-scope run success scenarios from command metadata.
 
@@ -94,21 +115,21 @@ def _build_default_run_success_scenarios(
         Parameter tuples for default-scope run success tests.
     """
     scenarios: list[RunDefaultSuccessScenario] = []
-    for command_name, case_label, _case_id, display_label in cases:
+    for case in cases:
         scenarios.append(
             (
-                command_name,
-                f"{display_label} run success objective",
-                f"Validate {display_label} run success-path behavior",
-                f"run {display_label}",
-                [f"echo {case_label}-run-one", f"echo {case_label}-run-two"],
+                case.name,
+                f"{case.label} run success objective",
+                f"Validate {case.label} run success-path behavior",
+                f"run {case.label}",
+                [f"echo {case.slug}-run-one", f"echo {case.slug}-run-two"],
             ),
         )
     return scenarios
 
 
 def _build_default_run_failure_scenarios(
-    cases: Sequence[RunCommandCase],
+    cases: Sequence[RunCommandMeta],
 ) -> list[RunDefaultFailureScenario]:
     """Build default-scope run failure scenarios from command metadata.
 
@@ -119,15 +140,15 @@ def _build_default_run_failure_scenarios(
         Parameter tuples for default-scope run stop-on-failure tests.
     """
     scenarios: list[RunDefaultFailureScenario] = []
-    for command_name, case_label, _case_id, display_label in cases:
+    for case in cases:
         scenarios.append(
             (
-                command_name,
-                f"{display_label} run failure objective",
-                f"Validate {display_label} run stop-on-failure behavior",
-                f"run {display_label}",
-                f"echo {case_label}-first",
-                f"echo {case_label}-should-not-run",
+                case.name,
+                f"{case.label} run failure objective",
+                f"Validate {case.label} run stop-on-failure behavior",
+                f"run {case.label}",
+                f"echo {case.slug}-first",
+                f"echo {case.slug}-should-not-run",
             ),
         )
     return scenarios
