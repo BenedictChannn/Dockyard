@@ -196,6 +196,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
             if len(command) < 2 or not command.endswith("`"):
                 continue
             command = command[1:-1].strip()
+        command = re.sub(r"^\[(?: |x|X)\]\s+", "", command)
         if command:
             results.append(command)
     return results

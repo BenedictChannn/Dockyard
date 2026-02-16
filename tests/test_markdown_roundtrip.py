@@ -699,3 +699,43 @@ Risk text
         "Third checklist step",
         "[] Keep literal unmatched bracket token",
     ]
+
+
+def test_markdown_parser_strips_checklist_prefixes_from_resume_commands() -> None:
+    """Parser should strip checklist prefixes from resume command entries."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+Risk text
+## Resume Commands
+- [ ] pytest -q
+* [x] python3 -m dockyard ls
+1. [X] echo numbered
+2) [x]echo-literal-no-separator
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["resume_commands"] == [
+        "pytest -q",
+        "python3 -m dockyard ls",
+        "echo numbered",
+        "[x]echo-literal-no-separator",
+    ]
