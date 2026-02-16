@@ -13,6 +13,7 @@ from typing import Literal
 import pytest
 
 CommandMatrix = list[list[str]]
+RunCommand = list[str]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
@@ -190,7 +191,7 @@ def _build_opt_in_run_command(
     git_repo: Path,
     branch: str | None = None,
     include_berth: bool = False,
-) -> list[str]:
+) -> RunCommand:
     """Build dockyard opt-in run command for non-interference checks."""
     run_command = ["python3", "-m", "dockyard", command_name]
     if include_berth:
@@ -201,11 +202,34 @@ def _build_opt_in_run_command(
     return run_command
 
 
+def _seed_opt_in_checkpoint(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    command: str | None,
+) -> dict[str, str]:
+    """Create opt-in checkpoint seed and return configured environment."""
+    env = _dockyard_env(tmp_path)
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        risks="none",
+        command=command,
+    )
+    return env
+
+
 def _assert_opt_in_run_mutates_repo(
     git_repo: Path,
     tmp_path: Path,
     *,
-    run_command: list[str],
+    run_command: RunCommand,
     run_cwd: Path,
     marker_name: str,
     objective: str,
@@ -224,16 +248,14 @@ def _assert_opt_in_run_mutates_repo(
         decisions: Checkpoint decisions text for setup save.
         next_step: Checkpoint next-step text for setup save.
     """
-    env = _dockyard_env(tmp_path)
     marker = git_repo / marker_name
 
-    _save_checkpoint(
+    env = _seed_opt_in_checkpoint(
         git_repo,
-        env,
+        tmp_path,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        risks="none",
         command=f"touch {marker}",
     )
     assert not marker.exists()
@@ -427,7 +449,7 @@ def _assert_opt_in_run_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
     *,
-    run_command: list[str],
+    run_command: RunCommand,
     run_cwd: Path,
     objective: str,
     decisions: str,
@@ -444,14 +466,12 @@ def _assert_opt_in_run_without_commands_keeps_repo_clean(
         decisions: Checkpoint decisions text for setup save.
         next_step: Checkpoint next-step text for setup save.
     """
-    env = _dockyard_env(tmp_path)
-    _save_checkpoint(
+    env = _seed_opt_in_checkpoint(
         git_repo,
-        env,
+        tmp_path,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        risks="none",
         command=None,
     )
     _assert_repo_clean(git_repo)
