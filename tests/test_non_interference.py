@@ -75,8 +75,6 @@ RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCase, ...] = tuple(
         key=_run_scope_branch_before_berth_sort_key,
     ),
 )
-RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH]
-RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH]
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 RunOptInMutationScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str]
 SaveNoPromptScenario = tuple[str, str, str, str, str, str, str]
@@ -87,6 +85,15 @@ SaveTemplateScenario = tuple[str, str, str]
 def _scope_label(scope_id: str) -> str:
     """Return human-readable scope label derived from scope ID."""
     return scope_id.replace("_", " ")
+
+
+def _scope_ids(cases: Sequence[RunScopeCase]) -> list[str]:
+    """Return pytest ID labels derived from run-scope metadata."""
+    return [case[4] for case in cases]
+
+
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
+RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
 
 
 def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
