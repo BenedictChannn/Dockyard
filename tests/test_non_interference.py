@@ -177,6 +177,23 @@ def _save_checkpoint(
     _run(save_command, cwd=git_repo, env=env)
 
 
+def _build_opt_in_run_command(
+    *,
+    command_name: str,
+    git_repo: Path,
+    branch: str | None = None,
+    include_berth: bool = False,
+) -> list[str]:
+    """Build dockyard opt-in run command for non-interference checks."""
+    run_command = ["python3", "-m", "dockyard", command_name]
+    if include_berth:
+        run_command.append(f"  {git_repo.name}  ")
+    if branch is not None:
+        run_command.extend(["--branch", f"  {branch}  "])
+    run_command.append("--run")
+    return run_command
+
+
 def _assert_opt_in_run_mutates_repo(
     git_repo: Path,
     tmp_path: Path,
@@ -247,16 +264,12 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
     _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            f"  {git_repo.name}  ",
-            "--branch",
-            f"  {base_branch}  ",
-            "--run",
-        ],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            branch=base_branch,
+            include_berth=True,
+        ),
         run_cwd=tmp_path,
         marker_name=marker_name,
         objective=objective,
@@ -290,15 +303,11 @@ def _assert_opt_in_run_with_branch_mutates_repo(
     _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "--branch",
-            f"  {base_branch}  ",
-            "--run",
-        ],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            branch=base_branch,
+        ),
         run_cwd=git_repo,
         marker_name=marker_name,
         objective=objective,
@@ -331,7 +340,11 @@ def _assert_opt_in_run_with_trimmed_berth_mutates_repo(
     _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", command_name, f"  {git_repo.name}  ", "--run"],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            include_berth=True,
+        ),
         run_cwd=tmp_path,
         marker_name=marker_name,
         objective=objective,
@@ -362,7 +375,7 @@ def _assert_opt_in_run_default_scope_without_commands_keeps_repo_clean(
     _assert_opt_in_run_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", command_name, "--run"],
+        run_command=_build_opt_in_run_command(command_name=command_name, git_repo=git_repo),
         run_cwd=git_repo,
         objective=objective,
         decisions=decisions,
@@ -394,7 +407,7 @@ def _assert_opt_in_run_default_scope_mutates_repo(
     _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", command_name, "--run"],
+        run_command=_build_opt_in_run_command(command_name=command_name, git_repo=git_repo),
         run_cwd=git_repo,
         marker_name=marker_name,
         objective=objective,
@@ -462,15 +475,11 @@ def _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
     _assert_opt_in_run_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            "--branch",
-            f"  {base_branch}  ",
-            "--run",
-        ],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            branch=base_branch,
+        ),
         run_cwd=git_repo,
         objective=objective,
         decisions=decisions,
@@ -500,7 +509,11 @@ def _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
     _assert_opt_in_run_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", command_name, f"  {git_repo.name}  ", "--run"],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            include_berth=True,
+        ),
         run_cwd=tmp_path,
         objective=objective,
         decisions=decisions,
@@ -531,16 +544,12 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo
     _assert_opt_in_run_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            command_name,
-            f"  {git_repo.name}  ",
-            "--branch",
-            f"  {base_branch}  ",
-            "--run",
-        ],
+        run_command=_build_opt_in_run_command(
+            command_name=command_name,
+            git_repo=git_repo,
+            branch=base_branch,
+            include_berth=True,
+        ),
         run_cwd=tmp_path,
         objective=objective,
         decisions=decisions,
