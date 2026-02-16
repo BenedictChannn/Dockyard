@@ -103,6 +103,8 @@ Useful flags:
   previews for readability.
 - Handoff shows `(none recorded)` placeholders when no next steps or commands
   are recorded.
+- Handoff renders blank objective/risks values as `(none)`, and `--run`
+  ignores blank command entries after normalization.
 
 ### 3) Harbor dashboard across projects
 

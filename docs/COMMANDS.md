@@ -87,7 +87,9 @@ Notes:
   fields into one-line bullet previews.
 - When handoff next steps or commands are empty, Dockyard prints
   `(none recorded)` placeholders.
+- Blank objective/risks values in handoff render as `(none)` for explicitness.
 - `--run` command labels in output are compacted to one-line previews.
+- `--run` ignores blank command entries after payload normalization.
 
 ## `ls` (`harbor`)
 

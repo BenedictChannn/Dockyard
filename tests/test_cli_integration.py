@@ -1054,6 +1054,56 @@ def test_resume_run_with_no_commands_is_noop_success(
     assert "-> exit" not in result.stdout
 
 
+def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run should ignore blank command entries after coercion."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Blank run command baseline",
+            "--decisions",
+            "Mutate run command payload with blank entries",
+            "--next-step",
+            "run resume --run",
+            "--risks",
+            "none",
+            "--command",
+            "echo keep-me",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET resume_commands_json = ?",
+        (json.dumps(["   ", "\n\t", "echo keep-me"]),),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
+    assert "$ echo keep-me -> exit 0" in output
+    assert "$  -> exit" not in output
+
+
 def test_resume_run_with_berth_executes_in_repo_root(
     git_repo: Path,
     tmp_path: Path,
@@ -1634,6 +1684,59 @@ def test_resume_handoff_shows_placeholders_for_empty_lists(
     assert "- Next Steps:" in output
     assert "- Commands:" in output
     assert output.count("  - (none recorded)") >= 2
+
+
+def test_resume_handoff_falls_back_for_blank_objective_and_risks(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Handoff should render explicit fallbacks for blank objective/risks."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Handoff fallback baseline",
+            "--decisions",
+            "Corrupt objective and risk fields to blanks",
+            "--next-step",
+            "seed step",
+            "--risks",
+            "seed risk",
+            "--command",
+            "echo seed",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET objective = ?, risks_review = ?",
+        ("   ", "   "),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["resume", "--handoff"], cwd=git_repo, env=env).stdout
+    assert "- Objective: (none)" in output
+    assert "- Risks: (none)" in output
 
 
 def test_resume_output_compacts_multiline_summary_fields(
