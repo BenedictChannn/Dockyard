@@ -100,7 +100,7 @@ def print_resume(
         ),
         (
             "Last Checkpoint: "
-            f"{_preview_text(checkpoint.created_at, 120)} ({format_age(checkpoint.created_at)} ago)"
+            f"{_label_text(checkpoint.created_at, 120)} ({format_age(checkpoint.created_at)} ago)"
         ),
         f"Objective: {_preview_text(checkpoint.objective, 200)}",
         "Next Steps:",
@@ -206,7 +206,7 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
         table.add_row(
             str(berth),
             _label_text(branch, 120),
-            _preview_text(created_at, 120),
+            _label_text(created_at, 120),
             _preview_text(snippet, 120),
         )
     console.print(table)

@@ -150,6 +150,16 @@ def test_print_resume_uses_unknown_labels_for_blank_project_or_branch() -> None:
     assert "Project/Branch: (unknown) / (unknown)" in output
 
 
+def test_print_resume_uses_unknown_timestamp_when_blank() -> None:
+    """Resume summary should fallback when checkpoint timestamp is blank."""
+    checkpoint = _checkpoint()
+    checkpoint.created_at = "   "
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "Last Checkpoint: (unknown) (unknown ago)" in output
+
+
 def test_print_resume_handles_non_list_resume_payload_fields() -> None:
     """Resume renderer should tolerate scalar/None list-like payload fields."""
     checkpoint = _checkpoint()
@@ -275,6 +285,24 @@ def test_print_search_uses_unknown_berth_when_identifiers_missing() -> None:
             {
                 "branch": "main",
                 "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "(unknown)" in output
+
+
+def test_print_search_uses_unknown_timestamp_when_blank() -> None:
+    """Search renderer should fallback when timestamp is blank."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "repo",
+                "branch": "main",
+                "created_at": "   ",
                 "snippet": "snippet",
             }
         ],
