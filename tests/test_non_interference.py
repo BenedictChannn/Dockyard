@@ -34,6 +34,16 @@ class RunScopeCaseMeta:
     include_branch: bool
     run_cwd_kind: RunCwdKind
     case_id: str
+
+
+@dataclass(frozen=True)
+class RunScopeContextMeta:
+    """Rendered context metadata for a run-scope scenario."""
+
+    command_label: str
+    scope_descriptor: str
+
+
 ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 
@@ -171,11 +181,11 @@ def _run_scope_context(
     *,
     include_berth: bool,
     include_branch: bool,
-) -> tuple[str, str]:
+) -> RunScopeContextMeta:
     """Return command label plus scope descriptor for scenario text."""
-    return (
-        RUN_SCOPE_COMMAND_LABELS[command_name],
-        _run_scope_descriptor(include_berth, include_branch),
+    return RunScopeContextMeta(
+        command_label=RUN_SCOPE_COMMAND_LABELS[command_name],
+        scope_descriptor=_run_scope_descriptor(include_berth, include_branch),
     )
 
 
@@ -199,7 +209,7 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """
     scenarios: list[RunNoCommandScenario] = []
     for case in cases:
-        command_label, scope_descriptor = _run_scope_context(
+        context = _run_scope_context(
             case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
@@ -210,9 +220,9 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
                 case.include_berth,
                 case.include_branch,
                 case.run_cwd_kind,
-                f"{command_label} {scope_descriptor} run no-commands baseline",
-                f"Verify {command_label} {scope_descriptor} --run no-op path remains non-mutating",
-                f"run {command_label} {scope_descriptor} --run",
+                f"{context.command_label} {context.scope_descriptor} run no-commands baseline",
+                f"Verify {context.command_label} {context.scope_descriptor} --run no-op path remains non-mutating",
+                f"run {context.command_label} {context.scope_descriptor} --run",
             ),
         )
     return scenarios
@@ -231,7 +241,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
     """
     scenarios: list[RunOptInMutationScenario] = []
     for case in cases:
-        command_label, scope_descriptor = _run_scope_context(
+        context = _run_scope_context(
             case.command_name,
             include_berth=case.include_berth,
             include_branch=case.include_branch,
@@ -243,9 +253,9 @@ def _build_opt_in_mutation_run_scope_scenarios(
                 case.include_branch,
                 case.run_cwd_kind,
                 f"{case.case_id}_opt_in_marker.txt",
-                f"{command_label} {scope_descriptor} opt-in mutation baseline",
-                f"Verify {command_label} {scope_descriptor} --run may execute mutating commands",
-                f"run {command_label} {scope_descriptor} --run",
+                f"{context.command_label} {context.scope_descriptor} opt-in mutation baseline",
+                f"Verify {context.command_label} {context.scope_descriptor} --run may execute mutating commands",
+                f"run {context.command_label} {context.scope_descriptor} --run",
             ),
         )
     return scenarios
