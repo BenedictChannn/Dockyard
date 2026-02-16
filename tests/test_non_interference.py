@@ -14,7 +14,7 @@ from typing import Literal
 
 import pytest
 
-from tests.metadata_utils import case_ids
+from tests.metadata_utils import case_ids, pair_with_context
 
 RunCommand = Sequence[str]
 CommandMatrix = list[RunCommand]
@@ -353,20 +353,12 @@ def _run_scope_context(
     )
 
 
-def _run_scope_cases_with_context(
-    cases: Sequence[RunScopeCaseMeta],
-) -> tuple[tuple[RunScopeCaseMeta, RunScopeContextMeta], ...]:
-    """Pair each run-scope case with its rendered context metadata."""
-    return tuple(
-        (
-            case,
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
-        for case in cases
+def _run_scope_context_for_case(case: RunScopeCaseMeta) -> RunScopeContextMeta:
+    """Build rendered context metadata for a run-scope case."""
+    return _run_scope_context(
+        case.command_name,
+        include_berth=case.include_berth,
+        include_branch=case.include_branch,
     )
 
 
@@ -392,7 +384,7 @@ def _build_no_command_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run no-op path remains non-mutating",
             next_step=f"run {context.phrase} --run",
         )
-        for case, context in _run_scope_cases_with_context(cases)
+        for case, context in pair_with_context(cases, context_builder=_run_scope_context_for_case)
     )
 
 
@@ -419,7 +411,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run may execute mutating commands",
             next_step=f"run {context.phrase} --run",
         )
-        for case, context in _run_scope_cases_with_context(cases)
+        for case, context in pair_with_context(cases, context_builder=_run_scope_context_for_case)
     )
 
 
