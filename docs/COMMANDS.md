@@ -97,6 +97,8 @@ Notes:
 - Blank objective/risks values in handoff render as `(none)` for explicitness.
 - `--run` command labels in output are compacted to one-line previews.
 - `--run` ignores blank command entries after payload normalization.
+- `--run` is explicit opt-in: `resume --run`, `r --run`, and
+  `undock --run` may mutate repo files depending on recorded commands.
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 

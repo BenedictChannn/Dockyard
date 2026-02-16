@@ -222,8 +222,8 @@ Dockyard is intended to be non-invasive:
 - writes its own markdown + sqlite store
 - does **not** mutate your repo in normal operations
 
-Only `resume --run` executes user-authored commands, which can mutate repos if
-those commands do so.
+Only the explicit run modes (`resume --run`, `r --run`, `undock --run`)
+execute user-authored commands, which can mutate repos if those commands do so.
 
 ## Development
 
