@@ -447,6 +447,31 @@ def _resolve_run_cwd(git_repo: Path, tmp_path: Path, run_cwd_kind: RunCwdKind) -
     return git_repo if run_cwd_kind == "repo" else tmp_path
 
 
+def test_build_run_args_renders_expected_scope_variants(tmp_path: Path) -> None:
+    """Run-args helper should include optional berth and branch selectors."""
+    git_repo = tmp_path / "demo-repo"
+
+    assert _build_run_args("resume", git_repo=git_repo) == ["resume", "--run"]
+    assert _build_run_args("undock", git_repo=git_repo, include_berth=True) == [
+        "undock",
+        "  demo-repo  ",
+        "--run",
+    ]
+    assert _build_run_args("r", git_repo=git_repo, branch="main", include_berth=True) == [
+        "r",
+        "  demo-repo  ",
+        "--branch",
+        "  main  ",
+        "--run",
+    ]
+
+
+def test_resolve_run_cwd_selects_repo_or_tmp(git_repo: Path, tmp_path: Path) -> None:
+    """Run cwd resolver should map selector values to expected paths."""
+    assert _resolve_run_cwd(git_repo, tmp_path, "repo") == git_repo
+    assert _resolve_run_cwd(git_repo, tmp_path, "tmp") == tmp_path
+
+
 def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     """Validate save/ls/resume/review/link flows including `dock dock` alias."""
     env = dict(os.environ)
