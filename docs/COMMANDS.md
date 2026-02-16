@@ -109,6 +109,7 @@ python3 -m dockyard f "<query>" --branch feature/workstream --json
 python3 -m dockyard f "<query>" --repo my_repo --branch feature/workstream --json
 python3 -m dockyard f "<query>" --tag backend --json
 python3 -m dockyard f "<query>" --tag backend --branch feature/workstream --json
+python3 -m dockyard f "<query>" --tag backend --limit 5 --json
 ```
 
 When no results match, Dockyard prints: `No checkpoint matches found.`
