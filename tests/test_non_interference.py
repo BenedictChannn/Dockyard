@@ -721,9 +721,8 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def _build_metadata_commands_in_repo(git_repo: Path, _base_branch: str) -> CommandMatrix:
+def _build_metadata_commands_in_repo(_git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build in-repo review/link metadata command list."""
-    del git_repo
     return [["python3", "-m", "dockyard", "link", "https://example.com/non-interference"]]
 
 
@@ -869,7 +868,7 @@ def test_save_no_prompt_flows_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def _build_in_repo_read_only_commands(base_branch: str) -> list[list[str]]:
+def _build_in_repo_read_only_commands(base_branch: str) -> CommandMatrix:
     """Build in-repo read-only command matrix for non-interference checks."""
     return [
         ["python3", "-m", "dockyard", "resume"],
@@ -1031,7 +1030,7 @@ def _build_search_read_commands(command_name: str, repo_name: str, base_branch: 
     return commands
 
 
-def _build_outside_repo_read_only_commands(repo_name: str, base_branch: str) -> list[list[str]]:
+def _build_outside_repo_read_only_commands(repo_name: str, base_branch: str) -> CommandMatrix:
     """Build outside-repo read-only command matrix for non-interference checks."""
     return [
         *_resume_read_variants("resume", berth=repo_name, branch=base_branch),
