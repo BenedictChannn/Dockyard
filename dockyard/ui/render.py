@@ -51,7 +51,14 @@ def _render_status_badge(status: Any) -> str:
     """Render compact status badge with resilient normalization."""
     raw = str(status).strip() if status is not None else ""
     normalized = raw.lower()
-    badge_map = {"green": "[green]G[/green]", "yellow": "[yellow]Y[/yellow]", "red": "[red]R[/red]"}
+    badge_map = {
+        "green": "[green]G[/green]",
+        "g": "[green]G[/green]",
+        "yellow": "[yellow]Y[/yellow]",
+        "y": "[yellow]Y[/yellow]",
+        "red": "[red]R[/red]",
+        "r": "[red]R[/red]",
+    }
     if normalized in badge_map:
         return badge_map[normalized]
     return raw or "unknown"
