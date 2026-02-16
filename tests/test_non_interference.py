@@ -1015,6 +1015,20 @@ def test_resume_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path)
     )
 
 
+def test_undock_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Alias `undock --run` is explicit opt-in and may mutate repository files."""
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "undock", "--run"],
+        run_cwd=git_repo,
+        marker_name="undock_alias_run_opt_in_marker.txt",
+        objective="Undock alias run opt-in mutation baseline",
+        decisions="Verify undock --run may execute mutating commands",
+        next_step="run undock --run",
+    )
+
+
 def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
