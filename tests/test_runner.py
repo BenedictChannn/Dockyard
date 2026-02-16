@@ -63,3 +63,16 @@ def test_run_commands_ignores_blank_commands(tmp_path: Path) -> None:
     assert success is True
     assert results == [(command, 0)]
     assert marker.exists()
+
+
+def test_run_commands_normalizes_command_whitespace_in_results(tmp_path: Path) -> None:
+    """Runner should trim surrounding whitespace before executing commands."""
+    marker = tmp_path / "trimmed_marker.txt"
+    padded_command = f"  echo ok > {marker}  "
+    normalized_command = f"echo ok > {marker}"
+
+    success, results = run_commands([padded_command], cwd=tmp_path)
+
+    assert success is True
+    assert results == [(normalized_command, 0)]
+    assert marker.exists()
