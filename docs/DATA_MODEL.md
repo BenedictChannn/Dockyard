@@ -123,6 +123,8 @@ Parser normalization notes:
   and content (for example, `1. step` and `1.step` are both accepted).
 - `next steps` also accepts markdown bullet markers (`-`, `*`, `+`) as a
   parser fallback for manually edited checkpoint files.
+- Next-step bullet markers accept optional spacing after delimiter
+  (for example, both `- step` and `-step` are accepted).
 - `resume commands` accepts `-`, `*`, or `+` bullet markers.
 - Resume command bullets may be backtick-wrapped (for renderer parity) or
   plain text when manually edited.
