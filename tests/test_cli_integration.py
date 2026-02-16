@@ -1900,6 +1900,16 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_repo_rows) == 1
     assert beta_repo_rows[0]["branch"] == "feature/alias-tag-filter"
+    assert (
+        json.loads(
+            _run_dock(
+                ["f", "Alias tag filter objective", "--tag", "beta", "--repo", "missing-berth", "--json"],
+                cwd=tmp_path,
+                env=env,
+            ).stdout
+        )
+        == []
+    )
     beta_feature_rows = json.loads(
         _run_dock(
             [
