@@ -27,7 +27,7 @@ SaveCommandName = Literal["save", "s", "dock"]
 DashboardCommandName = Literal["ls", "harbor"]
 SearchCommandName = Literal["search", "f"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
-DOCKYARD_COMMAND_PREFIX = ("python3", "-m", "dockyard")
+DOCKYARD_COMMAND_PREFIX: tuple[str, ...] = ("python3", "-m", "dockyard")
 
 
 @dataclass(frozen=True)
@@ -984,7 +984,7 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def _dockyard_command(*args: str) -> list[str]:
+def _dockyard_command(*args: str) -> RunCommand:
     """Build a dockyard command with the shared Python module prefix."""
     return [*DOCKYARD_COMMAND_PREFIX, *args]
 
