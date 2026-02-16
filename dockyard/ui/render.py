@@ -28,6 +28,12 @@ def _preview_text(value: Any, max_length: int) -> str:
     return compact[:max_length]
 
 
+def _label_text(value: Any, max_length: int) -> str:
+    """Return compact label text with unknown fallback."""
+    preview = _preview_text(value, max_length)
+    return preview if preview else "(unknown)"
+
+
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
@@ -77,7 +83,7 @@ def print_resume(
     summary_lines = [
         (
             "Project/Branch: "
-            f"{_preview_text(project_name, 120)} / {_preview_text(checkpoint.branch, 120)}"
+            f"{_label_text(project_name, 120)} / {_label_text(checkpoint.branch, 120)}"
         ),
         f"Last Checkpoint: {checkpoint.created_at} ({format_age(checkpoint.created_at)} ago)",
         f"Objective: {_preview_text(checkpoint.objective, 200)}",

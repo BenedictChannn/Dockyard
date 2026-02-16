@@ -123,6 +123,16 @@ def test_print_resume_bounds_long_summary_fields() -> None:
     assert "y" * 201 not in output
 
 
+def test_print_resume_uses_unknown_labels_for_blank_project_or_branch() -> None:
+    """Resume summary should fallback when project/branch labels are blank."""
+    checkpoint = _checkpoint()
+    checkpoint.branch = "   "
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="   ")
+    output = console.export_text()
+    assert "Project/Branch: (unknown) / (unknown)" in output
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)
