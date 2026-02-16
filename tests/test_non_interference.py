@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -20,38 +21,85 @@ ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
-RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str]
-RunScopeCommandCase = tuple[RunCommandName, str]
-SaveCommandCase = tuple[str, str, str]
-ResumeReadPathCase = tuple[str, str, str, ResumeReadCommandBuilder, RunCwdKind]
-MetadataScopeCase = tuple[str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
-SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
-    ("save", "save", "save"),
-    ("s", "alias_s", "s_alias"),
-    ("dock", "alias_dock", "dock_alias"),
+
+
+@dataclass(frozen=True)
+class SaveCommandMeta:
+    """Metadata describing a save command token."""
+
+    name: str
+    slug: str
+    case_id: str
+
+
+@dataclass(frozen=True)
+class RunScopeCommandMeta:
+    """Metadata describing a run-capable command token."""
+
+    name: RunCommandName
+    label: str
+
+
+@dataclass(frozen=True)
+class RunScopeVariantMeta:
+    """Metadata describing a run-scope variant."""
+
+    variant_id: str
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    descriptor: str
+
+
+@dataclass(frozen=True)
+class ResumeReadPathMeta:
+    """Metadata describing a resume read-path non-interference case."""
+
+    case_id: str
+    scope_label: str
+    marker_name: str
+    commands_builder: ResumeReadCommandBuilder
+    run_cwd_kind: RunCwdKind
+
+
+@dataclass(frozen=True)
+class MetadataScopeMeta:
+    """Metadata describing a review/link metadata non-interference case."""
+
+    case_id: str
+    scope_label: str
+    run_cwd_kind: RunCwdKind
+    metadata_builder: MetadataCommandBuilder
+    review_add_builder: ReviewAddCommandBuilder
+
+
+SAVE_COMMAND_CASES: tuple[SaveCommandMeta, ...] = (
+    SaveCommandMeta("save", "save", "save"),
+    SaveCommandMeta("s", "alias_s", "s_alias"),
+    SaveCommandMeta("dock", "alias_dock", "dock_alias"),
 )
-SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in SAVE_COMMAND_CASES)
-RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandCase, ...] = (
-    ("resume", "resume"),
-    ("r", "resume alias"),
-    ("undock", "undock alias"),
+SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case.case_id for case in SAVE_COMMAND_CASES)
+RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandMeta, ...] = (
+    RunScopeCommandMeta("resume", "resume"),
+    RunScopeCommandMeta("r", "resume alias"),
+    RunScopeCommandMeta("undock", "undock alias"),
 )
-RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
+RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_SCOPE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
-    command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES
+    case.name: case.label for case in RUN_SCOPE_COMMAND_CASES
 }
-RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
-    ("default", False, False, "repo", "default"),
-    ("berth", True, False, "tmp", "berth"),
-    ("branch", False, True, "repo", "branch"),
-    ("berth_branch", True, True, "tmp", "berth+branch"),
+RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariantMeta, ...] = (
+    RunScopeVariantMeta("default", False, False, "repo", "default"),
+    RunScopeVariantMeta("berth", True, False, "tmp", "berth"),
+    RunScopeVariantMeta("branch", False, True, "repo", "branch"),
+    RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch"),
 )
 RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (include_berth, include_branch): descriptor
-    for _variant_id, include_berth, include_branch, _run_cwd_kind, descriptor in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
+    (variant.include_berth, variant.include_branch): variant.descriptor
+    for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
 }
 
 
@@ -79,12 +127,12 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, in
 RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: tuple[RunScopeCase, ...] = tuple(
     (
         command_name,
-        include_berth,
-        include_branch,
-        run_cwd_kind,
-        f"{command_name}_{variant_id}",
+        variant.include_berth,
+        variant.include_branch,
+        variant.run_cwd_kind,
+        f"{command_name}_{variant.variant_id}",
     )
-    for variant_id, include_berth, include_branch, run_cwd_kind, _descriptor in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
+    for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
     for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCase, ...] = tuple(
@@ -171,7 +219,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
     return scenarios
 
 
-def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveNoPromptScenario]:
+def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveNoPromptScenario]:
     """Build no-prompt save scenarios from shared command metadata.
 
     Args:
@@ -181,22 +229,22 @@ def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandCase]) -> list[Sa
         Parameter tuples for no-prompt save non-interference tests.
     """
     scenarios: list[SaveNoPromptScenario] = []
-    for command_name, case_label, _case_id in cases:
+    for case in cases:
         scenarios.append(
             (
-                command_name,
-                f"{case_label} no-prompt objective",
-                f"{case_label} no-prompt decisions",
-                f"run {case_label} resume",
+                case.name,
+                f"{case.slug} no-prompt objective",
+                f"{case.slug} no-prompt decisions",
+                f"run {case.slug} resume",
                 "none",
-                f"echo {case_label}-resume",
-                f"echo {case_label}-build",
+                f"echo {case.slug}-resume",
+                f"echo {case.slug}-build",
             ),
         )
     return scenarios
 
 
-def _build_save_editor_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveEditorScenario]:
+def _build_save_editor_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveEditorScenario]:
     """Build save/editor scenarios from shared command metadata.
 
     Args:
@@ -206,19 +254,19 @@ def _build_save_editor_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveE
         Parameter tuples for save/editor non-interference tests.
     """
     scenarios: list[SaveEditorScenario] = []
-    for command_name, case_label, _case_id in cases:
+    for case in cases:
         scenarios.append(
             (
-                command_name,
-                f"{case_label}_editor.sh",
-                f"{case_label} editor decisions for non-interference",
-                f"{case_label} editor non-interference objective",
+                case.name,
+                f"{case.slug}_editor.sh",
+                f"{case.slug} editor decisions for non-interference",
+                f"{case.slug} editor non-interference objective",
             ),
         )
     return scenarios
 
 
-def _build_save_template_scenarios(cases: Sequence[SaveCommandCase]) -> list[SaveTemplateScenario]:
+def _build_save_template_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveTemplateScenario]:
     """Build save/template scenarios from shared command metadata.
 
     Args:
@@ -228,12 +276,12 @@ def _build_save_template_scenarios(cases: Sequence[SaveCommandCase]) -> list[Sav
         Parameter tuples for save/template non-interference tests.
     """
     scenarios: list[SaveTemplateScenario] = []
-    for command_name, case_label, _case_id in cases:
+    for case in cases:
         scenarios.append(
             (
-                command_name,
-                f"{case_label}_template.json",
-                f"{case_label} template non-interference objective",
+                case.name,
+                f"{case.slug}_template.json",
+                f"{case.slug} template non-interference objective",
             ),
         )
     return scenarios
@@ -806,7 +854,7 @@ def _build_review_add_command_root_override(git_repo: Path, base_branch: str) ->
 
 
 def _build_resume_read_path_scenarios(
-    cases: Sequence[ResumeReadPathCase],
+    cases: Sequence[ResumeReadPathMeta],
 ) -> list[ResumeReadPathScenario]:
     """Build resume-read non-interference scenarios from shared case metadata.
 
@@ -817,21 +865,21 @@ def _build_resume_read_path_scenarios(
         Parameter tuples for resume-read non-interference test coverage.
     """
     scenarios: list[ResumeReadPathScenario] = []
-    for _case_id, scope_label, marker_name, commands_builder, run_cwd_kind in cases:
+    for case in cases:
         scenarios.append(
             (
-                marker_name,
-                f"{scope_label} command safety baseline",
-                f"Ensure {scope_label} read paths do not execute stored commands",
-                f"Inspect {scope_label} resume output",
-                commands_builder,
-                run_cwd_kind,
+                case.marker_name,
+                f"{case.scope_label} command safety baseline",
+                f"Ensure {case.scope_label} read paths do not execute stored commands",
+                f"Inspect {case.scope_label} resume output",
+                case.commands_builder,
+                case.run_cwd_kind,
             ),
         )
     return scenarios
 
 
-def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeCase]) -> list[MetadataScopeScenario]:
+def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeMeta]) -> list[MetadataScopeScenario]:
     """Build metadata-scope non-interference scenarios from shared cases.
 
     Args:
@@ -841,43 +889,43 @@ def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeCase]) -> list[
         Parameter tuples for metadata-scope non-interference tests.
     """
     scenarios: list[MetadataScopeScenario] = []
-    for _case_id, scope_label, run_cwd_kind, metadata_builder, review_add_builder in cases:
+    for case in cases:
         scenarios.append(
             (
-                f"{scope_label} mutation command baseline",
-                f"Validate {scope_label} review/link non-interference",
-                f"Run {scope_label} metadata commands",
-                run_cwd_kind,
-                metadata_builder,
-                review_add_builder,
+                f"{case.scope_label} mutation command baseline",
+                f"Validate {case.scope_label} review/link non-interference",
+                f"Run {case.scope_label} metadata commands",
+                case.run_cwd_kind,
+                case.metadata_builder,
+                case.review_add_builder,
             ),
         )
     return scenarios
 
 
-RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
-    (
+RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
+    ResumeReadPathMeta(
         "in_repo_default",
         "in-repo default",
         "dockyard_resume_should_not_run.txt",
         _build_resume_read_commands_in_repo,
         "repo",
     ),
-    (
+    ResumeReadPathMeta(
         "alias_berth",
         "alias berth",
         "dockyard_alias_berth_resume_should_not_run.txt",
         _build_resume_read_commands_alias_berth,
         "tmp",
     ),
-    (
+    ResumeReadPathMeta(
         "alias_trimmed_berth",
         "alias trimmed berth",
         "dockyard_alias_trimmed_resume_should_not_run.txt",
         _build_resume_read_commands_alias_trimmed_berth,
         "tmp",
     ),
-    (
+    ResumeReadPathMeta(
         "primary_trimmed_berth",
         "primary trimmed berth",
         "dockyard_primary_trimmed_resume_should_not_run.txt",
@@ -885,11 +933,17 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
         "tmp",
     ),
 )
-RESUME_READ_PATH_IDS: tuple[str, ...] = tuple(case[0] for case in RESUME_READ_PATH_CASES)
+RESUME_READ_PATH_IDS: tuple[str, ...] = tuple(case.case_id for case in RESUME_READ_PATH_CASES)
 
-METADATA_SCOPE_CASES: tuple[MetadataScopeCase, ...] = (
-    ("in_repo", "in-repo", "repo", _build_metadata_commands_in_repo, _build_review_add_command_in_repo),
-    (
+METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
+    MetadataScopeMeta(
+        "in_repo",
+        "in-repo",
+        "repo",
+        _build_metadata_commands_in_repo,
+        _build_review_add_command_in_repo,
+    ),
+    MetadataScopeMeta(
         "root_override",
         "root override",
         "tmp",
@@ -897,7 +951,7 @@ METADATA_SCOPE_CASES: tuple[MetadataScopeCase, ...] = (
         _build_review_add_command_root_override,
     ),
 )
-METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case[0] for case in METADATA_SCOPE_CASES)
+METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case.case_id for case in METADATA_SCOPE_CASES)
 
 
 @pytest.mark.parametrize(
