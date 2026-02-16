@@ -867,6 +867,14 @@ def test_build_opt_in_run_command_includes_optional_scope_selectors(tmp_path: Pa
         "resume",
         "--run",
     )
+    assert _build_opt_in_run_command(command_name="resume", git_repo=git_repo, branch="main") == (
+        _dockyard_command(
+            "resume",
+            "--branch",
+            "  main  ",
+            "--run",
+        )
+    )
     assert _build_opt_in_run_command(
         command_name="undock",
         git_repo=git_repo,
