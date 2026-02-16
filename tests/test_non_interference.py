@@ -543,37 +543,86 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo
     )
 
 
-def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
-    """Saving checkpoint should not alter tracked files or git index."""
+@pytest.mark.parametrize(
+    (
+        "command_name",
+        "objective",
+        "decisions",
+        "next_step",
+        "risks",
+        "resume_command",
+        "build_command",
+    ),
+    [
+        (
+            "save",
+            "Checkpoint objective",
+            "Decision text",
+            "Do another thing",
+            "Review infra carefully",
+            "pytest -q",
+            "python -m build",
+        ),
+        (
+            "s",
+            "Alias s no-prompt non-interference objective",
+            "Alias s no-prompt non-interference decisions",
+            "run resume",
+            "none",
+            "echo noop",
+            "echo build",
+        ),
+        (
+            "dock",
+            "Dock alias save objective",
+            "Dock alias save decisions",
+            "Run resume",
+            "none",
+            "echo noop",
+            "echo build",
+        ),
+    ],
+    ids=["save", "s_alias", "dock_alias"],
+)
+def test_save_no_prompt_flows_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    risks: str,
+    resume_command: str,
+    build_command: str,
+) -> None:
+    """No-prompt save flows should not alter tracked files or git index."""
     env = _dockyard_env(tmp_path)
-
     _assert_repo_clean(git_repo)
-
     _run(
         [
             "python3",
             "-m",
             "dockyard",
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Checkpoint objective",
+            objective,
             "--decisions",
-            "Decision text",
+            decisions,
             "--next-step",
-            "Do another thing",
+            next_step,
             "--risks",
-            "Review infra carefully",
+            risks,
             "--command",
-            "pytest -q",
+            resume_command,
             "--tests-run",
             "--tests-command",
             "pytest -q",
             "--build-ok",
             "--build-command",
-            "python -m build",
+            build_command,
             "--lint-fail",
             "--smoke-fail",
             "--no-auto-review",
@@ -581,7 +630,6 @@ def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_pa
         cwd=git_repo,
         env=env,
     )
-
     _assert_repo_clean(git_repo)
 
 
@@ -1105,48 +1153,6 @@ def test_save_template_flows_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `s` no-prompt save should not alter project tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "s",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Alias s no-prompt non-interference objective",
-            "--decisions",
-            "Alias s no-prompt non-interference decisions",
-            "--next-step",
-            "run resume",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
@@ -1154,48 +1160,6 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
     _assert_repo_clean(git_repo)
 
     _run(["python3", "-m", "dockyard"], cwd=git_repo, env=env)
-
-    _assert_repo_clean(git_repo)
-
-
-def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """`dock dock` alias save flow should not alter project working tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "dock",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Dock alias save objective",
-            "--decisions",
-            "Dock alias save decisions",
-            "--next-step",
-            "Run resume",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
 
     _assert_repo_clean(git_repo)
 
