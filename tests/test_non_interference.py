@@ -22,13 +22,33 @@ def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> st
     return result.stdout.strip()
 
 
+def _run_commands(commands: list[list[str]], cwd: Path, env: dict[str, str]) -> None:
+    """Run a sequence of commands in a shared working directory.
+
+    Args:
+        commands: Commands to execute in order.
+        cwd: Working directory used for all commands.
+        env: Environment variables for subprocess execution.
+    """
+    for command in commands:
+        _run(command, cwd=cwd, env=env)
+
+
+def _assert_repo_clean(git_repo: Path) -> None:
+    """Assert repository working tree/index has no pending changes.
+
+    Args:
+        git_repo: Repository path to check.
+    """
+    assert _run(["git", "status", "--porcelain"], cwd=git_repo) == ""
+
+
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
     """Saving checkpoint should not alter tracked files or git index."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -63,8 +83,7 @@ def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_pa
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -108,8 +127,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
         env=env,
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     in_repo_commands = [
         ["python3", "-m", "dockyard", "resume"],
@@ -120,8 +138,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
         ["python3", "-m", "dockyard", "undock"],
         ["python3", "-m", "dockyard", "links"],
     ]
-    for command in in_repo_commands:
-        _run(command, cwd=git_repo, env=env)
+    _run_commands(in_repo_commands, cwd=git_repo, env=env)
 
     outside_repo_commands = [
         ["python3", "-m", "dockyard", "resume", git_repo.name],
@@ -209,11 +226,9 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
         ["python3", "-m", "dockyard", "review", "--all"],
         ["python3", "-m", "dockyard", "review", "list", "--all"],
     ]
-    for command in outside_repo_commands:
-        _run(command, cwd=tmp_path, env=env)
+    _run_commands(outside_repo_commands, cwd=tmp_path, env=env)
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_path: Path) -> None:
@@ -257,8 +272,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_pat
     )
 
     assert not marker.exists()
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(["python3", "-m", "dockyard", "resume"], cwd=git_repo, env=env)
     _run(["python3", "-m", "dockyard", "resume", "--json"], cwd=git_repo, env=env)
@@ -267,8 +281,7 @@ def test_resume_read_paths_do_not_execute_saved_commands(git_repo: Path, tmp_pat
     _run(["python3", "-m", "dockyard", "undock"], cwd=git_repo, env=env)
 
     assert not marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
@@ -316,49 +329,28 @@ def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
     )
 
     assert not marker.exists()
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
-
-    _run(["python3", "-m", "dockyard", "r", git_repo.name], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "r", git_repo.name, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "r", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
-    _run(
-        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--handoff"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "undock", git_repo.name], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "undock", git_repo.name, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "undock", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
-    _run(
-        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
-        ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--handoff"],
+    _assert_repo_clean(git_repo)
+    _run_commands(
+        [
+            ["python3", "-m", "dockyard", "r", git_repo.name],
+            ["python3", "-m", "dockyard", "r", git_repo.name, "--json"],
+            ["python3", "-m", "dockyard", "r", git_repo.name, "--handoff"],
+            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch],
+            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--json"],
+            ["python3", "-m", "dockyard", "r", git_repo.name, "--branch", base_branch, "--handoff"],
+            ["python3", "-m", "dockyard", "undock", git_repo.name],
+            ["python3", "-m", "dockyard", "undock", git_repo.name, "--json"],
+            ["python3", "-m", "dockyard", "undock", git_repo.name, "--handoff"],
+            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch],
+            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--json"],
+            ["python3", "-m", "dockyard", "undock", git_repo.name, "--branch", base_branch, "--handoff"],
+        ],
         cwd=tmp_path,
         env=env,
     )
 
     assert not marker.exists()
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
