@@ -27,6 +27,7 @@ SaveCommandName = Literal["save", "s", "dock"]
 DashboardCommandName = Literal["ls", "harbor"]
 SearchCommandName = Literal["search", "f"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
+DOCKYARD_COMMAND_PREFIX = ("python3", "-m", "dockyard")
 
 
 @dataclass(frozen=True)
@@ -983,9 +984,14 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def _dockyard_command(*args: str) -> list[str]:
+    """Build a dockyard command with the shared Python module prefix."""
+    return [*DOCKYARD_COMMAND_PREFIX, *args]
+
+
 def _build_link_command(url: str, *, root: Path | None = None) -> RunCommand:
     """Build link command with optional explicit root override."""
-    command: list[str] = ["python3", "-m", "dockyard", "link", url]
+    command = _dockyard_command("link", url)
     if root is not None:
         command.extend(["--root", str(root)])
     return command
@@ -993,7 +999,7 @@ def _build_link_command(url: str, *, root: Path | None = None) -> RunCommand:
 
 def _build_links_command(*, root: Path | None = None) -> RunCommand:
     """Build links command with optional explicit root override."""
-    command: list[str] = ["python3", "-m", "dockyard", "links"]
+    command = _dockyard_command("links")
     if root is not None:
         command.extend(["--root", str(root)])
     return command
@@ -1038,17 +1044,14 @@ def _build_review_add_command(
     notes: str | None = None,
 ) -> RunCommand:
     """Build review-add command with optional scoped arguments."""
-    command: list[str] = [
-        "python3",
-        "-m",
-        "dockyard",
+    command = _dockyard_command(
         "review",
         "add",
         "--reason",
         reason,
         "--severity",
         "low",
-    ]
+    )
     if repo is not None:
         command.extend(["--repo", repo])
     if branch is not None:
