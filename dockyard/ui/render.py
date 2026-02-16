@@ -80,9 +80,12 @@ def print_resume(
         f"Objective: {checkpoint.objective}",
         "Next Steps:",
     ]
-    summary_lines.extend(
-        [f"  {index + 1}. {step}" for index, step in enumerate(checkpoint.next_steps)]
-    )
+    if checkpoint.next_steps:
+        summary_lines.extend(
+            [f"  {index + 1}. {step}" for index, step in enumerate(checkpoint.next_steps)]
+        )
+    else:
+        summary_lines.append("  (none recorded)")
     summary_lines.append(f"Open Reviews: {open_reviews}")
     summary_lines.append(f"Verification: {verification_summary(checkpoint)}")
     console.print("\n".join(summary_lines))

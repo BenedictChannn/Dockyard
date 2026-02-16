@@ -5,7 +5,13 @@ from __future__ import annotations
 from rich.console import Console
 
 from dockyard.models import Checkpoint, VerificationState
-from dockyard.ui.render import format_age, print_harbor, print_search, verification_summary
+from dockyard.ui.render import (
+    format_age,
+    print_harbor,
+    print_resume,
+    print_search,
+    verification_summary,
+)
 
 
 def _checkpoint() -> Checkpoint:
@@ -71,6 +77,17 @@ def test_verification_summary_all_false_flags() -> None:
     checkpoint = _checkpoint()
     checkpoint.verification = VerificationState(tests_run=False, build_ok=False, lint_ok=False)
     assert verification_summary(checkpoint) == "tests:no build:no lint:no"
+
+
+def test_print_resume_shows_placeholder_when_next_steps_empty() -> None:
+    """Resume rendering should show placeholder when next steps are empty."""
+    checkpoint = _checkpoint()
+    checkpoint.next_steps = []
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "Next Steps:" in output
+    assert "(none recorded)" in output
 
 
 def test_print_search_empty_state_message() -> None:
