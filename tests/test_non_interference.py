@@ -178,6 +178,8 @@ RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyTyp
 RUN_SCOPE_VARIANT_RANK: Mapping[RunScopeVariantId, int] = MappingProxyType(
     {variant.variant_id: variant.sort_rank for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH}
 )
+NON_INTERFERENCE_LINK_URL = "https://example.com/non-interference"
+NON_INTERFERENCE_ROOT_OVERRIDE_LINK_URL = "https://example.com/non-interference-root-override"
 SEARCH_REPO_PLACEHOLDER = "{repo_name}"
 SEARCH_BRANCH_PLACEHOLDER = "{base_branch}"
 DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
@@ -999,14 +1001,14 @@ def _build_links_command(*, root: Path | None = None) -> RunCommand:
 
 def _build_metadata_commands_in_repo(_git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build in-repo review/link metadata command list."""
-    return [_build_link_command("https://example.com/non-interference")]
+    return [_build_link_command(NON_INTERFERENCE_LINK_URL)]
 
 
 def _build_metadata_commands_root_override(git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build root-override review/link metadata command list."""
     return [
         _build_link_command(
-            "https://example.com/non-interference-root-override",
+            NON_INTERFERENCE_ROOT_OVERRIDE_LINK_URL,
             root=git_repo,
         ),
         _build_links_command(root=git_repo),
