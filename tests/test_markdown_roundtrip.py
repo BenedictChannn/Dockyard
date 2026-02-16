@@ -676,7 +676,8 @@ Decision text
 - [ ] First checklist step
 * [x] Second checklist step
 1. [X] Third checklist step
-2. [] Keep literal unmatched bracket token
+2. [x]literal-no-separator
+3. [] Keep literal unmatched bracket token
 ## Risks/Review Needed
 Risk text
 ## Resume Commands
@@ -701,6 +702,7 @@ Risk text
         "First checklist step",
         "Second checklist step",
         "Third checklist step",
+        "[x]literal-no-separator",
         "[] Keep literal unmatched bracket token",
     ]
 

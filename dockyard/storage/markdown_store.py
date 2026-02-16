@@ -204,4 +204,4 @@ def _normalize_commands(lines: list[str]) -> list[str]:
 
 def _strip_checklist_prefix(item: str) -> str:
     """Strip markdown checklist prefixes from list item text."""
-    return re.sub(r"^\[(?: |x|X)\]\s*", "", item)
+    return re.sub(r"^\[(?: |x|X)\]\s+", "", item)
