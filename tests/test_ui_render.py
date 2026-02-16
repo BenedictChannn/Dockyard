@@ -102,6 +102,18 @@ def test_print_resume_normalizes_multiline_summary_fields() -> None:
     assert "1. Step line 1 Step line 2" in output
 
 
+def test_print_resume_bounds_long_summary_fields() -> None:
+    """Resume summary should bound objective and next-step preview lengths."""
+    checkpoint = _checkpoint()
+    checkpoint.objective = "x" * 260
+    checkpoint.next_steps = ["y" * 260]
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "x" * 201 not in output
+    assert "y" * 201 not in output
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)
