@@ -115,3 +115,12 @@ Contains:
 - resume commands
 - git evidence snapshot
 - verification block
+
+Parser normalization notes:
+
+- `next steps` accepts numbered list markers in either `1.` or `1)` style.
+- Numbered next-step markers may include optional whitespace between marker
+  and content (for example, `1. step` and `1.step` are both accepted).
+- `resume commands` accepts `-`, `*`, or `+` bullet markers.
+- Resume command bullets may be backtick-wrapped (for renderer parity) or
+  plain text when manually edited.
