@@ -1081,6 +1081,17 @@ def test_resume_unknown_berth_is_actionable(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_resume_unknown_berth_preserves_literal_markup_text(tmp_path: Path) -> None:
+    """Unknown-berth errors should preserve literal bracketed tokens."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["resume", "[red]missing[/red]"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Unknown berth: [red]missing[/red]" in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
     """Invoking dockyard without subcommand should run harbor listing."""
     env = dict(os.environ)
@@ -6737,6 +6748,19 @@ def test_link_commands_support_root_override_outside_repo(
     )
     listed = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
     assert "https://example.com/root-override" in listed
+
+
+def test_link_outputs_preserve_literal_markup_like_urls(git_repo: Path, tmp_path: Path) -> None:
+    """Link command output should preserve literal bracketed URL text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    literal_url = "https://example.com/[red]literal[/red]"
+    linked = _run_dock(["link", literal_url], cwd=git_repo, env=env).stdout
+    assert literal_url in linked
+
+    listed = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert literal_url in listed
 
 
 def test_link_outside_repo_without_root_is_actionable(tmp_path: Path) -> None:

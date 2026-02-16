@@ -7,7 +7,7 @@ import json
 import pytest
 
 import dockyard.cli as cli_module
-from dockyard.cli import _comma_or_pipe_values, _emit_json, _normalize_editor_text
+from dockyard.cli import _comma_or_pipe_values, _emit_json, _normalize_editor_text, _safe_text
 
 
 def test_normalize_editor_text_drops_scaffold_line() -> None:
@@ -151,3 +151,15 @@ def test_emit_json_list_payload_is_pretty_indented(monkeypatch: pytest.MonkeyPat
 
     assert len(captured) == 1
     assert captured[0].startswith("[\n  ")
+
+
+def test_safe_text_escapes_markup_tokens() -> None:
+    """Safe text helper should escape Rich markup delimiters."""
+    escaped = _safe_text("[red]literal[/red]")
+    assert escaped == "\\[red]literal\\[/red]"
+
+
+def test_safe_text_handles_non_string_values() -> None:
+    """Safe text helper should coerce and escape non-string values safely."""
+    escaped = _safe_text(123)
+    assert escaped == "123"
