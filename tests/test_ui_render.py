@@ -454,6 +454,49 @@ def test_print_harbor_falls_back_to_raw_status_for_unknown_value() -> None:
     assert "blue" in output
 
 
+def test_print_harbor_maps_uppercase_known_status_values() -> None:
+    """Known status values should map even when letter case differs."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-status",
+                "branch": "main",
+                "status": "GREEN",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "G" in output
+
+
+def test_print_harbor_strips_unknown_status_whitespace() -> None:
+    """Unknown status text should be rendered without outer whitespace."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-status",
+                "branch": "main",
+                "status": "  paused  ",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "paused" in output
+    assert "  paused  " not in output
+
+
 def test_print_harbor_falls_back_to_repo_id_without_berth_name() -> None:
     """Harbor renderer should fallback to repo_id when berth name missing."""
     console = Console(record=True, width=120)

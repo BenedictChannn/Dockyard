@@ -47,6 +47,16 @@ def _coerce_text_items(value: Any) -> list[str]:
     return [str(value)]
 
 
+def _render_status_badge(status: Any) -> str:
+    """Render compact status badge with resilient normalization."""
+    raw = str(status).strip() if status is not None else ""
+    normalized = raw.lower()
+    badge_map = {"green": "[green]G[/green]", "yellow": "[yellow]Y[/yellow]", "red": "[red]R[/red]"}
+    if normalized in badge_map:
+        return badge_map[normalized]
+    return raw or "unknown"
+
+
 def format_age(timestamp_iso: Any) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
@@ -162,7 +172,6 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
     table.add_column("Next Step")
     table.add_column("Open Reviews", justify="right")
 
-    status_badge = {"green": "[green]G[/green]", "yellow": "[yellow]Y[/yellow]", "red": "[red]R[/red]"}
     for row in rows:
         berth = _display_berth_label(row)
         branch = row.get("branch", "")
@@ -178,7 +187,7 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
         table.add_row(
             str(berth),
             _label_text(branch, 120),
-            status_badge.get(str(status), str(status)),
+            _render_status_badge(status),
             format_age(row.get("updated_at")),
             _preview_text(next_step, 60),
             str(row.get("open_review_count", 0)),
