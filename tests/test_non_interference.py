@@ -21,8 +21,8 @@ RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
 SaveCommandCase = tuple[str, str, str]
-ResumeReadPathCase = tuple[str, str, ResumeReadCommandBuilder, RunCwdKind]
-MetadataScopeCase = tuple[str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
+ResumeReadPathCase = tuple[str, str, str, ResumeReadCommandBuilder, RunCwdKind]
+MetadataScopeCase = tuple[str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
 SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
@@ -801,8 +801,7 @@ def _build_resume_read_path_scenarios(
         Parameter tuples for resume-read non-interference test coverage.
     """
     scenarios: list[ResumeReadPathScenario] = []
-    for case_id, marker_name, commands_builder, run_cwd_kind in cases:
-        scope_label = _scope_label(case_id)
+    for _case_id, scope_label, marker_name, commands_builder, run_cwd_kind in cases:
         scenarios.append(
             (
                 marker_name,
@@ -826,8 +825,7 @@ def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeCase]) -> list[
         Parameter tuples for metadata-scope non-interference tests.
     """
     scenarios: list[MetadataScopeScenario] = []
-    for case_id, run_cwd_kind, metadata_builder, review_add_builder in cases:
-        scope_label = _scope_label(case_id)
+    for _case_id, scope_label, run_cwd_kind, metadata_builder, review_add_builder in cases:
         scenarios.append(
             (
                 f"{scope_label} mutation command baseline",
@@ -842,16 +840,30 @@ def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeCase]) -> list[
 
 
 RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
-    ("in_repo_default", "dockyard_resume_should_not_run.txt", _build_resume_read_commands_in_repo, "repo"),
-    ("alias_berth", "dockyard_alias_berth_resume_should_not_run.txt", _build_resume_read_commands_alias_berth, "tmp"),
+    (
+        "in_repo_default",
+        "in-repo default",
+        "dockyard_resume_should_not_run.txt",
+        _build_resume_read_commands_in_repo,
+        "repo",
+    ),
+    (
+        "alias_berth",
+        "alias berth",
+        "dockyard_alias_berth_resume_should_not_run.txt",
+        _build_resume_read_commands_alias_berth,
+        "tmp",
+    ),
     (
         "alias_trimmed_berth",
+        "alias trimmed berth",
         "dockyard_alias_trimmed_resume_should_not_run.txt",
         _build_resume_read_commands_alias_trimmed_berth,
         "tmp",
     ),
     (
         "primary_trimmed_berth",
+        "primary trimmed berth",
         "dockyard_primary_trimmed_resume_should_not_run.txt",
         _build_resume_read_commands_primary_trimmed_berth,
         "tmp",
@@ -860,8 +872,14 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
 RESUME_READ_PATH_IDS: tuple[str, ...] = tuple(case[0] for case in RESUME_READ_PATH_CASES)
 
 METADATA_SCOPE_CASES: tuple[MetadataScopeCase, ...] = (
-    ("in_repo", "repo", _build_metadata_commands_in_repo, _build_review_add_command_in_repo),
-    ("root_override", "tmp", _build_metadata_commands_root_override, _build_review_add_command_root_override),
+    ("in_repo", "in-repo", "repo", _build_metadata_commands_in_repo, _build_review_add_command_in_repo),
+    (
+        "root_override",
+        "root override",
+        "tmp",
+        _build_metadata_commands_root_override,
+        _build_review_add_command_root_override,
+    ),
 )
 METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case[0] for case in METADATA_SCOPE_CASES)
 
