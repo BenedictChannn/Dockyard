@@ -9,6 +9,7 @@ import sqlite3
 import subprocess
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from operator import attrgetter
 from pathlib import Path
 from typing import Literal, TypeVar
 
@@ -125,9 +126,9 @@ RunBranchFailureScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, st
 RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
 
 
-RUN_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_COMMAND_CASES, get_id=lambda case: case.case_id)
-RUN_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_SCOPE_CASES, get_id=lambda case: case.case_id)
-RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_SCOPE_CASES, get_id=lambda case: case.case_id)
+RUN_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_COMMAND_CASES, get_id=attrgetter("case_id"))
+RUN_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_SCOPE_CASES, get_id=attrgetter("case_id"))
+RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_SCOPE_CASES, get_id=attrgetter("case_id"))
 
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:

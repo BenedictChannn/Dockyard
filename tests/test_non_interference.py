@@ -8,6 +8,7 @@ import re
 import subprocess
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from operator import attrgetter
 from pathlib import Path
 from typing import Literal, TypeVar
 
@@ -194,14 +195,14 @@ def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tupl
     return tuple(get_id(case) for case in cases)
 
 
-SAVE_COMMAND_IDS: tuple[str, ...] = _case_ids(SAVE_COMMAND_CASES, get_id=lambda case: case.case_id)
+SAVE_COMMAND_IDS: tuple[str, ...] = _case_ids(SAVE_COMMAND_CASES, get_id=attrgetter("case_id"))
 RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _case_ids(
     RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
-    get_id=lambda case: case.case_id,
+    get_id=attrgetter("case_id"),
 )
 RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _case_ids(
     RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH,
-    get_id=lambda case: case.case_id,
+    get_id=attrgetter("case_id"),
 )
 
 
@@ -984,7 +985,7 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
 )
 RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(
     RESUME_READ_PATH_CASES,
-    get_id=lambda case: case.case_id,
+    get_id=attrgetter("case_id"),
 )
 
 METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
@@ -1005,7 +1006,7 @@ METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
 )
 METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
     METADATA_SCOPE_CASES,
-    get_id=lambda case: case.case_id,
+    get_id=attrgetter("case_id"),
 )
 
 
