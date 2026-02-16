@@ -43,6 +43,18 @@ def _assert_repo_clean(git_repo: Path) -> None:
     assert _run(["git", "status", "--porcelain"], cwd=git_repo) == ""
 
 
+def _current_branch(git_repo: Path) -> str:
+    """Return current branch name for repository path.
+
+    Args:
+        git_repo: Repository path to inspect.
+
+    Returns:
+        Active branch name.
+    """
+    return _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+
+
 def _configure_editor(env: dict[str, str], tmp_path: Path, script_name: str, decisions_text: str) -> None:
     """Create editor script and wire EDITOR env var for save --editor tests.
 
@@ -211,7 +223,7 @@ def _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
         decisions: Checkpoint decisions text for setup save.
         next_step: Checkpoint next-step text for setup save.
     """
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
     _assert_opt_in_run_mutates_repo(
         git_repo,
         tmp_path,
@@ -280,7 +292,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     """Resume/ls/search/review read paths must not mutate repository state."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
         git_repo,
@@ -436,7 +448,7 @@ def test_resume_alias_berth_read_paths_do_not_execute_saved_commands(
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     marker = git_repo / "dockyard_alias_berth_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
         git_repo,
@@ -482,7 +494,7 @@ def test_resume_alias_trimmed_berth_read_paths_do_not_execute_saved_commands(
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     marker = git_repo / "dockyard_alias_trimmed_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
         git_repo,
@@ -531,7 +543,7 @@ def test_resume_explicit_trimmed_berth_read_paths_do_not_execute_saved_commands(
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     marker = git_repo / "dockyard_primary_trimmed_resume_should_not_run.txt"
     marker_command = f"touch {marker}"
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
         git_repo,
@@ -624,7 +636,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     """Root/override metadata mutations must not alter repository tree/index."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    base_branch = _current_branch(git_repo)
 
     _save_checkpoint(
         git_repo,
