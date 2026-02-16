@@ -57,6 +57,23 @@ def _git_current_branch(repo: Path) -> str:
     return result.stdout.strip()
 
 
+def _build_run_args(
+    command_name: str,
+    *,
+    git_repo: Path,
+    branch: str | None = None,
+    include_berth: bool = False,
+) -> list[str]:
+    """Build run-command arguments with optional berth and branch scope."""
+    run_args = [command_name]
+    if include_berth:
+        run_args.append(f"  {git_repo.name}  ")
+    if branch is not None:
+        run_args.extend(["--branch", f"  {branch}  "])
+    run_args.append("--run")
+    return run_args
+
+
 def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
     """Validate save/ls/resume/review/link flows including `dock dock` alias."""
     env = dict(os.environ)
@@ -2377,7 +2394,7 @@ def test_run_default_scope_executes_commands_on_success(
         decisions=decisions,
         next_step=next_step,
         resume_commands=resume_commands,
-        run_args=[command_name, "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo),
         run_cwd=git_repo,
     )
 
@@ -2431,7 +2448,7 @@ def test_run_default_scope_stops_on_failure(
         next_step=next_step,
         first_command=first_command,
         skipped_command=skipped_command,
-        run_args=[command_name, "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo),
         run_cwd=git_repo,
     )
 
@@ -2530,7 +2547,7 @@ def test_run_branch_scope_executes_commands_on_success(
         decisions=decisions,
         next_step=next_step,
         resume_commands=resume_commands,
-        run_args=[command_name, "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch),
         run_cwd=git_repo,
     )
 
@@ -2580,7 +2597,7 @@ def test_run_berth_branch_scope_executes_commands_on_success(
         decisions=decisions,
         next_step=next_step,
         resume_commands=resume_commands,
-        run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch, include_berth=True),
         run_cwd=tmp_path,
     )
 
@@ -2635,7 +2652,7 @@ def test_run_branch_scope_stops_on_failure(
         next_step=next_step,
         first_command=first_command,
         skipped_command=skipped_command,
-        run_args=[command_name, "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch),
         run_cwd=git_repo,
     )
 
@@ -2690,7 +2707,7 @@ def test_run_berth_branch_scope_stops_on_failure(
         next_step=next_step,
         first_command=first_command,
         skipped_command=skipped_command,
-        run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch, include_berth=True),
         run_cwd=tmp_path,
     )
 
@@ -2965,7 +2982,7 @@ def test_run_berth_scope_with_no_commands_is_noop_success(
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        run_args=[command_name, f"  {git_repo.name}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, include_berth=True),
         run_cwd=tmp_path,
     )
 
@@ -3010,7 +3027,7 @@ def test_run_branch_scope_with_no_commands_is_noop_success(
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        run_args=[command_name, "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch),
         run_cwd=git_repo,
     )
 
@@ -3055,7 +3072,7 @@ def test_run_berth_branch_scope_with_no_commands_is_noop_success(
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        run_args=[command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--run"],
+        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch, include_berth=True),
         run_cwd=tmp_path,
     )
 
