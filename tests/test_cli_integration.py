@@ -2333,89 +2333,31 @@ def test_save_editor_trims_outer_blank_lines(
 
 def test_resume_run_stops_on_failure(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run must stop at first failing command."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Check run ordering",
-            "--decisions",
-            "Run list should stop on first failing command",
-            "--next-step",
-            "Observe command exit sequence",
-            "--risks",
-            "None",
-            "--command",
-            "echo first",
-            "--command",
-            "false",
-            "--command",
-            "echo should-not-run",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Check run ordering",
+        decisions="Run list should stop on first failing command",
+        next_step="Observe command exit sequence",
+        first_command="echo first",
+        skipped_command="echo should-not-run",
+        run_args=["resume", "--run"],
+        run_cwd=git_repo,
     )
-
-    run_result = _run_dock(["resume", "--run"], cwd=git_repo, env=env, expect_code=1)
-    assert "$ echo first -> exit 0" in run_result.stdout
-    assert "$ false -> exit 1" in run_result.stdout
-    assert "$ echo should-not-run -> exit" not in run_result.stdout
 
 
 def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run should execute all commands when none fail."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-
-    _run_dock(
-        [
-            "save",
-            "--root",
-            str(git_repo),
-            "--no-prompt",
-            "--objective",
-            "Run success path",
-            "--decisions",
-            "Verify all commands execute when successful",
-            "--next-step",
-            "Run resume --run",
-            "--risks",
-            "None",
-            "--command",
-            "echo first-ok",
-            "--command",
-            "echo second-ok",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective="Run success path",
+        decisions="Verify all commands execute when successful",
+        next_step="Run resume --run",
+        resume_commands=["echo first-ok", "echo second-ok"],
+        run_args=["resume", "--run"],
+        run_cwd=git_repo,
     )
-
-    result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
-    assert "$ echo first-ok -> exit 0" in result.stdout
-    assert "$ echo second-ok -> exit 0" in result.stdout
 
 
 def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: Path) -> None:
