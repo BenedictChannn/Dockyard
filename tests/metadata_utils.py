@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Any, Protocol, TypeVar
+from typing import Protocol, TypeVar
 
 CaseT = TypeVar("CaseT")
 ContextT = TypeVar("ContextT")
@@ -19,7 +19,7 @@ class SupportsCaseId(Protocol):
 class SupportsRunScopeCase(Protocol):
     """Protocol for scope-aware metadata with command + flags."""
 
-    command_name: Any
+    command_name: str
     include_berth: bool
     include_branch: bool
 
@@ -56,7 +56,7 @@ def pair_with_context(
 def pair_scope_cases_with_context(
     cases: Sequence[ScopeCaseT],
     *,
-    context_builder: Callable[[Any, bool, bool], ContextT],
+    context_builder: Callable[[str, bool, bool], ContextT],
 ) -> tuple[tuple[ScopeCaseT, ContextT], ...]:
     """Pair each scope case with context derived from command/scope flags.
 
