@@ -82,6 +82,11 @@ def test_comma_or_pipe_values_drops_empty_pipe_segments() -> None:
     assert _comma_or_pipe_values("alpha|| beta | ") == ["alpha", "beta"]
 
 
+def test_comma_or_pipe_values_preserves_internal_spaces() -> None:
+    """Parsing should not alter interior whitespace inside a value token."""
+    assert _comma_or_pipe_values("alpha value|beta value") == ["alpha value", "beta value"]
+
+
 def test_emit_json_uses_unicode_friendly_plain_output(monkeypatch: pytest.MonkeyPatch) -> None:
     """JSON emitter should output parseable text without unicode escaping."""
     captured: list[str] = []
