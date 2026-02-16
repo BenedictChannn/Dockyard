@@ -6154,6 +6154,44 @@ def test_unsupported_template_extension_produces_actionable_error(
     assert "Traceback" not in output
 
 
+def test_template_tml_extension_is_rejected(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`.tml` template extension should be rejected as unsupported."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "template.tml"
+    bad_template.write_text('objective = "bad extension"\n', encoding="utf-8")
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Unsupported template extension",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use json or toml",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template must be .json or .toml" in output
+    assert "Traceback" not in output
+
+
 def test_template_type_validation_for_list_fields(
     git_repo: Path,
     tmp_path: Path,

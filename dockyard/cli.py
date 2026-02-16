@@ -247,7 +247,7 @@ def _load_template_data(template_path: str | None) -> dict:
         if suffix == ".json":
             parsed = json.loads(raw)
             return _validate_template_data(parsed, path=path)
-        if suffix in {".toml", ".tml"}:
+        if suffix == ".toml":
             parsed = tomllib.loads(raw)
             return _validate_template_data(parsed, path=path)
     except (json.JSONDecodeError, tomllib.TOMLDecodeError) as exc:
