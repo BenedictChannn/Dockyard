@@ -43,6 +43,51 @@ def _assert_repo_clean(git_repo: Path) -> None:
     assert _run(["git", "status", "--porcelain"], cwd=git_repo) == ""
 
 
+def _configure_editor(env: dict[str, str], tmp_path: Path, script_name: str, decisions_text: str) -> None:
+    """Create editor script and wire EDITOR env var for save --editor tests.
+
+    Args:
+        env: Mutable environment mapping used by subprocess calls.
+        tmp_path: Temporary directory for script placement.
+        script_name: Filename for the generated editor script.
+        decisions_text: Text the editor writes into the decisions file.
+    """
+    editor_script = tmp_path / script_name
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                f"printf '{decisions_text}\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+
+def _write_non_interference_template(template_path: Path, objective: str) -> None:
+    """Write baseline template payload used by non-interference tests.
+
+    Args:
+        template_path: Destination path for template JSON file.
+        objective: Objective string persisted in template payload.
+    """
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": objective,
+                "decisions": "Template decisions",
+                "next_steps": ["Run resume"],
+                "risks_review": "none",
+                "resume_commands": ["echo noop"],
+                "verification": {"tests_run": True, "build_ok": True},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_save_no_prompt_keeps_repo_working_tree_unchanged(git_repo: Path, tmp_path: Path) -> None:
     """Saving checkpoint should not alter tracked files or git index."""
     env = dict(os.environ)
@@ -665,18 +710,12 @@ def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    editor_script = tmp_path / "editor.sh"
-    editor_script.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env bash",
-                "printf 'Editor decisions for non-interference\\n' > \"$1\"",
-            ]
-        ),
-        encoding="utf-8",
+    _configure_editor(
+        env=env,
+        tmp_path=tmp_path,
+        script_name="editor.sh",
+        decisions_text="Editor decisions for non-interference",
     )
-    editor_script.chmod(0o755)
-    env["EDITOR"] = str(editor_script)
 
     _assert_repo_clean(git_repo)
 
@@ -721,18 +760,9 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     template_path = tmp_path / "save_template.json"
-    template_path.write_text(
-        json.dumps(
-            {
-                "objective": "Template non-interference objective",
-                "decisions": "Template decisions",
-                "next_steps": ["Run resume"],
-                "risks_review": "none",
-                "resume_commands": ["echo noop"],
-                "verification": {"tests_run": True, "build_ok": True},
-            }
-        ),
-        encoding="utf-8",
+    _write_non_interference_template(
+        template_path=template_path,
+        objective="Template non-interference objective",
     )
 
     _assert_repo_clean(git_repo)
@@ -763,18 +793,9 @@ def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_pat
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     template_path = tmp_path / "save_alias_s_template.json"
-    template_path.write_text(
-        json.dumps(
-            {
-                "objective": "Template alias s non-interference objective",
-                "decisions": "Template decisions",
-                "next_steps": ["Run resume"],
-                "risks_review": "none",
-                "resume_commands": ["echo noop"],
-                "verification": {"tests_run": True, "build_ok": True},
-            }
-        ),
-        encoding="utf-8",
+    _write_non_interference_template(
+        template_path=template_path,
+        objective="Template alias s non-interference objective",
     )
 
     _assert_repo_clean(git_repo)
@@ -804,18 +825,12 @@ def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path:
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    editor_script = tmp_path / "alias_s_editor.sh"
-    editor_script.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env bash",
-                "printf 'Alias s editor decisions for non-interference\\n' > \"$1\"",
-            ]
-        ),
-        encoding="utf-8",
+    _configure_editor(
+        env=env,
+        tmp_path=tmp_path,
+        script_name="alias_s_editor.sh",
+        decisions_text="Alias s editor decisions for non-interference",
     )
-    editor_script.chmod(0o755)
-    env["EDITOR"] = str(editor_script)
 
     _assert_repo_clean(git_repo)
 
@@ -903,18 +918,9 @@ def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     template_path = tmp_path / "save_alias_dock_template.json"
-    template_path.write_text(
-        json.dumps(
-            {
-                "objective": "Template alias dock non-interference objective",
-                "decisions": "Template decisions",
-                "next_steps": ["Run resume"],
-                "risks_review": "none",
-                "resume_commands": ["echo noop"],
-                "verification": {"tests_run": True, "build_ok": True},
-            }
-        ),
-        encoding="utf-8",
+    _write_non_interference_template(
+        template_path=template_path,
+        objective="Template alias dock non-interference objective",
     )
 
     _assert_repo_clean(git_repo)
@@ -944,18 +950,12 @@ def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_pa
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    editor_script = tmp_path / "alias_dock_editor.sh"
-    editor_script.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env bash",
-                "printf 'Alias dock editor decisions for non-interference\\n' > \"$1\"",
-            ]
-        ),
-        encoding="utf-8",
+    _configure_editor(
+        env=env,
+        tmp_path=tmp_path,
+        script_name="alias_dock_editor.sh",
+        decisions_text="Alias dock editor decisions for non-interference",
     )
-    editor_script.chmod(0o755)
-    env["EDITOR"] = str(editor_script)
 
     _assert_repo_clean(git_repo)
 
