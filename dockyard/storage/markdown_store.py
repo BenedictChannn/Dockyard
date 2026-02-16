@@ -152,13 +152,13 @@ def _normalize_block(lines: list[str]) -> str:
 
 
 def _normalize_numbered(lines: list[str]) -> list[str]:
-    """Normalize numbered list lines into plain value list."""
+    """Normalize list lines (numbered or bulleted) into plain value list."""
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
         if not stripped:
             continue
-        match = re.match(r"^\d+[.)]\s*(.*)$", stripped)
+        match = re.match(r"^(?:\d+[.)]|[-*+])\s*(.*)$", stripped)
         if match:
             item = match.group(1).strip()
             if item:
