@@ -389,3 +389,44 @@ None
             "Decision line two",
         ],
     )
+
+
+def test_markdown_parser_preserves_unknown_headings_inside_risks_section() -> None:
+    """Parser should preserve unknown `##` lines within risks freeform text."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+Primary risk line
+## Internal risk note
+Follow-up mitigation detail
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["risks_review"] == "\n".join(
+        [
+            "Primary risk line",
+            "## Internal risk note",
+            "Follow-up mitigation detail",
+        ],
+    )
+    assert parsed["resume_commands"] == ["pytest -q"]

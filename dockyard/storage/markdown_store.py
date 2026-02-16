@@ -115,6 +115,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
         "Decisions/Findings": "decisions",
         "Next Steps": "next_steps",
         "Risks / Review Needed": "risks_review",
+        "Risks/Review Needed": "risks_review",
         "Resume Commands": "resume_commands",
     }
     parsed: dict[str, str | list[str]] = {
