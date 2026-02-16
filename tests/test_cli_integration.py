@@ -8,8 +8,12 @@ import re
 import sqlite3
 import subprocess
 from pathlib import Path
+from typing import Literal
 
 import pytest
+
+RunArgs = list[str]
+RunCwdKind = Literal["repo", "tmp"]
 
 
 def _run_dock(
@@ -63,7 +67,7 @@ def _build_run_args(
     git_repo: Path,
     branch: str | None = None,
     include_berth: bool = False,
-) -> list[str]:
+) -> RunArgs:
     """Build run-command arguments with optional berth and branch scope."""
     run_args = [command_name]
     if include_berth:
@@ -72,6 +76,11 @@ def _build_run_args(
         run_args.extend(["--branch", f"  {branch}  "])
     run_args.append("--run")
     return run_args
+
+
+def _resolve_run_cwd(git_repo: Path, tmp_path: Path, run_cwd_kind: RunCwdKind) -> Path:
+    """Resolve run command cwd from run-scope selector."""
+    return git_repo if run_cwd_kind == "repo" else tmp_path
 
 
 def test_cli_flow_and_aliases(git_repo: Path, tmp_path: Path) -> None:
@@ -2832,7 +2841,7 @@ def _assert_run_executes_commands_on_success(
     decisions: str,
     next_step: str,
     resume_commands: list[str],
-    run_args: list[str],
+    run_args: RunArgs,
     run_cwd: Path,
 ) -> None:
     """Assert that run mode executes each recorded command successfully."""
@@ -2858,7 +2867,7 @@ def _assert_run_stops_on_first_failure(
     next_step: str,
     first_command: str,
     skipped_command: str,
-    run_args: list[str],
+    run_args: RunArgs,
     run_cwd: Path,
 ) -> None:
     """Assert that run mode stops executing commands at first failure."""
@@ -2883,7 +2892,7 @@ def _assert_run_no_commands_noop(
     objective: str,
     decisions: str,
     next_step: str,
-    run_args: list[str],
+    run_args: RunArgs,
     run_cwd: Path,
 ) -> None:
     """Seed checkpoint without commands and assert run path is no-op."""
@@ -2900,25 +2909,28 @@ def _assert_run_no_commands_noop(
 
 
 @pytest.mark.parametrize(
-    ("run_args", "objective", "decisions", "next_step"),
+    ("command_name", "objective", "decisions", "next_step", "run_cwd_kind"),
     [
         (
-            ["resume", "--run"],
+            "resume",
             "No command resume run",
             "Ensure run path handles empty command list",
             "resume with run",
+            "repo",
         ),
         (
-            ["r", "--run"],
+            "r",
             "No command resume alias run",
             "Ensure alias run path handles empty command list",
             "run r --run",
+            "repo",
         ),
         (
-            ["undock", "--run"],
+            "undock",
             "No command undock alias run",
             "Ensure undock alias run path handles empty command list",
             "run undock --run",
+            "repo",
         ),
     ],
     ids=["resume", "r_alias", "undock_alias"],
@@ -2926,10 +2938,11 @@ def _assert_run_no_commands_noop(
 def test_run_default_scope_with_no_commands_is_noop_success(
     git_repo: Path,
     tmp_path: Path,
-    run_args: list[str],
+    command_name: str,
     objective: str,
     decisions: str,
     next_step: str,
+    run_cwd_kind: RunCwdKind,
 ) -> None:
     """`<command> --run` should no-op when checkpoint has no run commands."""
     _assert_run_no_commands_noop(
@@ -2938,8 +2951,8 @@ def test_run_default_scope_with_no_commands_is_noop_success(
         objective=objective,
         decisions=decisions,
         next_step=next_step,
-        run_args=run_args,
-        run_cwd=git_repo,
+        run_args=_build_run_args(command_name, git_repo=git_repo),
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
     )
 
 
