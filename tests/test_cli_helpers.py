@@ -181,3 +181,15 @@ def test_safe_preview_applies_length_bound() -> None:
     """Safe preview helper should enforce max-length truncation."""
     preview = _safe_preview("x" * 20, max_length=10)
     assert preview == "x" * 10
+
+
+def test_safe_preview_escapes_markup_tokens() -> None:
+    """Safe preview helper should escape literal markup delimiters."""
+    preview = _safe_preview("[red]literal[/red]")
+    assert preview == "\\[red]literal\\[/red]"
+
+
+def test_safe_preview_uses_fallback_for_blank_values() -> None:
+    """Safe preview helper should return fallback when compact text is blank."""
+    preview = _safe_preview("   ", fallback="(unknown)")
+    assert preview == "(unknown)"

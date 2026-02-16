@@ -3015,7 +3015,7 @@ def test_review_add_outside_repo_with_explicit_context_succeeds(tmp_path: Path) 
     )
     assert "Created review" in created.stdout
 
-    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    listed = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
     assert "manual_repo/manual_branch" in listed
     assert "manual_outside_repo" in listed
 
@@ -3581,6 +3581,69 @@ def test_review_list_compacts_multiline_reason_text(git_repo: Path, tmp_path: Pa
     listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
     assert "line one line two" in listed
     assert "line one\nline two" not in listed
+
+
+def test_review_list_falls_back_for_blank_metadata_fields(git_repo: Path, tmp_path: Path) -> None:
+    """Review list should show explicit fallbacks for blank row metadata."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review fallback baseline",
+            "--decisions",
+            "Corrupt review row text fields",
+            "--next-step",
+            "run review list",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "normal reason", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        (
+            "UPDATE review_items "
+            "SET severity = ?, status = ?, repo_id = ?, branch = ?, reason = ? "
+            "WHERE id = ?"
+        ),
+        ("   ", "   ", "   ", "   ", "   ", review_id),
+    )
+    conn.commit()
+    conn.close()
+
+    listed = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
+    assert "(unknown) | (unknown)" in listed
+    assert "(unknown)/(unknown)" in listed
+    assert "| (none)" in listed
 
 
 def test_review_outputs_preserve_literal_markup_like_text(
@@ -6806,6 +6869,26 @@ def test_links_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path
     listed = _run_dock(["links"], cwd=git_repo, env=env).stdout
     assert "https://example.com/line-one line-two" in listed
     assert "https://example.com/line-one\nline-two" not in listed
+
+
+def test_links_output_falls_back_for_blank_fields(git_repo: Path, tmp_path: Path) -> None:
+    """Links output should show explicit fallbacks for blank row fields."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(["link", "https://example.com/base-link"], cwd=git_repo, env=env)
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE links SET created_at = ?, url = ?",
+        ("   ", "   "),
+    )
+    conn.commit()
+    conn.close()
+
+    listed = _run_dock(["links"], cwd=git_repo, env=env).stdout
+    assert "(unknown) | (unknown)" in listed
 
 
 def test_link_outputs_preserve_literal_markup_like_urls(git_repo: Path, tmp_path: Path) -> None:

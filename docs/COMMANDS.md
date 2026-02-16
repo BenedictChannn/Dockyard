@@ -156,6 +156,8 @@ python3 -m dockyard review list --all
 
 Both `review` and `review list` print `No review items.` when the ledger is empty.
 `review list` uses the same severity-first ordering as the default `review` command.
+List rows compact multiline values into single-line previews and show explicit
+fallbacks (`(unknown)` / `(none)`) for blank metadata fields.
 
 ### Add
 
@@ -190,3 +192,6 @@ Attach and list URLs for current slip.
 python3 -m dockyard link https://example.com/pr/123
 python3 -m dockyard links
 ```
+
+`links` output compacts multiline URL/timestamp values to single-line previews
+and uses `(unknown)` fallback text for blank fields.

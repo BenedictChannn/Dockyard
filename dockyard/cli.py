@@ -73,10 +73,14 @@ def _safe_text(value: Any) -> str:
     return escape(str(value))
 
 
-def _safe_preview(value: Any, max_length: int = 200) -> str:
+def _safe_preview(value: Any, max_length: int = 200, fallback: str = "") -> str:
     """Escape and compact text for one-line CLI preview output."""
-    compact = " ".join(str(value).split())
-    return escape(compact[:max_length])
+    raw = "" if value is None else str(value)
+    compact = " ".join(raw.split())
+    clipped = compact[:max_length]
+    if clipped:
+        return escape(clipped)
+    return escape(fallback) if fallback else ""
 
 
 def _normalize_editor_text(raw: str) -> str:
@@ -661,9 +665,12 @@ def review_list(
         return
     lines = [
         (
-            f"{_safe_preview(item.id, 60)} | {_safe_preview(item.severity, 20)}"
-            f" | {_safe_preview(item.status, 20)} | {_safe_preview(item.repo_id, 80)}"
-            f"/{_safe_preview(item.branch, 80)} | {_safe_preview(item.reason, 200)}"
+            f"{_safe_preview(item.id, 60, fallback='(unknown)')} | "
+            f"{_safe_preview(item.severity, 20, fallback='(unknown)')} | "
+            f"{_safe_preview(item.status, 20, fallback='(unknown)')} | "
+            f"{_safe_preview(item.repo_id, 80, fallback='(unknown)')}/"
+            f"{_safe_preview(item.branch, 80, fallback='(unknown)')} | "
+            f"{_safe_preview(item.reason, 200, fallback='(none)')}"
         )
         for item in items
     ]
@@ -811,7 +818,10 @@ def links_command(
         console.print("No links for current slip.")
         return
     for item in items:
-        console.print(f"{_safe_preview(item.created_at, 60)} | {_safe_preview(item.url, 220)}")
+        console.print(
+            f"{_safe_preview(item.created_at, 60, fallback='(unknown)')} | "
+            f"{_safe_preview(item.url, 220, fallback='(unknown)')}"
+        )
 
 
 def main() -> None:
