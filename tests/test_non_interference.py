@@ -708,6 +708,67 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def _build_metadata_commands_in_repo(git_repo: Path, base_branch: str) -> list[list[str]]:
+    """Build in-repo review/link metadata command list."""
+    del base_branch
+    return [["python3", "-m", "dockyard", "link", "https://example.com/non-interference"]]
+
+
+def _build_metadata_commands_root_override(git_repo: Path, base_branch: str) -> list[list[str]]:
+    """Build root-override review/link metadata command list."""
+    del base_branch
+    return [
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            "link",
+            "https://example.com/non-interference-root-override",
+            "--root",
+            str(git_repo),
+        ],
+        ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
+    ]
+
+
+def _build_review_add_command_in_repo(git_repo: Path, base_branch: str) -> list[str]:
+    """Build in-repo review-add command."""
+    del git_repo
+    del base_branch
+    return [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "add",
+        "--reason",
+        "manual",
+        "--severity",
+        "low",
+    ]
+
+
+def _build_review_add_command_root_override(git_repo: Path, base_branch: str) -> list[str]:
+    """Build root-override review-add command."""
+    return [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "add",
+        "--reason",
+        "manual-root-override",
+        "--severity",
+        "low",
+        "--repo",
+        git_repo.name,
+        "--branch",
+        base_branch,
+        "--notes",
+        "outside repo invocation",
+    ]
+
+
 @pytest.mark.parametrize(
     (
         "command_name",
@@ -991,74 +1052,57 @@ def test_resume_read_paths_do_not_execute_saved_commands(
     )
 
 
-def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Dockyard metadata mutations must not alter repository working tree."""
-    _assert_review_link_commands_do_not_modify_repo(
-        git_repo,
-        tmp_path,
-        objective="Mutation command baseline",
-        decisions="Validate review/link non-interference",
-        next_step="Run link and review commands",
-        run_cwd=git_repo,
-        metadata_commands=[
-            ["python3", "-m", "dockyard", "link", "https://example.com/non-interference"],
-        ],
-        review_add_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            "review",
-            "add",
-            "--reason",
-            "manual",
-            "--severity",
-            "low",
-        ],
-    )
-
-
-def test_review_and_link_root_override_commands_do_not_modify_repo(
+@pytest.mark.parametrize(
+    (
+        "objective",
+        "decisions",
+        "next_step",
+        "run_cwd_kind",
+        "metadata_builder",
+        "review_add_builder",
+    ),
+    [
+        (
+            "Mutation command baseline",
+            "Validate review/link non-interference",
+            "Run link and review commands",
+            "repo",
+            _build_metadata_commands_in_repo,
+            _build_review_add_command_in_repo,
+        ),
+        (
+            "Root override mutation baseline",
+            "Validate root override review/link non-interference",
+            "Run root override metadata commands",
+            "tmp",
+            _build_metadata_commands_root_override,
+            _build_review_add_command_root_override,
+        ),
+    ],
+    ids=["in_repo", "root_override"],
+)
+def test_review_and_link_commands_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    run_cwd_kind: str,
+    metadata_builder: Callable[[Path, str], list[list[str]]],
+    review_add_builder: Callable[[Path, str], list[str]],
 ) -> None:
-    """Root/override metadata mutations must not alter repository tree/index."""
+    """Review/link metadata paths must not alter repository tree/index."""
     base_branch = _current_branch(git_repo)
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _assert_review_link_commands_do_not_modify_repo(
         git_repo,
         tmp_path,
-        objective="Root override mutation baseline",
-        decisions="Validate root override review/link non-interference",
-        next_step="Run root override metadata commands",
-        run_cwd=tmp_path,
-        metadata_commands=[
-            [
-                "python3",
-                "-m",
-                "dockyard",
-                "link",
-                "https://example.com/non-interference-root-override",
-                "--root",
-                str(git_repo),
-            ],
-            ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
-        ],
-        review_add_command=[
-            "python3",
-            "-m",
-            "dockyard",
-            "review",
-            "add",
-            "--reason",
-            "manual-root-override",
-            "--severity",
-            "low",
-            "--repo",
-            git_repo.name,
-            "--branch",
-            base_branch,
-            "--notes",
-            "outside repo invocation",
-        ],
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        run_cwd=run_cwd,
+        metadata_commands=metadata_builder(git_repo, base_branch),
+        review_add_command=review_add_builder(git_repo, base_branch),
     )
 
 
