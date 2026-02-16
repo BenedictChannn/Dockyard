@@ -616,6 +616,58 @@ def test_save_editor_ignores_indented_placeholder_only_content(
     assert "Traceback" not in output
 
 
+def test_save_editor_ignores_repeated_scaffold_lines(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Repeated scaffold lines should be stripped before persistence."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    editor_script = tmp_path / "repeated_scaffold_editor.sh"
+    editor_script.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "printf '# Decisions / Findings\\n# Decisions / Findings\\nCore editor decision\\n' > \"$1\"",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    editor_script.chmod(0o755)
+    env["EDITOR"] = str(editor_script)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--editor",
+            "--no-prompt",
+            "--objective",
+            "Editor repeated scaffold objective",
+            "--next-step",
+            "Run resume json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["decisions"] == "Core editor decision"
+
+
 def test_save_editor_preserves_non_scaffold_hash_lines(
     git_repo: Path,
     tmp_path: Path,
