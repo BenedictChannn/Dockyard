@@ -911,6 +911,55 @@ def test_resume_run_executes_all_commands_on_success(git_repo: Path, tmp_path: P
     assert "$ echo second-ok -> exit 0" in result.stdout
 
 
+def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run output should compact multiline command labels."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Run multiline command label baseline",
+            "--decisions",
+            "Mutate command payload to include line breaks",
+            "--next-step",
+            "run resume --run",
+            "--risks",
+            "none",
+            "--command",
+            "echo baseline",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET resume_commands_json = ?",
+        (json.dumps(["echo run-one\necho run-two"]),),
+    )
+    conn.commit()
+    conn.close()
+
+    run_result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
+    assert "$ echo run-one echo run-two -> exit 0" in run_result.stdout
+
+
 def test_resume_run_with_no_commands_is_noop_success(
     git_repo: Path,
     tmp_path: Path,
@@ -3818,6 +3867,75 @@ def test_review_open_compacts_multiline_metadata_fields(
     assert "reason: reason line one line two" in opened
     assert "notes: notes line one line two" in opened
     assert "files: src/one.py src/two.py" in opened
+
+
+def test_review_open_falls_back_for_blank_metadata_fields(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review open should show explicit fallbacks for blank metadata."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review open fallback baseline",
+            "--decisions",
+            "Mutate review row metadata to blanks",
+            "--next-step",
+            "run review open",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    created = _run_dock(
+        ["review", "add", "--reason", "normal reason", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        (
+            "UPDATE review_items "
+            "SET repo_id = ?, branch = ?, created_at = ?, severity = ?, status = ?, reason = ? "
+            "WHERE id = ?"
+        ),
+        ("   ", "   ", "   ", "   ", "   ", "   ", review_id),
+    )
+    conn.commit()
+    conn.close()
+
+    opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env).stdout
+    assert "repo: (unknown)" in opened
+    assert "branch: (unknown)" in opened
+    assert "created_at: (unknown)" in opened
+    assert "severity: (unknown)" in opened
+    assert "status: (unknown)" in opened
+    assert "reason: (none)" in opened
 
 
 def test_save_with_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:

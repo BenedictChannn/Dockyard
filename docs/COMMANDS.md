@@ -83,6 +83,9 @@ Notes:
 - Resume summary compacts multiline objective and next-step values into
   single-line previews.
 - If a checkpoint has no next steps, resume summary shows `(none recorded)`.
+- `--handoff` output compacts multiline objective/next-step/risk/command
+  fields into one-line bullet previews.
+- `--run` command labels in output are compacted to one-line previews.
 
 ## `ls` (`harbor`)
 
@@ -183,6 +186,9 @@ python3 -m dockyard review open <review_id>
 `review open` displays review metadata plus associated checkpoint details (if
 available), including creation timestamp, checkpoint id, and any attached file
 paths.
+Blank metadata fields are rendered with explicit fallback text where
+applicable (`(unknown)` / `(none)`), and multiline values are compacted to
+single-line text.
 
 ## `link` / `links`
 

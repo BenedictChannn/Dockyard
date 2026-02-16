@@ -99,6 +99,8 @@ Useful flags:
 - `--json` structured output
 - Resume summary lines compact multiline objective/next-step text into single
   line previews for faster scanning.
+- Handoff bullets and `--run` command labels are compacted to single-line
+  previews for readability.
 
 ### 3) Harbor dashboard across projects
 
@@ -147,12 +149,18 @@ python3 -m dockyard review open <id>
 python3 -m dockyard review done <id>
 ```
 
+Review list/open outputs compact multiline fields into single-line text and use
+explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values.
+
 ### 6) Link URLs to a branch context
 
 ```bash
 python3 -m dockyard link https://example.com/pr/123
 python3 -m dockyard links
 ```
+
+`links` output also compacts multiline values and uses `(unknown)` fallback for
+blank timestamp/URL fields.
 
 ## Storage
 
