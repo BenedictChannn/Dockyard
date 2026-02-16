@@ -18,9 +18,10 @@ ResumeReadCommandBuilder = Callable[[Path], CommandMatrix]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
-RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
+RunCommandName = Literal["resume", "r", "undock"]
+RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
 RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str]
-RunScopeCommandCase = tuple[str, str]
+RunScopeCommandCase = tuple[RunCommandName, str]
 SaveCommandCase = tuple[str, str, str]
 ResumeReadPathCase = tuple[str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeCase = tuple[str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
@@ -37,9 +38,9 @@ RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandCase, ...] = (
     ("r", "resume alias"),
     ("undock", "undock alias"),
 )
-RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
+RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
-RUN_SCOPE_COMMAND_LABELS: dict[str, str] = {
+RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
     command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES
 }
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
@@ -406,7 +407,7 @@ def _save_checkpoint(
 
 def _build_opt_in_run_command(
     *,
-    command_name: str,
+    command_name: RunCommandName,
     git_repo: Path,
     branch: str | None = None,
     include_berth: bool = False,

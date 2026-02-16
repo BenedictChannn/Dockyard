@@ -16,8 +16,9 @@ import pytest
 RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
-RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
-RunCommandCase = tuple[str, str, str, str]
+RunCommandName = Literal["resume", "r", "undock"]
+RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
+RunCommandCase = tuple[RunCommandName, str, str, str]
 RunScopeVariant = tuple[str, bool, bool, RunCwdKind, str, str]
 RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("resume", "resume", "resume", "resume"),
@@ -25,8 +26,8 @@ RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("undock", "undock", "undock_alias", "undock alias"),
 )
 RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
-RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
-RUN_SCOPE_COMMAND_LABELS: dict[str, str] = {
+RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
+RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
     command_name: label for command_name, _slug, _case_id, label in RUN_COMMAND_CASES
 }
 RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
@@ -264,7 +265,7 @@ def _git_current_branch(repo: Path) -> str:
 
 
 def _build_run_args(
-    command_name: str,
+    command_name: RunCommandName,
     *,
     git_repo: Path,
     branch: str | None = None,
