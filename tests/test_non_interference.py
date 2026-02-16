@@ -15,11 +15,11 @@ from typing import Literal, TypeVar
 
 import pytest
 
-CommandMatrix = list[list[str]]
-RunCommand = list[str]
+RunCommand = Sequence[str]
+CommandMatrix = list[RunCommand]
 ResumeReadCommandBuilder = Callable[[Path], CommandMatrix]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
-ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
+ReviewAddCommandBuilder = Callable[[Path, str], RunCommand]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 SaveCommandName = Literal["save", "s", "dock"]
@@ -495,7 +495,7 @@ def _build_save_template_scenarios(cases: Sequence[SaveCommandMeta]) -> tuple[Sa
     )
 
 
-def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
+def _run(command: RunCommand, cwd: Path, env: dict[str, str] | None = None) -> str:
     """Run subprocess command and return stdout."""
     result = subprocess.run(
         command,
@@ -508,7 +508,7 @@ def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> st
     return result.stdout.strip()
 
 
-def _run_commands(commands: CommandMatrix, cwd: Path, env: dict[str, str]) -> None:
+def _run_commands(commands: Sequence[RunCommand], cwd: Path, env: dict[str, str]) -> None:
     """Run a sequence of commands in a shared working directory.
 
     Args:
@@ -1025,7 +1025,7 @@ def _build_metadata_commands_root_override(git_repo: Path, _base_branch: str) ->
     ]
 
 
-def _build_review_add_command_in_repo(_git_repo: Path, _base_branch: str) -> list[str]:
+def _build_review_add_command_in_repo(_git_repo: Path, _base_branch: str) -> RunCommand:
     """Build in-repo review-add command."""
     return [
         "python3",
@@ -1040,7 +1040,7 @@ def _build_review_add_command_in_repo(_git_repo: Path, _base_branch: str) -> lis
     ]
 
 
-def _build_review_add_command_root_override(git_repo: Path, base_branch: str) -> list[str]:
+def _build_review_add_command_root_override(git_repo: Path, base_branch: str) -> RunCommand:
     """Build root-override review-add command."""
     return [
         "python3",
