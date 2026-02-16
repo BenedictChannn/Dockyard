@@ -10,7 +10,7 @@ def run_commands(commands: list[str], cwd: str | Path) -> tuple[bool, list[tuple
     """Run commands sequentially and stop on first failure.
 
     Args:
-        commands: Shell commands to execute.
+        commands: Shell commands to execute. Blank commands are ignored.
         cwd: Working directory in which commands should be executed.
 
     Returns:
@@ -21,13 +21,16 @@ def run_commands(commands: list[str], cwd: str | Path) -> tuple[bool, list[tuple
     results: list[tuple[str, int]] = []
     working_dir = Path(cwd)
     for command in commands:
+        normalized = command.strip()
+        if not normalized:
+            continue
         completed = subprocess.run(
-            command,
+            normalized,
             cwd=str(working_dir),
             shell=True,
             check=False,
         )
-        results.append((command, completed.returncode))
+        results.append((normalized, completed.returncode))
         if completed.returncode != 0:
             return False, results
     return True, results

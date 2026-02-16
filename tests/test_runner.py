@@ -39,3 +39,27 @@ def test_run_commands_empty_sequence_is_success(tmp_path: Path) -> None:
     success, results = run_commands([], cwd=tmp_path)
     assert success is True
     assert results == []
+
+
+def test_run_commands_executes_relative_commands_in_provided_cwd(tmp_path: Path) -> None:
+    """Runner should execute shell commands from the provided working directory."""
+    command = "pwd > cwd_marker.txt"
+    success, results = run_commands([command], cwd=tmp_path)
+
+    assert success is True
+    assert results == [(command, 0)]
+    marker = tmp_path / "cwd_marker.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(tmp_path)
+
+
+def test_run_commands_ignores_blank_commands(tmp_path: Path) -> None:
+    """Runner should skip blank command entries while executing meaningful ones."""
+    marker = tmp_path / "blank_skip_marker.txt"
+    command = f"echo ok > {marker}"
+
+    success, results = run_commands(["", "   ", command], cwd=tmp_path)
+
+    assert success is True
+    assert results == [(command, 0)]
+    assert marker.exists()
