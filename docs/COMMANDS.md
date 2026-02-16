@@ -192,6 +192,7 @@ Optional `--notes` and `--checkpoint-id` values are trimmed; blank values are
 treated as missing.
 Override values passed to `--repo/--branch` are also trimmed before lookup.
 `--repo` and `--branch` must be non-empty when provided.
+`--severity` must be non-empty and one of `low|med|high`.
 
 ### Mark done
 

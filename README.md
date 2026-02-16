@@ -175,6 +175,7 @@ Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
 treated as missing.
 `--repo` / `--branch` override values are trimmed before lookup.
 `--repo` / `--branch` must be non-empty when provided.
+`--severity` must be non-empty and one of `low|med|high`.
 `review open` / `review done` IDs are trimmed; blank IDs are rejected.
 
 ### 6) Link URLs to a branch context

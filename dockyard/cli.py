@@ -356,6 +356,8 @@ def _validate_review_severity(raw: str) -> str:
         DockyardError: If severity is not one of low/med/high.
     """
     normalized = raw.strip().lower()
+    if not normalized:
+        raise DockyardError("Severity must be a non-empty string.")
     if normalized not in VALID_REVIEW_SEVERITIES:
         allowed = ", ".join(sorted(VALID_REVIEW_SEVERITIES))
         raise DockyardError(f"Invalid severity '{raw}'. Use one of: {allowed}.")

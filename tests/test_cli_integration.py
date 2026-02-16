@@ -4451,6 +4451,16 @@ def test_review_add_validates_severity(git_repo: Path, tmp_path: Path) -> None:
     assert "Invalid severity" in output
     assert "Traceback" not in output
 
+    blank = _run_dock(
+        ["review", "add", "--reason", "invalid", "--severity", "   "],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    blank_output = f"{blank.stdout}\n{blank.stderr}"
+    assert "Severity must be a non-empty string." in blank_output
+    assert "Traceback" not in blank_output
+
     # Upper-case values should normalize successfully.
     good = _run_dock(
         ["review", "add", "--reason", "valid", "--severity", "HIGH"],
