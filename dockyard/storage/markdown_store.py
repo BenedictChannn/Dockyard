@@ -171,9 +171,10 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
-        if not stripped.startswith("- "):
+        match = re.match(r"^[-*+]\s+(.*)$", stripped)
+        if not match:
             continue
-        command = stripped[2:].strip()
+        command = match.group(1).strip()
         if command.startswith("`"):
             if len(command) < 2 or not command.endswith("`"):
                 continue

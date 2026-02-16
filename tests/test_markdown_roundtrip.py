@@ -127,6 +127,8 @@ None
 ## Resume Commands
 - pytest -q
 - python3 -m dockyard ls
+* echo star-bullet
++ echo plus-bullet
 - `echo quoted`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
@@ -147,6 +149,8 @@ None
     assert parsed["resume_commands"] == [
         "pytest -q",
         "python3 -m dockyard ls",
+        "echo star-bullet",
+        "echo plus-bullet",
         "echo quoted",
     ]
 
