@@ -111,68 +111,47 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert status_before == ""
 
-    _run(["python3", "-m", "dockyard", "resume"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", "--json"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", "--handoff"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", "--branch", base_branch], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "resume", git_repo.name], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--handoff"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch, "--json"], cwd=tmp_path, env=env)
-    _run(
+    in_repo_commands = [
+        ["python3", "-m", "dockyard", "resume"],
+        ["python3", "-m", "dockyard", "resume", "--json"],
+        ["python3", "-m", "dockyard", "resume", "--handoff"],
+        ["python3", "-m", "dockyard", "resume", "--branch", base_branch],
+        ["python3", "-m", "dockyard", "r"],
+        ["python3", "-m", "dockyard", "undock"],
+        ["python3", "-m", "dockyard", "links"],
+    ]
+    for command in in_repo_commands:
+        _run(command, cwd=git_repo, env=env)
+
+    outside_repo_commands = [
+        ["python3", "-m", "dockyard", "resume", git_repo.name],
+        ["python3", "-m", "dockyard", "resume", git_repo.name, "--json"],
+        ["python3", "-m", "dockyard", "resume", git_repo.name, "--handoff"],
+        ["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch],
+        ["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch, "--json"],
         ["python3", "-m", "dockyard", "resume", git_repo.name, "--branch", base_branch, "--handoff"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "r"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "undock"], cwd=git_repo, env=env)
-    _run(["python3", "-m", "dockyard", "ls"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "ls", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "ls", "--limit", "1", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "ls", "--stale", "0", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "ls", "--tag", "baseline", "--json"], cwd=tmp_path, env=env)
-    _run(
+        ["python3", "-m", "dockyard", "ls"],
+        ["python3", "-m", "dockyard", "ls", "--json"],
+        ["python3", "-m", "dockyard", "ls", "--limit", "1", "--json"],
+        ["python3", "-m", "dockyard", "ls", "--stale", "0", "--json"],
+        ["python3", "-m", "dockyard", "ls", "--tag", "baseline", "--json"],
         ["python3", "-m", "dockyard", "ls", "--tag", "baseline", "--stale", "0", "--limit", "1", "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "harbor"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "harbor", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "harbor", "--limit", "1", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "harbor", "--stale", "0", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--json"], cwd=tmp_path, env=env)
-    _run(
+        ["python3", "-m", "dockyard", "harbor"],
+        ["python3", "-m", "dockyard", "harbor", "--json"],
+        ["python3", "-m", "dockyard", "harbor", "--limit", "1", "--json"],
+        ["python3", "-m", "dockyard", "harbor", "--stale", "0", "--json"],
+        ["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--json"],
         ["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--stale", "0", "--limit", "1", "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         ["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--stale", "0", "--limit", "1"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "search", "baseline"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "search", "baseline", "--tag", "missing-tag"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "search", "baseline", "--repo", git_repo.name], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "search", "baseline", "--branch", base_branch], cwd=tmp_path, env=env)
-    _run(
+        ["python3", "-m", "dockyard", "search", "baseline"],
+        ["python3", "-m", "dockyard", "search", "baseline", "--json"],
+        ["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline"],
+        ["python3", "-m", "dockyard", "search", "baseline", "--tag", "missing-tag"],
+        ["python3", "-m", "dockyard", "search", "baseline", "--repo", git_repo.name],
+        ["python3", "-m", "dockyard", "search", "baseline", "--branch", base_branch],
         ["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline", "--branch", base_branch],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         ["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline", "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         ["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline", "--repo", git_repo.name, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         [
             "python3",
             "-m",
@@ -187,32 +166,16 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
             base_branch,
             "--json",
         ],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         ["python3", "-m", "dockyard", "search", "baseline", "--repo", git_repo.name, "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "f", "baseline"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--repo", git_repo.name, "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--branch", base_branch, "--json"], cwd=tmp_path, env=env)
-    _run(
+        ["python3", "-m", "dockyard", "f", "baseline"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--json"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--repo", git_repo.name, "--json"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--branch", base_branch, "--json"],
         ["python3", "-m", "dockyard", "f", "baseline", "--repo", git_repo.name, "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--tag", "missing-tag"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline", "--repo", git_repo.name], cwd=tmp_path, env=env)
-    _run(
+        ["python3", "-m", "dockyard", "f", "baseline", "--tag", "missing-tag"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline"],
+        ["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline", "--repo", git_repo.name],
         ["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline", "--repo", git_repo.name, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         [
             "python3",
             "-m",
@@ -227,10 +190,6 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
             base_branch,
             "--json",
         ],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         [
             "python3",
             "-m",
@@ -244,20 +203,14 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
             "--branch",
             base_branch,
         ],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(
         ["python3", "-m", "dockyard", "f", "baseline", "--tag", "baseline", "--branch", base_branch, "--json"],
-        cwd=tmp_path,
-        env=env,
-    )
-    _run(["python3", "-m", "dockyard", "search", "baseline", "--json"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "review"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "review", "list"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "review", "--all"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "review", "list", "--all"], cwd=tmp_path, env=env)
-    _run(["python3", "-m", "dockyard", "links"], cwd=git_repo, env=env)
+        ["python3", "-m", "dockyard", "review"],
+        ["python3", "-m", "dockyard", "review", "list"],
+        ["python3", "-m", "dockyard", "review", "--all"],
+        ["python3", "-m", "dockyard", "review", "list", "--all"],
+    ]
+    for command in outside_repo_commands:
+        _run(command, cwd=tmp_path, env=env)
 
     status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
     assert status_after == ""
