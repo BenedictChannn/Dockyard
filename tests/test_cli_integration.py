@@ -72,6 +72,29 @@ class RunScopeVariantMeta:
     slug: str
 
 
+@dataclass(frozen=True)
+class RunDefaultSuccessCaseMeta:
+    """Scenario metadata for default-scope run success tests."""
+
+    command_name: RunCommandName
+    objective: str
+    decisions: str
+    next_step: str
+    resume_commands: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RunDefaultFailureCaseMeta:
+    """Scenario metadata for default-scope run failure tests."""
+
+    command_name: RunCommandName
+    objective: str
+    decisions: str
+    next_step: str
+    first_command: str
+    skipped_command: str
+
+
 RUN_COMMAND_CASES: tuple[RunCommandMeta, ...] = (
     RunCommandMeta(name="resume", slug="resume", case_id="resume", label="resume"),
     RunCommandMeta(name="r", slug="r", case_id="r_alias", label="resume alias"),
@@ -138,8 +161,6 @@ RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
         key=_run_scope_case_branch_sort_key,
     )
 )
-RunDefaultSuccessScenario = tuple[RunCommandName, str, str, str, RunCommands]
-RunDefaultFailureScenario = tuple[RunCommandName, str, str, str, str, str]
 RunBranchSuccessScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, RunCommands]
 RunBranchFailureScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, str, str]
 RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
@@ -176,7 +197,7 @@ def _run_scope_context(
 
 def _build_default_run_success_scenarios(
     cases: Sequence[RunCommandMeta],
-) -> list[RunDefaultSuccessScenario]:
+) -> tuple[RunDefaultSuccessCaseMeta, ...]:
     """Build default-scope run success scenarios from command metadata.
 
     Args:
@@ -185,23 +206,21 @@ def _build_default_run_success_scenarios(
     Returns:
         Parameter entries for default-scope run success tests.
     """
-    scenarios: list[RunDefaultSuccessScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.name,
-                f"{case.label} run success objective",
-                f"Validate {case.label} run success-path behavior",
-                f"run {case.label}",
-                [f"echo {case.slug}-run-one", f"echo {case.slug}-run-two"],
-            ),
+    return tuple(
+        RunDefaultSuccessCaseMeta(
+            command_name=case.name,
+            objective=f"{case.label} run success objective",
+            decisions=f"Validate {case.label} run success-path behavior",
+            next_step=f"run {case.label}",
+            resume_commands=(f"echo {case.slug}-run-one", f"echo {case.slug}-run-two"),
         )
-    return scenarios
+        for case in cases
+    )
 
 
 def _build_default_run_failure_scenarios(
     cases: Sequence[RunCommandMeta],
-) -> list[RunDefaultFailureScenario]:
+) -> tuple[RunDefaultFailureCaseMeta, ...]:
     """Build default-scope run failure scenarios from command metadata.
 
     Args:
@@ -210,19 +229,17 @@ def _build_default_run_failure_scenarios(
     Returns:
         Parameter entries for default-scope run stop-on-failure tests.
     """
-    scenarios: list[RunDefaultFailureScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.name,
-                f"{case.label} run failure objective",
-                f"Validate {case.label} run stop-on-failure behavior",
-                f"run {case.label}",
-                f"echo {case.slug}-first",
-                f"echo {case.slug}-should-not-run",
-            ),
+    return tuple(
+        RunDefaultFailureCaseMeta(
+            command_name=case.name,
+            objective=f"{case.label} run failure objective",
+            decisions=f"Validate {case.label} run stop-on-failure behavior",
+            next_step=f"run {case.label}",
+            first_command=f"echo {case.slug}-first",
+            skipped_command=f"echo {case.slug}-should-not-run",
         )
-    return scenarios
+        for case in cases
+    )
 
 
 def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunBranchSuccessScenario]:
@@ -319,6 +336,14 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
             ),
         )
     return scenarios
+
+
+RUN_DEFAULT_SUCCESS_CASES: tuple[RunDefaultSuccessCaseMeta, ...] = _build_default_run_success_scenarios(
+    RUN_COMMAND_CASES,
+)
+RUN_DEFAULT_FAILURE_CASES: tuple[RunDefaultFailureCaseMeta, ...] = _build_default_run_failure_scenarios(
+    RUN_COMMAND_CASES,
+)
 
 
 def _run_dock(
@@ -2665,57 +2690,48 @@ def test_save_editor_trims_outer_blank_lines(
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
-    _build_default_run_success_scenarios(RUN_COMMAND_CASES),
+    "case",
+    RUN_DEFAULT_SUCCESS_CASES,
     ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_executes_commands_on_success(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    resume_commands: RunCommands,
+    case: RunDefaultSuccessCaseMeta,
 ) -> None:
     """`<command> --run` should execute all recorded commands."""
     _assert_run_executes_commands_on_success(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        resume_commands=resume_commands,
-        run_args=_build_run_args(command_name, git_repo=git_repo),
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        resume_commands=list(case.resume_commands),
+        run_args=_build_run_args(case.command_name, git_repo=git_repo),
         run_cwd=git_repo,
     )
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
-    _build_default_run_failure_scenarios(RUN_COMMAND_CASES),
+    "case",
+    RUN_DEFAULT_FAILURE_CASES,
     ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_stops_on_failure(
     git_repo: Path,
     tmp_path: Path,
-    command_name: RunCommandName,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    first_command: str,
-    skipped_command: str,
+    case: RunDefaultFailureCaseMeta,
 ) -> None:
     """`<command> --run` should stop execution on first failing command."""
     _assert_run_stops_on_first_failure(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        first_command=first_command,
-        skipped_command=skipped_command,
-        run_args=_build_run_args(command_name, git_repo=git_repo),
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        first_command=case.first_command,
+        skipped_command=case.skipped_command,
+        run_args=_build_run_args(case.command_name, git_repo=git_repo),
         run_cwd=git_repo,
     )
 
