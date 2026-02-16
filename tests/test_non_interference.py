@@ -71,6 +71,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     """Resume/ls/search/review read paths must not mutate repository state."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
 
     _run(
         [
@@ -117,6 +118,7 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _run(["python3", "-m", "dockyard", "f", "baseline"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "f", "baseline", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "f", "baseline", "--repo", git_repo.name, "--json"], cwd=tmp_path, env=env)
+    _run(["python3", "-m", "dockyard", "f", "baseline", "--branch", base_branch, "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "f", "baseline", "--tag", "missing-tag"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "search", "baseline", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "review"], cwd=tmp_path, env=env)
