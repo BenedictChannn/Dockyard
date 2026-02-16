@@ -1080,6 +1080,57 @@ def test_undock_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path)
     )
 
 
+def test_resume_run_opt_in_with_branch_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Primary `resume --branch <name> --run` may mutate repository files."""
+    base_branch = _current_branch(git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "resume", "--branch", f"  {base_branch}  ", "--run"],
+        run_cwd=git_repo,
+        marker_name="resume_run_with_branch_opt_in_marker.txt",
+        objective="Resume branch run opt-in mutation baseline",
+        decisions="Verify resume --branch <name> --run may execute mutating commands",
+        next_step="run resume --branch <name> --run",
+    )
+
+
+def test_resume_alias_run_opt_in_with_branch_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `r --branch <name> --run` may mutate repository files."""
+    base_branch = _current_branch(git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "r", "--branch", f"  {base_branch}  ", "--run"],
+        run_cwd=git_repo,
+        marker_name="resume_alias_run_with_branch_opt_in_marker.txt",
+        objective="Resume alias branch run opt-in mutation baseline",
+        decisions="Verify r --branch <name> --run may execute mutating commands",
+        next_step="run r --branch <name> --run",
+    )
+
+
+def test_undock_alias_run_opt_in_with_branch_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `undock --branch <name> --run` may mutate repository files."""
+    base_branch = _current_branch(git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", "undock", "--branch", f"  {base_branch}  ", "--run"],
+        run_cwd=git_repo,
+        marker_name="undock_alias_run_with_branch_opt_in_marker.txt",
+        objective="Undock alias branch run opt-in mutation baseline",
+        decisions="Verify undock --branch <name> --run may execute mutating commands",
+        next_step="run undock --branch <name> --run",
+    )
+
+
 def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
