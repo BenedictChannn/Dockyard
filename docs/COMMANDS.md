@@ -38,6 +38,8 @@ python3 -m dockyard save --no-prompt \
   --next-step "Add migration idempotence test" \
   --risks "Needs schema review" \
   --command "pytest -q"
+python3 -m dockyard s --no-prompt --objective "..." --decisions "..." --next-step "..." --risks "..."
+python3 -m dockyard dock --no-prompt --objective "..." --decisions "..." --next-step "..." --risks "..."
 ```
 
 Template mode:
