@@ -27,6 +27,30 @@ SAVE_COMMAND_CASES: list[SaveCommandCase] = [
 ]
 RESUME_READ_PATH_IDS = ["in_repo_default", "alias_berth", "alias_trimmed_berth", "primary_trimmed_berth"]
 METADATA_SCOPE_IDS = ["in_repo", "root_override"]
+RUN_SCOPE_COMMAND_ORDER = {"resume": 0, "r": 1, "undock": 2}
+
+
+def _run_scope_branch_before_berth_sort_key(case: RunScopeCase) -> tuple[int, int]:
+    """Return sort key that prioritizes branch-only scopes before berth-only.
+
+    Args:
+        case: Run-scope metadata tuple.
+
+    Returns:
+        Tuple sorted by scope family then command ordering.
+    """
+    command_name, include_berth, include_branch, _run_cwd_kind, _scope_id = case
+    if not include_berth and not include_branch:
+        scope_rank = 0
+    elif include_branch and not include_berth:
+        scope_rank = 1
+    elif include_berth and not include_branch:
+        scope_rank = 2
+    else:
+        scope_rank = 3
+    return (scope_rank, RUN_SCOPE_COMMAND_ORDER[command_name])
+
+
 RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
@@ -41,20 +65,10 @@ RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH: list[RunScopeCase] = [
     ("r", True, True, "tmp", "r_berth_branch"),
     ("undock", True, True, "tmp", "undock_berth_branch"),
 ]
-RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: list[RunScopeCase] = [
-    ("resume", False, False, "repo", "resume_default"),
-    ("r", False, False, "repo", "r_default"),
-    ("undock", False, False, "repo", "undock_default"),
-    ("resume", False, True, "repo", "resume_branch"),
-    ("r", False, True, "repo", "r_branch"),
-    ("undock", False, True, "repo", "undock_branch"),
-    ("resume", True, False, "tmp", "resume_berth"),
-    ("r", True, False, "tmp", "r_berth"),
-    ("undock", True, False, "tmp", "undock_berth"),
-    ("resume", True, True, "tmp", "resume_berth_branch"),
-    ("r", True, True, "tmp", "r_berth_branch"),
-    ("undock", True, True, "tmp", "undock_berth_branch"),
-]
+RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: list[RunScopeCase] = sorted(
+    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+    key=_run_scope_branch_before_berth_sort_key,
+)
 RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH]
 RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [case[4] for case in RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH]
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
