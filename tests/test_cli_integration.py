@@ -605,6 +605,42 @@ def test_save_alias_s_template_non_utf8_file_is_actionable(git_repo: Path, tmp_p
     assert "Traceback" not in output
 
 
+def test_save_alias_s_template_directory_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should fail clearly when template path is a directory."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(tmp_path),
+            "--no-prompt",
+            "--objective",
+            "Alias s template directory path",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use a file path for template",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
@@ -832,6 +868,42 @@ def test_save_alias_dock_template_non_utf8_file_is_actionable(
             "should fail before save",
             "--next-step",
             "use a utf-8 encoded template",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Failed to read template:" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_template_directory_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should fail clearly when template path is a directory."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(tmp_path),
+            "--no-prompt",
+            "--objective",
+            "Dock alias template directory path",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use a file path for template",
             "--risks",
             "none",
             "--command",
