@@ -17,7 +17,7 @@ from typing import Literal, TypeVar
 import pytest
 
 RunArgs = list[str]
-RunCommands = list[str]
+RunCommands = Sequence[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
 RunScopeVariantId = Literal["default", "berth", "branch", "berth_branch"]
@@ -2758,7 +2758,7 @@ def test_run_default_scope_executes_commands_on_success(
         objective=case.objective,
         decisions=case.decisions,
         next_step=case.next_step,
-        resume_commands=list(case.resume_commands),
+        resume_commands=case.resume_commands,
         run_args=_build_run_args(case.command_name, git_repo=git_repo),
         run_cwd=git_repo,
     )
@@ -2858,7 +2858,7 @@ def test_run_branch_scopes_execute_commands_on_success(
         objective=case.objective,
         decisions=case.decisions,
         next_step=case.next_step,
-        resume_commands=list(case.resume_commands),
+        resume_commands=case.resume_commands,
     )
 
 
