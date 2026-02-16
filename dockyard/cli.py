@@ -818,17 +818,20 @@ def link_command(
     root: str | None = typer.Option(None, "--root", help="Repository root override."),
 ) -> None:
     """Attach a URL to the current branch context."""
+    cleaned_url = url.strip()
+    if not cleaned_url:
+        raise typer.BadParameter("URL must be a non-empty string.")
     store, _ = _store()
     snapshot = inspect_repository(root_override=root)
     item = LinkItem(
         id=f"lnk_{uuid.uuid4().hex[:10]}",
         repo_id=snapshot.repo_id,
         branch=snapshot.branch,
-        url=url,
+        url=cleaned_url,
         created_at=utc_now_iso(),
     )
     store.add_link(item)
-    console.print(f"[green]Linked[/green] {_safe_text(url)}")
+    console.print(f"[green]Linked[/green] {_safe_preview(cleaned_url, 220, fallback='(unknown)')}")
 
 
 @app.command("links")

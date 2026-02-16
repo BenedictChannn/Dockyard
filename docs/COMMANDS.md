@@ -203,5 +203,8 @@ python3 -m dockyard link https://example.com/pr/123
 python3 -m dockyard links
 ```
 
+Validation:
+- `link` URL must be a non-empty string
+
 `links` output compacts multiline URL/timestamp values to single-line previews
 and uses `(unknown)` fallback text for blank fields.

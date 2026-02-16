@@ -7354,6 +7354,33 @@ def test_link_commands_support_root_override_outside_repo(
     assert "https://example.com/root-override" in listed
 
 
+def test_link_rejects_blank_url(git_repo: Path, tmp_path: Path) -> None:
+    """Link command should reject blank URL values with actionable error."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        ["link", "   "],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "URL must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_link_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path) -> None:
+    """Link success output should compact multiline URL text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_url = "https://example.com/line-one\nline-two"
+    linked = _run_dock(["link", multiline_url], cwd=git_repo, env=env).stdout
+    assert "https://example.com/line-one line-two" in linked
+    assert "https://example.com/line-one\nline-two" not in linked
+
+
 def test_links_output_compacts_multiline_url_text(git_repo: Path, tmp_path: Path) -> None:
     """Links list should compact multiline URL text into one-line previews."""
     env = dict(os.environ)
