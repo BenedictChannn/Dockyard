@@ -2513,10 +2513,22 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
+    (
+        "command_name",
+        "include_berth",
+        "include_branch",
+        "run_cwd_kind",
+        "objective",
+        "decisions",
+        "next_step",
+        "resume_commands",
+    ),
     [
         (
             "resume",
+            False,
+            True,
+            "repo",
             "Resume run branch success objective",
             "Validate branch-scoped run success-path behavior",
             "run resume branch",
@@ -2524,6 +2536,9 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
         ),
         (
             "r",
+            False,
+            True,
+            "repo",
             "Resume alias run branch success objective",
             "Validate alias branch-scoped run success-path behavior",
             "run alias branch",
@@ -2531,42 +2546,19 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
         ),
         (
             "undock",
+            False,
+            True,
+            "repo",
             "Undock alias run branch success objective",
             "Validate undock branch-scoped run success-path behavior",
             "run undock branch",
             ["echo undock-branch-run-one", "echo undock-branch-run-two"],
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_branch_scope_executes_commands_on_success(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    resume_commands: RunCommands,
-) -> None:
-    """`<command> --branch <name> --run` should execute recorded commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        resume_commands=resume_commands,
-        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch),
-        run_cwd=git_repo,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "resume_commands"),
-    [
         (
             "resume",
+            True,
+            True,
+            "tmp",
             "Resume berth+branch run success objective",
             "Validate berth+branch run success-path behavior",
             "run resume berth+branch",
@@ -2574,6 +2566,9 @@ def test_run_branch_scope_executes_commands_on_success(
         ),
         (
             "r",
+            True,
+            True,
+            "tmp",
             "Resume alias berth+branch run success objective",
             "Validate alias berth+branch run success-path behavior",
             "run r berth+branch",
@@ -2581,42 +2576,69 @@ def test_run_branch_scope_executes_commands_on_success(
         ),
         (
             "undock",
+            True,
+            True,
+            "tmp",
             "Undock alias berth+branch run success objective",
             "Validate undock berth+branch run success-path behavior",
             "run undock berth+branch",
             ["echo undock-berth-branch-run-one", "echo undock-berth-branch-run-two"],
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=[
+        "resume_branch",
+        "r_branch",
+        "undock_branch",
+        "resume_berth_branch",
+        "r_berth_branch",
+        "undock_berth_branch",
+    ],
 )
-def test_run_berth_branch_scope_executes_commands_on_success(
+def test_run_branch_scopes_execute_commands_on_success(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     objective: str,
     decisions: str,
     next_step: str,
     resume_commands: RunCommands,
 ) -> None:
-    """`<command> <berth> --branch <name> --run` should execute commands."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_executes_commands_on_success(
+    """Branch-scoped run variants should execute recorded commands."""
+    _assert_run_executes_commands_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
+        command_name=command_name,
+        include_berth=include_berth,
+        include_branch=include_branch,
+        run_cwd_kind=run_cwd_kind,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
         resume_commands=resume_commands,
-        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch, include_berth=True),
-        run_cwd=tmp_path,
     )
 
 
 @pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
+    (
+        "command_name",
+        "include_berth",
+        "include_branch",
+        "run_cwd_kind",
+        "objective",
+        "decisions",
+        "next_step",
+        "first_command",
+        "skipped_command",
+    ),
     [
         (
             "resume",
+            False,
+            True,
+            "repo",
             "Resume run branch failure objective",
             "Validate branch-scoped stop-on-failure behavior",
             "run resume branch",
@@ -2625,6 +2647,9 @@ def test_run_berth_branch_scope_executes_commands_on_success(
         ),
         (
             "r",
+            False,
+            True,
+            "repo",
             "Resume alias run branch failure objective",
             "Validate alias branch-scoped stop-on-failure behavior",
             "run alias branch",
@@ -2633,45 +2658,20 @@ def test_run_berth_branch_scope_executes_commands_on_success(
         ),
         (
             "undock",
+            False,
+            True,
+            "repo",
             "Undock alias run branch failure objective",
             "Validate undock branch-scoped stop-on-failure behavior",
             "run undock branch",
             "echo undock-branch-first",
             "echo undock-branch-should-not-run",
         ),
-    ],
-    ids=["resume", "r_alias", "undock_alias"],
-)
-def test_run_branch_scope_stops_on_failure(
-    git_repo: Path,
-    tmp_path: Path,
-    command_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    first_command: str,
-    skipped_command: str,
-) -> None:
-    """`<command> --branch <name> --run` should stop after first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
-        git_repo=git_repo,
-        tmp_path=tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        first_command=first_command,
-        skipped_command=skipped_command,
-        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch),
-        run_cwd=git_repo,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
-    [
         (
             "resume",
+            True,
+            True,
+            "tmp",
             "Resume berth+branch run failure objective",
             "Validate berth+branch stop-on-failure behavior",
             "run resume berth+branch",
@@ -2680,6 +2680,9 @@ def test_run_branch_scope_stops_on_failure(
         ),
         (
             "r",
+            True,
+            True,
+            "tmp",
             "Resume alias berth+branch run failure objective",
             "Validate alias berth+branch stop-on-failure behavior",
             "run r berth+branch",
@@ -2688,6 +2691,9 @@ def test_run_branch_scope_stops_on_failure(
         ),
         (
             "undock",
+            True,
+            True,
+            "tmp",
             "Undock alias berth+branch run failure objective",
             "Validate undock berth+branch stop-on-failure behavior",
             "run undock berth+branch",
@@ -2695,30 +2701,41 @@ def test_run_branch_scope_stops_on_failure(
             "echo undock-berth-branch-should-not-run",
         ),
     ],
-    ids=["resume", "r_alias", "undock_alias"],
+    ids=[
+        "resume_branch",
+        "r_branch",
+        "undock_branch",
+        "resume_berth_branch",
+        "r_berth_branch",
+        "undock_berth_branch",
+    ],
 )
-def test_run_berth_branch_scope_stops_on_failure(
+def test_run_branch_scopes_stop_on_failure(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
     objective: str,
     decisions: str,
     next_step: str,
     first_command: str,
     skipped_command: str,
 ) -> None:
-    """`<command> <berth> --branch <name> --run` should stop on first failure."""
-    branch = _git_current_branch(git_repo)
-    _assert_run_stops_on_first_failure(
+    """Branch-scoped run variants should stop on first failing command."""
+    _assert_run_stops_on_failure_for_scope(
         git_repo=git_repo,
         tmp_path=tmp_path,
+        command_name=command_name,
+        include_berth=include_berth,
+        include_branch=include_branch,
+        run_cwd_kind=run_cwd_kind,
         objective=objective,
         decisions=decisions,
         next_step=next_step,
         first_command=first_command,
         skipped_command=skipped_command,
-        run_args=_build_run_args(command_name, git_repo=git_repo, branch=branch, include_berth=True),
-        run_cwd=tmp_path,
     )
 
 
@@ -2907,6 +2924,72 @@ def _assert_run_no_commands_noop(
     )
     result = _run_dock(run_args, cwd=run_cwd, env=env)
     assert "-> exit" not in result.stdout
+
+
+def _assert_run_executes_commands_for_scope(
+    *,
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    resume_commands: RunCommands,
+) -> None:
+    """Assert scoped run mode executes recorded commands successfully."""
+    branch = _git_current_branch(git_repo) if include_branch else None
+    _assert_run_executes_commands_on_success(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        resume_commands=resume_commands,
+        run_args=_build_run_args(
+            command_name,
+            git_repo=git_repo,
+            branch=branch,
+            include_berth=include_berth,
+        ),
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+    )
+
+
+def _assert_run_stops_on_failure_for_scope(
+    *,
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    include_berth: bool,
+    include_branch: bool,
+    run_cwd_kind: RunCwdKind,
+    objective: str,
+    decisions: str,
+    next_step: str,
+    first_command: str,
+    skipped_command: str,
+) -> None:
+    """Assert scoped run mode stops on first failing command."""
+    branch = _git_current_branch(git_repo) if include_branch else None
+    _assert_run_stops_on_first_failure(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+        first_command=first_command,
+        skipped_command=skipped_command,
+        run_args=_build_run_args(
+            command_name,
+            git_repo=git_repo,
+            branch=branch,
+            include_berth=include_berth,
+        ),
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+    )
 
 
 def _assert_run_no_commands_noop_for_scope(
