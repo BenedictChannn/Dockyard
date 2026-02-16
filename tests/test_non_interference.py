@@ -342,7 +342,6 @@ def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
 
 def _run_scope_context(
     command_name: RunCommandName,
-    *,
     include_berth: bool,
     include_branch: bool,
 ) -> RunScopeContextMeta:
@@ -375,14 +374,7 @@ def _build_no_command_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run no-op path remains non-mutating",
             next_step=f"run {context.phrase} --run",
         )
-        for case, context in pair_scope_cases_with_context(
-            cases,
-            context_builder=lambda command_name, include_berth, include_branch: _run_scope_context(
-                command_name,
-                include_berth=include_berth,
-                include_branch=include_branch,
-            ),
-        )
+        for case, context in pair_scope_cases_with_context(cases, context_builder=_run_scope_context)
     )
 
 
@@ -409,14 +401,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run may execute mutating commands",
             next_step=f"run {context.phrase} --run",
         )
-        for case, context in pair_scope_cases_with_context(
-            cases,
-            context_builder=lambda command_name, include_berth, include_branch: _run_scope_context(
-                command_name,
-                include_berth=include_berth,
-                include_branch=include_branch,
-            ),
-        )
+        for case, context in pair_scope_cases_with_context(cases, context_builder=_run_scope_context)
     )
 
 
