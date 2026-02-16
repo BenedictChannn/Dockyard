@@ -155,6 +155,23 @@ def test_print_search_handles_non_string_created_at() -> None:
     assert "repo_created_at" in output
 
 
+def test_print_search_uses_unknown_berth_when_identifiers_missing() -> None:
+    """Search renderer should fallback to unknown berth when IDs missing."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "(unknown)" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -203,6 +220,26 @@ def test_print_harbor_falls_back_to_repo_id_without_berth_name() -> None:
     )
     output = console.export_text()
     assert "repo_harbor_fallback" in output
+
+
+def test_print_harbor_uses_unknown_berth_when_identifiers_missing() -> None:
+    """Harbor renderer should fallback to unknown berth when IDs missing."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "(unknown)" in output
 
 
 def test_print_harbor_handles_non_string_updated_at() -> None:
