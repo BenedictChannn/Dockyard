@@ -441,6 +441,36 @@ def _assert_opt_in_run_with_branch_without_commands_keeps_repo_clean(
     )
 
 
+def _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    command_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """Assert `<command> <trimmed_berth> --run` is non-mutating without commands.
+
+    Args:
+        git_repo: Repository path to inspect for mutations.
+        tmp_path: Temporary path used for Dockyard home.
+        command_name: Dockyard command token (resume/r/undock).
+        objective: Checkpoint objective text for setup save.
+        decisions: Checkpoint decisions text for setup save.
+        next_step: Checkpoint next-step text for setup save.
+    """
+    _assert_opt_in_run_without_commands_keeps_repo_clean(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", command_name, f"  {git_repo.name}  ", "--run"],
+        run_cwd=tmp_path,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+    )
+
+
 def _assert_opt_in_run_with_trimmed_berth_and_branch_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
@@ -1311,11 +1341,10 @@ def test_resume_run_with_trimmed_berth_without_commands_keeps_repo_clean(
     tmp_path: Path,
 ) -> None:
     """`resume <berth> --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
+    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "resume", f"  {git_repo.name}  ", "--run"],
-        run_cwd=tmp_path,
+        command_name="resume",
         objective="Resume berth run no-commands baseline",
         decisions="Verify resume <berth> --run no-op path remains non-mutating",
         next_step="run resume <berth> --run",
@@ -1327,11 +1356,10 @@ def test_resume_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
     tmp_path: Path,
 ) -> None:
     """`r <berth> --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
+    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "r", f"  {git_repo.name}  ", "--run"],
-        run_cwd=tmp_path,
+        command_name="r",
         objective="Resume alias berth run no-commands baseline",
         decisions="Verify r <berth> --run no-op path remains non-mutating",
         next_step="run r <berth> --run",
@@ -1343,11 +1371,10 @@ def test_undock_alias_run_with_trimmed_berth_without_commands_keeps_repo_clean(
     tmp_path: Path,
 ) -> None:
     """`undock <berth> --run` with no commands must not mutate repository."""
-    _assert_opt_in_run_without_commands_keeps_repo_clean(
+    _assert_opt_in_run_with_trimmed_berth_without_commands_keeps_repo_clean(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "undock", f"  {git_repo.name}  ", "--run"],
-        run_cwd=tmp_path,
+        command_name="undock",
         objective="Undock alias berth run no-commands baseline",
         decisions="Verify undock <berth> --run no-op path remains non-mutating",
         next_step="run undock <berth> --run",
