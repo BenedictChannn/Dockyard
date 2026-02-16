@@ -18,7 +18,17 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
-RunScopeCase = tuple[RunCommandName, bool, bool, RunCwdKind, str]
+
+
+@dataclass(frozen=True)
+class RunScopeCaseMeta:
+    """Metadata describing a command scoped run scenario."""
+
+    command_name: RunCommandName
+    include_berth: bool
+    include_branch: bool
+    run_cwd_kind: RunCwdKind
+    case_id: str
 @dataclass(frozen=True)
 class RunCommandMeta:
     """Metadata describing a run-enabled command token."""
@@ -65,18 +75,20 @@ RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (variant.include_berth, variant.include_branch): variant.slug
     for variant in RUN_SCOPE_VARIANTS
 }
-RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(
-    (
-        command_name,
-        variant.include_berth,
-        variant.include_branch,
-        variant.run_cwd_kind,
-        f"{command_name}_{variant.variant_id}",
+RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
+    RunScopeCaseMeta(
+        command_name=command_name,
+        include_berth=variant.include_berth,
+        include_branch=variant.include_branch,
+        run_cwd_kind=variant.run_cwd_kind,
+        case_id=f"{command_name}_{variant.variant_id}",
     )
     for variant in RUN_SCOPE_VARIANTS
     for command_name in RUN_SCOPE_COMMANDS
 )
-RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(case for case in RUN_SCOPE_CASES if case[2])
+RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
+    case for case in RUN_SCOPE_CASES if case.include_branch
+)
 RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
 RunDefaultFailureScenario = tuple[str, str, str, str, str, str]
 RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
@@ -84,9 +96,9 @@ RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 
 
-def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
+def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:
     """Return pytest ID labels derived from run-scope case metadata."""
-    return tuple(case[4] for case in cases)
+    return tuple(case.case_id for case in cases)
 
 
 RUN_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES)
@@ -154,7 +166,7 @@ def _build_default_run_failure_scenarios(
     return scenarios
 
 
-def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCase]) -> list[RunBranchSuccessScenario]:
+def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunBranchSuccessScenario]:
     """Build branch-targeted run success scenarios from shared scope metadata.
 
     Args:
@@ -164,26 +176,29 @@ def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCase]) -> list[R
         Parameter tuples for branch-scope run-success tests.
     """
     scenarios: list[RunBranchSuccessScenario] = []
-    for command_name, include_berth, include_branch, run_cwd_kind, _scope_id in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
-        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
-        scope_slug = _run_scope_slug(include_berth, include_branch)
+    for case in cases:
+        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
+        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
+        scope_slug = _run_scope_slug(case.include_berth, case.include_branch)
         scenarios.append(
             (
-                command_name,
-                include_berth,
-                include_branch,
-                run_cwd_kind,
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+                case.run_cwd_kind,
                 f"{command_label} {scope_descriptor} run success objective",
                 f"Validate {command_label} {scope_descriptor} run success-path behavior",
                 f"run {command_label} {scope_descriptor}",
-                [f"echo {command_name}-{scope_slug}-run-one", f"echo {command_name}-{scope_slug}-run-two"],
+                [
+                    f"echo {case.command_name}-{scope_slug}-run-one",
+                    f"echo {case.command_name}-{scope_slug}-run-two",
+                ],
             ),
         )
     return scenarios
 
 
-def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCase]) -> list[RunBranchFailureScenario]:
+def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunBranchFailureScenario]:
     """Build branch-targeted run failure scenarios from shared scope metadata.
 
     Args:
@@ -193,27 +208,27 @@ def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCase]) -> list[R
         Parameter tuples for branch-scope stop-on-failure tests.
     """
     scenarios: list[RunBranchFailureScenario] = []
-    for command_name, include_berth, include_branch, run_cwd_kind, _scope_id in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
-        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
-        scope_slug = _run_scope_slug(include_berth, include_branch)
+    for case in cases:
+        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
+        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
+        scope_slug = _run_scope_slug(case.include_berth, case.include_branch)
         scenarios.append(
             (
-                command_name,
-                include_berth,
-                include_branch,
-                run_cwd_kind,
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+                case.run_cwd_kind,
                 f"{command_label} {scope_descriptor} run failure objective",
                 f"Validate {command_label} {scope_descriptor} stop-on-failure behavior",
                 f"run {command_label} {scope_descriptor}",
-                f"echo {command_name}-{scope_slug}-first",
-                f"echo {command_name}-{scope_slug}-should-not-run",
+                f"echo {case.command_name}-{scope_slug}-first",
+                f"echo {case.command_name}-{scope_slug}-should-not-run",
             ),
         )
     return scenarios
 
 
-def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
+def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunNoCommandScenario]:
     """Build no-command run scenarios from shared scope metadata.
 
     Args:
@@ -223,15 +238,15 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list
         Parameter tuples for no-command run-path tests.
     """
     scenarios: list[RunNoCommandScenario] = []
-    for command_name, include_berth, include_branch, run_cwd_kind, _scope_id in cases:
-        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
-        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
+    for case in cases:
+        command_label = RUN_SCOPE_COMMAND_LABELS[case.command_name]
+        scope_descriptor = _run_scope_descriptor(case.include_berth, case.include_branch)
         scenarios.append(
             (
-                command_name,
-                include_berth,
-                include_branch,
-                run_cwd_kind,
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+                case.run_cwd_kind,
                 f"No command {command_label} {scope_descriptor} run",
                 f"Ensure {command_label} {scope_descriptor} run path handles empty command list",
                 f"run {command_label} {scope_descriptor} with run",
