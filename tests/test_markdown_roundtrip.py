@@ -226,3 +226,39 @@ None
         "Add integration coverage",
         "Tighten parser behavior",
     ]
+
+
+def test_markdown_parser_accepts_parenthesized_numbered_next_steps() -> None:
+    """Parser should support numbered next-step markers using `1)` format."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1) First parenthesized step
+2) Second parenthesized step
+## Risks/Review Needed
+None
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["next_steps"] == [
+        "First parenthesized step",
+        "Second parenthesized step",
+    ]
