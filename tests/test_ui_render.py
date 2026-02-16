@@ -463,3 +463,25 @@ def test_print_harbor_next_step_preview_is_single_line() -> None:
     )
     output = console.export_text()
     assert "line1 line2 line3" in output
+
+
+def test_print_harbor_next_step_preview_is_bounded() -> None:
+    """Harbor renderer should bound next-step preview length."""
+    long_step = "x" * 120
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-next-step-long",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [long_step],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "x" * 70 not in output
