@@ -234,6 +234,23 @@ def _run_scope_context(
     )
 
 
+def _run_scope_cases_with_context(
+    cases: Sequence[RunScopeCaseMeta],
+) -> tuple[tuple[RunScopeCaseMeta, RunScopeContextMeta], ...]:
+    """Pair each run-scope case with its rendered context metadata."""
+    return tuple(
+        (
+            case,
+            _run_scope_context(
+                case.command_name,
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
+            ),
+        )
+        for case in cases
+    )
+
+
 def _build_default_run_success_scenarios(
     cases: Sequence[RunCommandMeta],
 ) -> tuple[RunDefaultSuccessCaseMeta, ...]:
@@ -306,14 +323,7 @@ def _build_branch_run_success_scenarios(
                 f"echo {case.command_name}-{context.scope_slug}-run-two",
             ),
         )
-        for case in cases
-        for context in (
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
+        for case, context in _run_scope_cases_with_context(cases)
     )
 
 
@@ -340,14 +350,7 @@ def _build_branch_run_failure_scenarios(
             first_command=f"echo {case.command_name}-{context.scope_slug}-first",
             skipped_command=f"echo {case.command_name}-{context.scope_slug}-should-not-run",
         )
-        for case in cases
-        for context in (
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
+        for case, context in _run_scope_cases_with_context(cases)
     )
 
 
@@ -370,14 +373,7 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
             decisions=f"Ensure {context.phrase} run path handles empty command list",
             next_step=f"run {context.phrase} with run",
         )
-        for case in cases
-        for context in (
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
+        for case, context in _run_scope_cases_with_context(cases)
     )
 
 
