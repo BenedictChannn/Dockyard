@@ -90,6 +90,18 @@ def test_print_resume_shows_placeholder_when_next_steps_empty() -> None:
     assert "(none recorded)" in output
 
 
+def test_print_resume_normalizes_multiline_summary_fields() -> None:
+    """Resume summary should compact objective and next steps to one line."""
+    checkpoint = _checkpoint()
+    checkpoint.objective = "Objective line 1\nObjective line 2"
+    checkpoint.next_steps = ["Step line 1\nStep line 2"]
+    console = Console(record=True, width=120)
+    print_resume(console, checkpoint, open_reviews=0, project_name="repo-ui")
+    output = console.export_text()
+    assert "Objective: Objective line 1 Objective line 2" in output
+    assert "1. Step line 1 Step line 2" in output
+
+
 def test_print_search_empty_state_message() -> None:
     """Empty search result rendering should show informative message."""
     console = Console(record=True, width=120)

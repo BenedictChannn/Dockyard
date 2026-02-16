@@ -97,6 +97,8 @@ Useful flags:
 - `--handoff` print agent-ready block
 - `--run` run recorded commands in sequence (stop on first failure)
 - `--json` structured output
+- Resume summary lines compact multiline objective/next-step text into single
+  line previews for faster scanning.
 
 ### 3) Harbor dashboard across projects
 

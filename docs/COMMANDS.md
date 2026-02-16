@@ -79,6 +79,11 @@ python3 -m dockyard resume [BERTH]
 - `--handoff` print agent-ready context block
 - `--json` structured output
 
+Notes:
+- Resume summary compacts multiline objective and next-step values into
+  single-line previews.
+- If a checkpoint has no next steps, resume summary shows `(none recorded)`.
+
 ## `ls` (`harbor`)
 
 Harbor dashboard listing slips across berths.

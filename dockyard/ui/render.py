@@ -77,12 +77,15 @@ def print_resume(
     summary_lines = [
         f"Project/Branch: {project_name} / {checkpoint.branch}",
         f"Last Checkpoint: {checkpoint.created_at} ({format_age(checkpoint.created_at)} ago)",
-        f"Objective: {checkpoint.objective}",
+        f"Objective: {_preview_text(checkpoint.objective, 200)}",
         "Next Steps:",
     ]
     if checkpoint.next_steps:
         summary_lines.extend(
-            [f"  {index + 1}. {step}" for index, step in enumerate(checkpoint.next_steps)]
+            [
+                f"  {index + 1}. {_preview_text(step, 200)}"
+                for index, step in enumerate(checkpoint.next_steps)
+            ]
         )
     else:
         summary_lines.append("  (none recorded)")
