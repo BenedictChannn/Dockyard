@@ -39,8 +39,10 @@ RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandCase, ...] = (
 )
 RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_SCOPE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
-RUN_SCOPE_COMMAND_LABELS = {command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES}
-RUN_SCOPE_DESCRIPTOR_BY_FLAGS = {
+RUN_SCOPE_COMMAND_LABELS: dict[str, str] = {
+    command_name: label for command_name, label in RUN_SCOPE_COMMAND_CASES
+}
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
     (False, False): "default",
     (True, False): "berth",
     (False, True): "branch",
