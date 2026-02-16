@@ -17,6 +17,20 @@ RunCommand = list[str]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
+RUN_SCOPE_IDS = [
+    "resume_default",
+    "r_default",
+    "undock_default",
+    "resume_branch",
+    "r_branch",
+    "undock_branch",
+    "resume_berth",
+    "r_berth",
+    "undock_berth",
+    "resume_berth_branch",
+    "r_berth_branch",
+    "undock_berth_branch",
+]
 
 
 def _run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
@@ -1242,20 +1256,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
             "run undock <berth> --branch <name> --run",
         ),
     ],
-    ids=[
-        "resume_default",
-        "r_default",
-        "undock_default",
-        "resume_berth",
-        "r_berth",
-        "undock_berth",
-        "resume_branch",
-        "r_branch",
-        "undock_branch",
-        "resume_berth_branch",
-        "r_berth_branch",
-        "undock_berth_branch",
-    ],
+    ids=RUN_SCOPE_IDS,
 )
 def test_run_scopes_without_commands_keep_repo_clean(
     git_repo: Path,
@@ -1415,20 +1416,7 @@ def test_run_scopes_without_commands_keep_repo_clean(
             "run undock <berth> --branch <branch> --run",
         ),
     ],
-    ids=[
-        "resume_default",
-        "r_default",
-        "undock_default",
-        "resume_branch",
-        "r_branch",
-        "undock_branch",
-        "resume_berth",
-        "r_berth",
-        "undock_berth",
-        "resume_berth_branch",
-        "r_berth_branch",
-        "undock_berth_branch",
-    ],
+    ids=RUN_SCOPE_IDS,
 )
 def test_run_scopes_opt_in_can_modify_repo(
     git_repo: Path,
