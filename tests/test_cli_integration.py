@@ -23,7 +23,7 @@ RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("r", "r", "r_alias"),
     ("undock", "undock", "undock_alias"),
 )
-RUN_COMMAND_IDS = [case[2] for case in RUN_COMMAND_CASES]
+RUN_COMMAND_IDS = tuple(case[2] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = (
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
@@ -46,9 +46,9 @@ RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 
 
-def _scope_ids(cases: Sequence[RunScopeCase]) -> list[str]:
+def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
     """Return pytest ID labels derived from run-scope case metadata."""
-    return [case[4] for case in cases]
+    return tuple(case[4] for case in cases)
 
 
 RUN_SCOPE_IDS = _scope_ids(RUN_SCOPE_CASES)
