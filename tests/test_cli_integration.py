@@ -4697,6 +4697,9 @@ def test_ls_stale_handles_naive_updated_timestamp(git_repo: Path, tmp_path: Path
     rows = json.loads(_run_dock(["ls", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert rows[0]["branch"] == branch
+    harbor_rows = json.loads(_run_dock(["harbor", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(harbor_rows) == 1
+    assert harbor_rows[0]["branch"] == branch
 
 
 def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
