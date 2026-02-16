@@ -13,11 +13,12 @@ from typing import Literal
 import pytest
 
 RunArgs = list[str]
+RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 
 
 def _run_dock(
-    args: list[str],
+    args: RunArgs,
     cwd: Path,
     env: dict[str, str],
     expect_code: int = 0,
@@ -2393,7 +2394,7 @@ def test_run_default_scope_executes_commands_on_success(
     objective: str,
     decisions: str,
     next_step: str,
-    resume_commands: list[str],
+    resume_commands: RunCommands,
 ) -> None:
     """`<command> --run` should execute all recorded commands."""
     _assert_run_executes_commands_on_success(
@@ -2545,7 +2546,7 @@ def test_run_branch_scope_executes_commands_on_success(
     objective: str,
     decisions: str,
     next_step: str,
-    resume_commands: list[str],
+    resume_commands: RunCommands,
 ) -> None:
     """`<command> --branch <name> --run` should execute recorded commands."""
     branch = _git_current_branch(git_repo)
@@ -2595,7 +2596,7 @@ def test_run_berth_branch_scope_executes_commands_on_success(
     objective: str,
     decisions: str,
     next_step: str,
-    resume_commands: list[str],
+    resume_commands: RunCommands,
 ) -> None:
     """`<command> <berth> --branch <name> --run` should execute commands."""
     branch = _git_current_branch(git_repo)
@@ -2781,7 +2782,7 @@ def _seed_checkpoint_for_run(
     objective: str,
     decisions: str,
     next_step: str,
-    resume_commands: list[str],
+    resume_commands: RunCommands,
 ) -> dict[str, str]:
     """Save a checkpoint with optional resume commands.
 
@@ -2840,7 +2841,7 @@ def _assert_run_executes_commands_on_success(
     objective: str,
     decisions: str,
     next_step: str,
-    resume_commands: list[str],
+    resume_commands: RunCommands,
     run_args: RunArgs,
     run_cwd: Path,
 ) -> None:
