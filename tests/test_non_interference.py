@@ -17,7 +17,22 @@ RunCommand = list[str]
 MetadataCommandBuilder = Callable[[Path, str], CommandMatrix]
 ReviewAddCommandBuilder = Callable[[Path, str], list[str]]
 RunCwdKind = Literal["repo", "tmp"]
-RUN_SCOPE_IDS = [
+SAVE_COMMAND_IDS = ["save", "s_alias", "dock_alias"]
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = [
+    "resume_default",
+    "r_default",
+    "undock_default",
+    "resume_berth",
+    "r_berth",
+    "undock_berth",
+    "resume_branch",
+    "r_branch",
+    "undock_branch",
+    "resume_berth_branch",
+    "r_berth_branch",
+    "undock_berth_branch",
+]
+RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = [
     "resume_default",
     "r_default",
     "undock_default",
@@ -638,7 +653,7 @@ def _build_review_add_command_root_override(git_repo: Path, base_branch: str) ->
             "echo build",
         ),
     ],
-    ids=["save", "s_alias", "dock_alias"],
+    ids=SAVE_COMMAND_IDS,
 )
 def test_save_no_prompt_flows_do_not_modify_repo(
     git_repo: Path,
@@ -1030,7 +1045,7 @@ def test_review_and_link_commands_do_not_modify_repo(
             "Alias dock editor non-interference objective",
         ),
     ],
-    ids=["save", "s_alias", "dock_alias"],
+    ids=SAVE_COMMAND_IDS,
 )
 def test_save_editor_flows_do_not_modify_repo(
     git_repo: Path,
@@ -1091,7 +1106,7 @@ def test_save_editor_flows_do_not_modify_repo(
         ("s", "save_alias_s_template.json", "Template alias s non-interference objective"),
         ("dock", "save_alias_dock_template.json", "Template alias dock non-interference objective"),
     ],
-    ids=["save", "s_alias", "dock_alias"],
+    ids=SAVE_COMMAND_IDS,
 )
 def test_save_template_flows_do_not_modify_repo(
     git_repo: Path,
@@ -1256,7 +1271,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
             "run undock <berth> --branch <name> --run",
         ),
     ],
-    ids=RUN_SCOPE_IDS,
+    ids=RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH,
 )
 def test_run_scopes_without_commands_keep_repo_clean(
     git_repo: Path,
@@ -1416,7 +1431,7 @@ def test_run_scopes_without_commands_keep_repo_clean(
             "run undock <berth> --branch <branch> --run",
         ),
     ],
-    ids=RUN_SCOPE_IDS,
+    ids=RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH,
 )
 def test_run_scopes_opt_in_can_modify_repo(
     git_repo: Path,
