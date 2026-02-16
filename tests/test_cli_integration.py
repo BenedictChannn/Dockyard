@@ -3851,6 +3851,55 @@ def test_undock_alias_run_stops_on_failure(
     assert "$ echo undock-should-not-run -> exit" not in output
 
 
+def test_undock_alias_supports_handoff_and_json_for_explicit_berth(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Undock alias should mirror resume handoff/json berth lookup behavior."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Undock handoff/json objective",
+            "--decisions",
+            "Validate undock alias parity for handoff and json output",
+            "--next-step",
+            "Run undock alias outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo undock",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    handoff = _run_dock(["undock", f"  {git_repo.name}  ", "--handoff"], cwd=tmp_path, env=env).stdout
+    assert "Undock handoff/json objective" in handoff
+    assert "### Dockyard Handoff" in handoff
+
+    payload = json.loads(
+        _run_dock(["undock", f"  {git_repo.name}  ", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert payload["project_name"] == git_repo.name
+    assert payload["objective"] == "Undock handoff/json objective"
+
+
 def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path) -> None:
     """Auto-created review should link back to associated checkpoint details."""
     env = dict(os.environ)
