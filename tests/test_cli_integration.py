@@ -47,6 +47,16 @@ RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
 
 
+def _scope_label(scope_id: str) -> str:
+    """Return human-readable scope label derived from scope ID."""
+    return scope_id.replace("_", " ")
+
+
+def _scope_command_label(scope_id: str) -> str:
+    """Return command-friendly label derived from scope ID."""
+    return scope_id.replace("_", "-")
+
+
 def _build_default_run_success_scenarios(cases: list[RunCommandCase]) -> list[RunDefaultSuccessScenario]:
     """Build default-scope run success scenarios from command metadata.
 
@@ -105,8 +115,8 @@ def _build_branch_run_success_scenarios(cases: list[RunScopeCase]) -> list[RunBr
     """
     scenarios: list[RunBranchSuccessScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = scope_id.replace("_", " ")
-        command_label = scope_id.replace("_", "-")
+        scope_label = _scope_label(scope_id)
+        command_label = _scope_command_label(scope_id)
         scenarios.append(
             (
                 command_name,
@@ -133,8 +143,8 @@ def _build_branch_run_failure_scenarios(cases: list[RunScopeCase]) -> list[RunBr
     """
     scenarios: list[RunBranchFailureScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = scope_id.replace("_", " ")
-        command_label = scope_id.replace("_", "-")
+        scope_label = _scope_label(scope_id)
+        command_label = _scope_command_label(scope_id)
         scenarios.append(
             (
                 command_name,
@@ -162,7 +172,7 @@ def _build_no_command_run_scope_scenarios(cases: list[RunScopeCase]) -> list[Run
     """
     scenarios: list[RunNoCommandScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = scope_id.replace("_", " ")
+        scope_label = _scope_label(scope_id)
         scenarios.append(
             (
                 command_name,
