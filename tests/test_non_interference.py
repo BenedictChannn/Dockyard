@@ -333,6 +333,39 @@ def _assert_opt_in_run_with_trimmed_berth_mutates_repo(
     )
 
 
+def _assert_opt_in_run_default_scope_mutates_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    *,
+    command_name: str,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """Assert `<command> --run` mutates repository in current repo scope.
+
+    Args:
+        git_repo: Repository path where mutation should occur.
+        tmp_path: Temporary path used for Dockyard home.
+        command_name: Dockyard command token (resume/r/undock).
+        marker_name: Marker filename expected in git status after run.
+        objective: Checkpoint objective text for setup save.
+        decisions: Checkpoint decisions text for setup save.
+        next_step: Checkpoint next-step text for setup save.
+    """
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=["python3", "-m", "dockyard", command_name, "--run"],
+        run_cwd=git_repo,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
+    )
+
+
 def _assert_opt_in_run_without_commands_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
@@ -1413,11 +1446,10 @@ def test_undock_alias_run_with_trimmed_berth_and_branch_without_commands_keeps_r
 
 def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run is explicit opt-in and may mutate repository files."""
-    _assert_opt_in_run_mutates_repo(
+    _assert_opt_in_run_default_scope_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "resume", "--run"],
-        run_cwd=git_repo,
+        command_name="resume",
         marker_name="resume_run_opt_in_marker.txt",
         objective="Resume run opt-in mutation baseline",
         decisions="Verify explicit --run path may execute mutating commands",
@@ -1427,11 +1459,10 @@ def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> No
 
 def test_resume_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `r --run` is explicit opt-in and may mutate repository files."""
-    _assert_opt_in_run_mutates_repo(
+    _assert_opt_in_run_default_scope_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "r", "--run"],
-        run_cwd=git_repo,
+        command_name="r",
         marker_name="resume_alias_run_opt_in_marker.txt",
         objective="Resume alias run opt-in mutation baseline",
         decisions="Verify r --run may execute mutating commands",
@@ -1441,11 +1472,10 @@ def test_resume_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path)
 
 def test_undock_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Alias `undock --run` is explicit opt-in and may mutate repository files."""
-    _assert_opt_in_run_mutates_repo(
+    _assert_opt_in_run_default_scope_mutates_repo(
         git_repo,
         tmp_path,
-        run_command=["python3", "-m", "dockyard", "undock", "--run"],
-        run_cwd=git_repo,
+        command_name="undock",
         marker_name="undock_alias_run_opt_in_marker.txt",
         objective="Undock alias run opt-in mutation baseline",
         decisions="Verify undock --run may execute mutating commands",
