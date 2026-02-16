@@ -89,11 +89,11 @@ RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     case for case in RUN_SCOPE_CASES if case.include_branch
 )
-RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
-RunDefaultFailureScenario = tuple[str, str, str, str, str, str]
-RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
-RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str, str]
-RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
+RunDefaultSuccessScenario = tuple[RunCommandName, str, str, str, RunCommands]
+RunDefaultFailureScenario = tuple[RunCommandName, str, str, str, str, str]
+RunBranchSuccessScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, RunCommands]
+RunBranchFailureScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, str, str]
+RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
 
 
 def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:

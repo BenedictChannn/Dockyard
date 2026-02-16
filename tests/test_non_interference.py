@@ -153,8 +153,8 @@ RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH: tuple[RunScopeCaseMeta, ...] = tuple(
         key=_run_scope_branch_before_berth_sort_key,
     ),
 )
-RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
-RunOptInMutationScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str]
+RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
+RunOptInMutationScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str, str]
 SaveNoPromptScenario = tuple[SaveCommandName, str, str, str, str, str, str]
 SaveEditorScenario = tuple[SaveCommandName, str, str, str]
 SaveTemplateScenario = tuple[SaveCommandName, str, str]
