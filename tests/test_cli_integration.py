@@ -26,7 +26,7 @@ RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
 )
 RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
-RUN_SCOPE_COMMAND_LABELS = {"resume": "resume", "r": "resume alias", "undock": "undock alias"}
+RUN_SCOPE_COMMAND_LABELS = {command_name: label for command_name, _slug, _case_id, label in RUN_COMMAND_CASES}
 RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
     ("default", False, False, "repo"),
     ("berth", True, False, "tmp"),
