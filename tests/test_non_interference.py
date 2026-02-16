@@ -1184,6 +1184,28 @@ def test_build_review_add_command_includes_optional_scope_args() -> None:
     ]
 
 
+def test_build_review_add_command_supports_partial_optional_scope_args() -> None:
+    """Review-add builder should include only provided optional arguments."""
+    command = _build_review_add_command(
+        reason="manual-partial",
+        repo="demo-repo",
+    )
+
+    assert command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "review",
+        "add",
+        "--reason",
+        "manual-partial",
+        "--severity",
+        "low",
+        "--repo",
+        "demo-repo",
+    ]
+
+
 def test_build_review_add_command_in_repo_delegates_to_helper() -> None:
     """In-repo review-add wrapper should delegate to generic helper defaults."""
     assert _build_review_add_command_in_repo(Path("/tmp/demo-repo"), "main") == _build_review_add_command(
