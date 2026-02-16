@@ -2734,6 +2734,249 @@ def test_undock_alias_run_with_no_commands_is_noop_success(
     assert "-> exit" not in result.stdout
 
 
+def test_resume_run_with_berth_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`resume <berth> --run` should no-op when no commands are recorded."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume berth run",
+            "--decisions",
+            "Ensure berth run path handles empty command list",
+            "--next-step",
+            "run resume berth with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume", f"  {git_repo.name}  ", "--run"], cwd=tmp_path, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_resume_alias_run_with_berth_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`r <berth> --run` should no-op when no commands are recorded."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume alias berth run",
+            "--decisions",
+            "Ensure alias berth run path handles empty command list",
+            "--next-step",
+            "run r berth with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["r", f"  {git_repo.name}  ", "--run"], cwd=tmp_path, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_undock_alias_run_with_berth_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`undock <berth> --run` should no-op when no commands are recorded."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command undock alias berth run",
+            "--decisions",
+            "Ensure undock berth run path handles empty command list",
+            "--next-step",
+            "run undock berth with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["undock", f"  {git_repo.name}  ", "--run"], cwd=tmp_path, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_resume_run_with_branch_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`resume --branch <name> --run` should no-op with empty commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume branch run",
+            "--decisions",
+            "Ensure branch run path handles empty command list",
+            "--next-step",
+            "run resume branch with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["resume", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_resume_alias_run_with_branch_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`r --branch <name> --run` should no-op with empty commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command resume alias branch run",
+            "--decisions",
+            "Ensure alias branch run path handles empty command list",
+            "--next-step",
+            "run r branch with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["r", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env)
+    assert "-> exit" not in result.stdout
+
+
+def test_undock_alias_run_with_branch_no_commands_is_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """`undock --branch <name> --run` should no-op with empty commands."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "No command undock alias branch run",
+            "--decisions",
+            "Ensure undock branch run path handles empty command list",
+            "--next-step",
+            "run undock branch with run",
+            "--risks",
+            "none",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(["undock", "--branch", f"  {branch}  ", "--run"], cwd=git_repo, env=env)
+    assert "-> exit" not in result.stdout
+
+
 def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) -> None:
     """Resume --run should ignore blank command entries after coercion."""
     env = dict(os.environ)
