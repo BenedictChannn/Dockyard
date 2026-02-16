@@ -518,6 +518,48 @@ def test_print_harbor_strips_unknown_status_whitespace() -> None:
     assert "  paused  " not in output
 
 
+def test_print_harbor_compacts_multiline_unknown_status_text() -> None:
+    """Unknown status text should be compacted to a single line."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-status",
+                "branch": "main",
+                "status": "paused\nreview",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "paused review" in output
+
+
+def test_print_harbor_falls_back_to_unknown_for_none_status() -> None:
+    """Missing status value should render as unknown text."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-status",
+                "branch": "main",
+                "status": None,
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "unknown" in output
+
+
 def test_print_harbor_falls_back_to_repo_id_without_berth_name() -> None:
     """Harbor renderer should fallback to repo_id when berth name missing."""
     console = Console(record=True, width=120)

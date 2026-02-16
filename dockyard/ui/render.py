@@ -49,7 +49,7 @@ def _coerce_text_items(value: Any) -> list[str]:
 
 def _render_status_badge(status: Any) -> str:
     """Render compact status badge with resilient normalization."""
-    raw = str(status).strip() if status is not None else ""
+    raw = _preview_text(status, 40)
     normalized = raw.lower()
     badge_map = {
         "green": "[green]G[/green]",
