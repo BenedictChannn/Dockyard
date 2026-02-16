@@ -353,6 +353,23 @@ def _run_scope_context(
     )
 
 
+def _run_scope_cases_with_context(
+    cases: Sequence[RunScopeCaseMeta],
+) -> tuple[tuple[RunScopeCaseMeta, RunScopeContextMeta], ...]:
+    """Pair each run-scope case with its rendered context metadata."""
+    return tuple(
+        (
+            case,
+            _run_scope_context(
+                case.command_name,
+                include_berth=case.include_berth,
+                include_branch=case.include_branch,
+            ),
+        )
+        for case in cases
+    )
+
+
 def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
     """Return pytest ID labels derived from metadata collection."""
     return tuple(get_id(case) for case in cases)
@@ -383,14 +400,7 @@ def _build_no_command_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run no-op path remains non-mutating",
             next_step=f"run {context.phrase} --run",
         )
-        for case in cases
-        for context in (
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
+        for case, context in _run_scope_cases_with_context(cases)
     )
 
 
@@ -417,14 +427,7 @@ def _build_opt_in_mutation_run_scope_scenarios(
             decisions=f"Verify {context.phrase} --run may execute mutating commands",
             next_step=f"run {context.phrase} --run",
         )
-        for case in cases
-        for context in (
-            _run_scope_context(
-                case.command_name,
-                include_berth=case.include_berth,
-                include_branch=case.include_branch,
-            ),
-        )
+        for case, context in _run_scope_cases_with_context(cases)
     )
 
 
