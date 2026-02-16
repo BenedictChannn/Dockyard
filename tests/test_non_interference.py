@@ -988,143 +988,60 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Editor-assisted save flow should not alter project working tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    _configure_editor(
-        env=env,
-        tmp_path=tmp_path,
-        script_name="editor.sh",
-        decisions_text="Editor decisions for non-interference",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
+@pytest.mark.parametrize(
+    ("command_name", "script_name", "decisions_text", "objective"),
+    [
+        (
             "save",
-            "--root",
-            str(git_repo),
-            "--editor",
-            "--no-prompt",
-            "--objective",
+            "editor.sh",
+            "Editor decisions for non-interference",
             "Editor non-interference objective",
-            "--next-step",
-            "run resume",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
-def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Template-driven save flow should not alter project working tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    template_path = tmp_path / "save_template.json"
-    _write_non_interference_template(
-        template_path=template_path,
-        objective="Template non-interference objective",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "save",
-            "--root",
-            str(git_repo),
-            "--template",
-            str(template_path),
-            "--no-prompt",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
-def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `s` template save flow should not alter project tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    template_path = tmp_path / "save_alias_s_template.json"
-    _write_non_interference_template(
-        template_path=template_path,
-        objective="Template alias s non-interference objective",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
+        ),
+        (
             "s",
-            "--root",
-            str(git_repo),
-            "--template",
-            str(template_path),
-            "--no-prompt",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
-def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `s` editor save flow should not alter project tree/index."""
+            "alias_s_editor.sh",
+            "Alias s editor decisions for non-interference",
+            "Alias s editor non-interference objective",
+        ),
+        (
+            "dock",
+            "alias_dock_editor.sh",
+            "Alias dock editor decisions for non-interference",
+            "Alias dock editor non-interference objective",
+        ),
+    ],
+    ids=["save", "s_alias", "dock_alias"],
+)
+def test_save_editor_flows_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    script_name: str,
+    decisions_text: str,
+    objective: str,
+) -> None:
+    """Save/editor flows should not alter project working tree/index."""
     env = _dockyard_env(tmp_path)
-
     _configure_editor(
         env=env,
         tmp_path=tmp_path,
-        script_name="alias_s_editor.sh",
-        decisions_text="Alias s editor decisions for non-interference",
+        script_name=script_name,
+        decisions_text=decisions_text,
     )
 
     _assert_repo_clean(git_repo)
-
     _run(
         [
             "python3",
             "-m",
             "dockyard",
-            "s",
+            command_name,
             "--root",
             str(git_repo),
             "--editor",
             "--no-prompt",
             "--objective",
-            "Alias s editor non-interference objective",
+            objective,
             "--next-step",
             "run resume",
             "--risks",
@@ -1144,7 +1061,47 @@ def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path:
         cwd=git_repo,
         env=env,
     )
+    _assert_repo_clean(git_repo)
 
+
+@pytest.mark.parametrize(
+    ("command_name", "template_name", "objective"),
+    [
+        ("save", "save_template.json", "Template non-interference objective"),
+        ("s", "save_alias_s_template.json", "Template alias s non-interference objective"),
+        ("dock", "save_alias_dock_template.json", "Template alias dock non-interference objective"),
+    ],
+    ids=["save", "s_alias", "dock_alias"],
+)
+def test_save_template_flows_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    template_name: str,
+    objective: str,
+) -> None:
+    """Save/template flows should not alter project working tree/index."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / template_name
+    _write_non_interference_template(template_path=template_path, objective=objective)
+
+    _assert_repo_clean(git_repo)
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
     _assert_repo_clean(git_repo)
 
 
@@ -1167,86 +1124,6 @@ def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: P
             "Alias s no-prompt non-interference objective",
             "--decisions",
             "Alias s no-prompt non-interference decisions",
-            "--next-step",
-            "run resume",
-            "--risks",
-            "none",
-            "--command",
-            "echo noop",
-            "--tests-run",
-            "--tests-command",
-            "pytest -q",
-            "--build-ok",
-            "--build-command",
-            "echo build",
-            "--lint-fail",
-            "--smoke-fail",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
-def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `dock` template save flow should not alter project tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    template_path = tmp_path / "save_alias_dock_template.json"
-    _write_non_interference_template(
-        template_path=template_path,
-        objective="Template alias dock non-interference objective",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "dock",
-            "--root",
-            str(git_repo),
-            "--template",
-            str(template_path),
-            "--no-prompt",
-            "--no-auto-review",
-        ],
-        cwd=git_repo,
-        env=env,
-    )
-
-    _assert_repo_clean(git_repo)
-
-
-def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `dock` editor save flow should not alter project tree/index."""
-    env = _dockyard_env(tmp_path)
-
-    _configure_editor(
-        env=env,
-        tmp_path=tmp_path,
-        script_name="alias_dock_editor.sh",
-        decisions_text="Alias dock editor decisions for non-interference",
-    )
-
-    _assert_repo_clean(git_repo)
-
-    _run(
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "dock",
-            "--root",
-            str(git_repo),
-            "--editor",
-            "--no-prompt",
-            "--objective",
-            "Alias dock editor non-interference objective",
             "--next-step",
             "run resume",
             "--risks",
