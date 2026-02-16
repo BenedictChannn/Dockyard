@@ -497,7 +497,7 @@ def test_run_dock_helper_raises_on_unexpected_exit_code(tmp_path: Path) -> None:
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="Unexpected code .*--definitely-invalid-flag"):
         _run_dock(
             ["--definitely-invalid-flag"],
             cwd=tmp_path,
