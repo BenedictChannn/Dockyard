@@ -54,10 +54,6 @@ class RunScopeContextMeta:
         return f"{self.command_label} {self.scope_descriptor}"
 
 
-ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
-MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
-
-
 @dataclass(frozen=True)
 class SaveCommandMeta:
     """Metadata describing a save command token."""
@@ -104,6 +100,32 @@ class MetadataScopeMeta:
 
     case_id: str
     scope_label: str
+    run_cwd_kind: RunCwdKind
+    metadata_builder: MetadataCommandBuilder
+    review_add_builder: ReviewAddCommandBuilder
+
+
+@dataclass(frozen=True)
+class ResumeReadPathScenarioMeta:
+    """Rendered scenario metadata for resume read-path tests."""
+
+    case_id: str
+    marker_name: str
+    objective: str
+    decisions: str
+    next_step: str
+    commands_builder: ResumeReadCommandBuilder
+    run_cwd_kind: RunCwdKind
+
+
+@dataclass(frozen=True)
+class MetadataScopeScenarioMeta:
+    """Rendered scenario metadata for review/link non-interference tests."""
+
+    case_id: str
+    objective: str
+    decisions: str
+    next_step: str
     run_cwd_kind: RunCwdKind
     metadata_builder: MetadataCommandBuilder
     review_add_builder: ReviewAddCommandBuilder
@@ -987,52 +1009,50 @@ def _build_review_add_command_root_override(git_repo: Path, base_branch: str) ->
 
 def _build_resume_read_path_scenarios(
     cases: Sequence[ResumeReadPathMeta],
-) -> list[ResumeReadPathScenario]:
+) -> tuple[ResumeReadPathScenarioMeta, ...]:
     """Build resume-read non-interference scenarios from shared case metadata.
 
     Args:
         cases: Resume-read case metadata entries.
 
     Returns:
-        Parameter rows for resume-read non-interference test coverage.
+        Rendered case metadata rows for resume-read non-interference tests.
     """
-    scenarios: list[ResumeReadPathScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                case.marker_name,
-                f"{case.scope_label} command safety baseline",
-                f"Ensure {case.scope_label} read paths do not execute stored commands",
-                f"Inspect {case.scope_label} resume output",
-                case.commands_builder,
-                case.run_cwd_kind,
-            ),
+    return tuple(
+        ResumeReadPathScenarioMeta(
+            case_id=case.case_id,
+            marker_name=case.marker_name,
+            objective=f"{case.scope_label} command safety baseline",
+            decisions=f"Ensure {case.scope_label} read paths do not execute stored commands",
+            next_step=f"Inspect {case.scope_label} resume output",
+            commands_builder=case.commands_builder,
+            run_cwd_kind=case.run_cwd_kind,
         )
-    return scenarios
+        for case in cases
+    )
 
 
-def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeMeta]) -> list[MetadataScopeScenario]:
+def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeMeta]) -> tuple[MetadataScopeScenarioMeta, ...]:
     """Build metadata-scope non-interference scenarios from shared cases.
 
     Args:
         cases: Metadata-scope case metadata entries.
 
     Returns:
-        Parameter rows for metadata-scope non-interference tests.
+        Rendered case metadata rows for metadata-scope non-interference tests.
     """
-    scenarios: list[MetadataScopeScenario] = []
-    for case in cases:
-        scenarios.append(
-            (
-                f"{case.scope_label} mutation command baseline",
-                f"Validate {case.scope_label} review/link non-interference",
-                f"Run {case.scope_label} metadata commands",
-                case.run_cwd_kind,
-                case.metadata_builder,
-                case.review_add_builder,
-            ),
+    return tuple(
+        MetadataScopeScenarioMeta(
+            case_id=case.case_id,
+            objective=f"{case.scope_label} mutation command baseline",
+            decisions=f"Validate {case.scope_label} review/link non-interference",
+            next_step=f"Run {case.scope_label} metadata commands",
+            run_cwd_kind=case.run_cwd_kind,
+            metadata_builder=case.metadata_builder,
+            review_add_builder=case.review_add_builder,
         )
-    return scenarios
+        for case in cases
+    )
 
 
 RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
@@ -1065,8 +1085,11 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
         "tmp",
     ),
 )
-RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(
+RESUME_READ_PATH_SCENARIOS: tuple[ResumeReadPathScenarioMeta, ...] = _build_resume_read_path_scenarios(
     RESUME_READ_PATH_CASES,
+)
+RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(
+    RESUME_READ_PATH_SCENARIOS,
     get_id=attrgetter("case_id"),
 )
 
@@ -1086,8 +1109,11 @@ METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
         _build_review_add_command_root_override,
     ),
 )
-METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
+METADATA_SCOPE_SCENARIOS: tuple[MetadataScopeScenarioMeta, ...] = _build_metadata_scope_scenarios(
     METADATA_SCOPE_CASES,
+)
+METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
+    METADATA_SCOPE_SCENARIOS,
     get_id=attrgetter("case_id"),
 )
 
@@ -1293,66 +1319,49 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 
 @pytest.mark.parametrize(
-    ("marker_name", "objective", "decisions", "next_step", "commands_builder", "run_cwd_kind"),
-    _build_resume_read_path_scenarios(RESUME_READ_PATH_CASES),
+    "case",
+    RESUME_READ_PATH_SCENARIOS,
     ids=RESUME_READ_PATH_IDS,
 )
 def test_resume_read_paths_do_not_execute_saved_commands(
     git_repo: Path,
     tmp_path: Path,
-    marker_name: str,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    commands_builder: ResumeReadCommandBuilder,
-    run_cwd_kind: RunCwdKind,
+    case: ResumeReadPathScenarioMeta,
 ) -> None:
     """Resume read-only path variants must never execute stored commands."""
     _assert_resume_read_paths_do_not_execute_saved_commands(
         git_repo,
         tmp_path,
-        marker_name=marker_name,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        commands=commands_builder(git_repo),
-        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+        marker_name=case.marker_name,
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        commands=case.commands_builder(git_repo),
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, case.run_cwd_kind),
     )
 
 
 @pytest.mark.parametrize(
-    (
-        "objective",
-        "decisions",
-        "next_step",
-        "run_cwd_kind",
-        "metadata_builder",
-        "review_add_builder",
-    ),
-    _build_metadata_scope_scenarios(METADATA_SCOPE_CASES),
+    "case",
+    METADATA_SCOPE_SCENARIOS,
     ids=METADATA_SCOPE_IDS,
 )
 def test_review_and_link_commands_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
-    objective: str,
-    decisions: str,
-    next_step: str,
-    run_cwd_kind: RunCwdKind,
-    metadata_builder: MetadataCommandBuilder,
-    review_add_builder: ReviewAddCommandBuilder,
+    case: MetadataScopeScenarioMeta,
 ) -> None:
     """Review/link metadata paths must not alter repository tree/index."""
     base_branch = _current_branch(git_repo)
     _assert_review_link_commands_do_not_modify_repo(
         git_repo,
         tmp_path,
-        objective=objective,
-        decisions=decisions,
-        next_step=next_step,
-        run_cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
-        metadata_commands=metadata_builder(git_repo, base_branch),
-        review_add_command=review_add_builder(git_repo, base_branch),
+        objective=case.objective,
+        decisions=case.decisions,
+        next_step=case.next_step,
+        run_cwd=_resolve_run_cwd(git_repo, tmp_path, case.run_cwd_kind),
+        metadata_commands=case.metadata_builder(git_repo, base_branch),
+        review_add_command=case.review_add_builder(git_repo, base_branch),
     )
 
 
