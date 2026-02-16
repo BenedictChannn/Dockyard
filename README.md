@@ -118,6 +118,8 @@ Useful flags:
   (for example: `resume my-berth --branch main --run`).
 - If no commands are recorded, run mode is a safe no-op (no command rows are
   executed) for `resume`, `r`, and `undock`.
+- The same no-op behavior applies when persisted command entries normalize to
+  blank/whitespace values.
 - BERTH argument values are trimmed; blank BERTH values are rejected.
 - `--branch` values are trimmed; blank values are rejected.
 

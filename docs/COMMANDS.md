@@ -104,6 +104,8 @@ Notes:
   with `--run` (e.g., `resume <berth> --branch <name> --run`).
 - If no resume commands are recorded, `--run` is a no-op success for
   `resume`, `r`, and `undock` (no command execution rows are emitted).
+- The same no-op behavior applies when persisted command payloads contain only
+  blank/whitespace entries after normalization.
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 
