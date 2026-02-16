@@ -981,24 +981,35 @@ def _assert_review_link_commands_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def _build_link_command(url: str, *, root: Path | None = None) -> RunCommand:
+    """Build link command with optional explicit root override."""
+    command: list[str] = ["python3", "-m", "dockyard", "link", url]
+    if root is not None:
+        command.extend(["--root", str(root)])
+    return command
+
+
+def _build_links_command(*, root: Path | None = None) -> RunCommand:
+    """Build links command with optional explicit root override."""
+    command: list[str] = ["python3", "-m", "dockyard", "links"]
+    if root is not None:
+        command.extend(["--root", str(root)])
+    return command
+
+
 def _build_metadata_commands_in_repo(_git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build in-repo review/link metadata command list."""
-    return [["python3", "-m", "dockyard", "link", "https://example.com/non-interference"]]
+    return [_build_link_command("https://example.com/non-interference")]
 
 
 def _build_metadata_commands_root_override(git_repo: Path, _base_branch: str) -> CommandMatrix:
     """Build root-override review/link metadata command list."""
     return [
-        [
-            "python3",
-            "-m",
-            "dockyard",
-            "link",
+        _build_link_command(
             "https://example.com/non-interference-root-override",
-            "--root",
-            str(git_repo),
-        ],
-        ["python3", "-m", "dockyard", "links", "--root", str(git_repo)],
+            root=git_repo,
+        ),
+        _build_links_command(root=git_repo),
     ]
 
 
@@ -1087,6 +1098,43 @@ def test_build_review_add_command_includes_optional_scope_args() -> None:
         "feature/demo",
         "--notes",
         "outside repo invocation",
+    ]
+
+
+def test_build_link_command_omits_root_by_default() -> None:
+    """Link command builder should omit root argument by default."""
+    command = _build_link_command("https://example.com/default-link")
+    assert command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "link",
+        "https://example.com/default-link",
+    ]
+
+
+def test_build_link_and_links_commands_include_root_when_provided() -> None:
+    """Link and links command builders should include root override."""
+    root = Path("/tmp/demo-repo")
+    link_command = _build_link_command("https://example.com/root-link", root=root)
+    links_command = _build_links_command(root=root)
+
+    assert link_command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "link",
+        "https://example.com/root-link",
+        "--root",
+        str(root),
+    ]
+    assert links_command == [
+        "python3",
+        "-m",
+        "dockyard",
+        "links",
+        "--root",
+        str(root),
     ]
 
 
