@@ -144,5 +144,7 @@ Parser normalization notes:
 - Section heading lookup is case-insensitive for known Dockyard sections.
 - Known section heading lookups ignore trailing colon suffixes
   (for example, `Objective:`).
+- Known section heading lookups also tolerate compact ATX forms like
+  `##Objective##` (no spacing after the marker, optional closing hashes).
 - Parser also accepts singular heading aliases for known sections
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
