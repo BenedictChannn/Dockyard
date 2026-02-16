@@ -73,3 +73,41 @@ def test_markdown_parser_handles_empty_resume_commands() -> None:
     )
     parsed = parse_checkpoint_markdown(render_checkpoint_markdown(checkpoint))
     assert parsed["resume_commands"] == []
+
+
+def test_markdown_parser_ignores_blank_resume_command_bullets() -> None:
+    """Parser should drop resume command bullets that normalize to empty strings."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+None
+## Resume Commands
+- ``
+- `   `
+- `pytest -q`
+- `  python3 -m dockyard ls  `
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["resume_commands"] == [
+        "pytest -q",
+        "python3 -m dockyard ls",
+    ]
