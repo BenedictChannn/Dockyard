@@ -1122,6 +1122,24 @@ def test_build_review_add_command_includes_optional_scope_args() -> None:
     ]
 
 
+def test_build_review_add_command_in_repo_delegates_to_helper() -> None:
+    """In-repo review-add wrapper should delegate to generic helper defaults."""
+    assert _build_review_add_command_in_repo(Path("/tmp/demo-repo"), "main") == _build_review_add_command(
+        reason="manual",
+    )
+
+
+def test_build_review_add_command_root_override_delegates_to_helper() -> None:
+    """Root-override review-add wrapper should delegate with scoped options."""
+    git_repo = Path("/tmp/demo-repo")
+    assert _build_review_add_command_root_override(git_repo, "main") == _build_review_add_command(
+        reason="manual-root-override",
+        repo=git_repo.name,
+        branch="main",
+        notes="outside repo invocation",
+    )
+
+
 def test_build_link_command_omits_root_by_default() -> None:
     """Link command builder should omit root argument by default."""
     command = _build_link_command("https://example.com/default-link")
