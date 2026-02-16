@@ -2160,6 +2160,51 @@ def test_search_alias_tag_filter_no_match_message(git_repo: Path, tmp_path: Path
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+def test_search_alias_tag_repo_filter_no_match_message(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should show no-match guidance for tag+repo misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias tag repo message objective",
+            "--decisions",
+            "Alias tag repo message decision",
+            "--next-step",
+            "validate tag+repo miss message",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["f", "Alias tag repo message objective", "--tag", "alpha", "--repo", "missing-berth"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
 def test_undock_alias_matches_resume_behavior(git_repo: Path, tmp_path: Path) -> None:
     """`undock` alias should resolve to the same resume behavior."""
     env = dict(os.environ)
