@@ -1495,181 +1495,193 @@ def test_run_trimmed_berth_branch_without_commands_keeps_repo_clean(
     )
 
 
-def test_resume_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run is explicit opt-in and may mutate repository files."""
+@pytest.mark.parametrize(
+    ("command_name", "marker_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "resume_run_opt_in_marker.txt",
+            "Resume run opt-in mutation baseline",
+            "Verify explicit --run path may execute mutating commands",
+            "run resume --run",
+        ),
+        (
+            "r",
+            "resume_alias_run_opt_in_marker.txt",
+            "Resume alias run opt-in mutation baseline",
+            "Verify r --run may execute mutating commands",
+            "run r --run",
+        ),
+        (
+            "undock",
+            "undock_alias_run_opt_in_marker.txt",
+            "Undock alias run opt-in mutation baseline",
+            "Verify undock --run may execute mutating commands",
+            "run undock --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_default_scope_opt_in_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """`<command> --run` may mutate repository when explicitly opted-in."""
     _assert_opt_in_run_default_scope_mutates_repo(
         git_repo,
         tmp_path,
-        command_name="resume",
-        marker_name="resume_run_opt_in_marker.txt",
-        objective="Resume run opt-in mutation baseline",
-        decisions="Verify explicit --run path may execute mutating commands",
-        next_step="run resume --run",
+        command_name=command_name,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `r --run` is explicit opt-in and may mutate repository files."""
-    _assert_opt_in_run_default_scope_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        marker_name="resume_alias_run_opt_in_marker.txt",
-        objective="Resume alias run opt-in mutation baseline",
-        decisions="Verify r --run may execute mutating commands",
-        next_step="run r --run",
-    )
-
-
-def test_undock_alias_run_opt_in_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Alias `undock --run` is explicit opt-in and may mutate repository files."""
-    _assert_opt_in_run_default_scope_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        marker_name="undock_alias_run_opt_in_marker.txt",
-        objective="Undock alias run opt-in mutation baseline",
-        decisions="Verify undock --run may execute mutating commands",
-        next_step="run undock --run",
-    )
-
-
-def test_resume_run_opt_in_with_branch_can_modify_repo(git_repo: Path, tmp_path: Path) -> None:
-    """Primary `resume --branch <name> --run` may mutate repository files."""
+@pytest.mark.parametrize(
+    ("command_name", "marker_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "resume_run_with_branch_opt_in_marker.txt",
+            "Resume branch run opt-in mutation baseline",
+            "Verify resume --branch <name> --run may execute mutating commands",
+            "run resume --branch <name> --run",
+        ),
+        (
+            "r",
+            "resume_alias_run_with_branch_opt_in_marker.txt",
+            "Resume alias branch run opt-in mutation baseline",
+            "Verify r --branch <name> --run may execute mutating commands",
+            "run r --branch <name> --run",
+        ),
+        (
+            "undock",
+            "undock_alias_run_with_branch_opt_in_marker.txt",
+            "Undock alias branch run opt-in mutation baseline",
+            "Verify undock --branch <name> --run may execute mutating commands",
+            "run undock --branch <name> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_branch_scope_opt_in_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
+) -> None:
+    """`<command> --branch <name> --run` may mutate when explicitly opted-in."""
     _assert_opt_in_run_with_branch_mutates_repo(
         git_repo,
         tmp_path,
-        command_name="resume",
-        marker_name="resume_run_with_branch_opt_in_marker.txt",
-        objective="Resume branch run opt-in mutation baseline",
-        decisions="Verify resume --branch <name> --run may execute mutating commands",
-        next_step="run resume --branch <name> --run",
+        command_name=command_name,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_alias_run_opt_in_with_branch_can_modify_repo(
+@pytest.mark.parametrize(
+    ("command_name", "marker_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "resume_run_with_berth_opt_in_marker.txt",
+            "Resume berth run opt-in mutation baseline",
+            "Verify resume <berth> --run may execute mutating commands",
+            "run resume <berth> --run",
+        ),
+        (
+            "r",
+            "resume_alias_run_with_berth_opt_in_marker.txt",
+            "Resume alias berth run opt-in mutation baseline",
+            "Verify r <berth> --run may execute mutating commands",
+            "run r <berth> --run",
+        ),
+        (
+            "undock",
+            "undock_alias_run_opt_in_marker.txt",
+            "Undock alias run opt-in mutation baseline",
+            "Verify undock --run with berth may execute mutating commands",
+            "run undock <berth> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_trimmed_berth_scope_opt_in_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
 ) -> None:
-    """Alias `r --branch <name> --run` may mutate repository files."""
-    _assert_opt_in_run_with_branch_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        marker_name="resume_alias_run_with_branch_opt_in_marker.txt",
-        objective="Resume alias branch run opt-in mutation baseline",
-        decisions="Verify r --branch <name> --run may execute mutating commands",
-        next_step="run r --branch <name> --run",
-    )
-
-
-def test_undock_alias_run_opt_in_with_branch_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `undock --branch <name> --run` may mutate repository files."""
-    _assert_opt_in_run_with_branch_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        marker_name="undock_alias_run_with_branch_opt_in_marker.txt",
-        objective="Undock alias branch run opt-in mutation baseline",
-        decisions="Verify undock --branch <name> --run may execute mutating commands",
-        next_step="run undock --branch <name> --run",
-    )
-
-
-def test_undock_alias_run_opt_in_with_berth_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `undock <berth> --run` is opt-in and may mutate repo files."""
+    """`<command> <berth> --run` may mutate when explicitly opted-in."""
     _assert_opt_in_run_with_trimmed_berth_mutates_repo(
         git_repo,
         tmp_path,
-        command_name="undock",
-        marker_name="undock_alias_run_opt_in_marker.txt",
-        objective="Undock alias run opt-in mutation baseline",
-        decisions="Verify undock --run with berth may execute mutating commands",
-        next_step="run undock <berth> --run",
+        command_name=command_name,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
 
 
-def test_resume_run_opt_in_with_trimmed_berth_can_modify_repo(
+@pytest.mark.parametrize(
+    ("command_name", "marker_name", "objective", "decisions", "next_step"),
+    [
+        (
+            "resume",
+            "resume_run_with_berth_branch_opt_in_marker.txt",
+            "Resume berth+branch run opt-in mutation baseline",
+            "Verify resume <berth> --branch <branch> --run may mutate repo",
+            "run resume <berth> --branch <branch> --run",
+        ),
+        (
+            "r",
+            "resume_alias_run_with_berth_branch_opt_in_marker.txt",
+            "Resume alias berth+branch run opt-in mutation baseline",
+            "Verify r <berth> --branch <branch> --run may mutate repo",
+            "run r <berth> --branch <branch> --run",
+        ),
+        (
+            "undock",
+            "undock_alias_run_with_berth_branch_opt_in_marker.txt",
+            "Undock alias berth+branch run opt-in mutation baseline",
+            "Verify undock <berth> --branch <branch> --run may mutate repo",
+            "run undock <berth> --branch <branch> --run",
+        ),
+    ],
+    ids=["resume", "r_alias", "undock_alias"],
+)
+def test_run_trimmed_berth_branch_scope_opt_in_can_modify_repo(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
+    marker_name: str,
+    objective: str,
+    decisions: str,
+    next_step: str,
 ) -> None:
-    """Primary `resume <berth> --run` may mutate repo when explicitly opted-in."""
-    _assert_opt_in_run_with_trimmed_berth_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="resume",
-        marker_name="resume_run_with_berth_opt_in_marker.txt",
-        objective="Resume berth run opt-in mutation baseline",
-        decisions="Verify resume <berth> --run may execute mutating commands",
-        next_step="run resume <berth> --run",
-    )
-
-
-def test_resume_alias_run_opt_in_with_trimmed_berth_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `r <berth> --run` may mutate repo when explicitly opted-in."""
-    _assert_opt_in_run_with_trimmed_berth_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        marker_name="resume_alias_run_with_berth_opt_in_marker.txt",
-        objective="Resume alias berth run opt-in mutation baseline",
-        decisions="Verify r <berth> --run may execute mutating commands",
-        next_step="run r <berth> --run",
-    )
-
-
-def test_resume_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Primary `resume <berth> --branch <branch> --run` may mutate repo."""
+    """`<command> <berth> --branch <branch> --run` may mutate when opted-in."""
     _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
         git_repo,
         tmp_path,
-        command_name="resume",
-        marker_name="resume_run_with_berth_branch_opt_in_marker.txt",
-        objective="Resume berth+branch run opt-in mutation baseline",
-        decisions="Verify resume <berth> --branch <branch> --run may mutate repo",
-        next_step="run resume <berth> --branch <branch> --run",
-    )
-
-
-def test_resume_alias_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `r <berth> --branch <branch> --run` may mutate repo."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="r",
-        marker_name="resume_alias_run_with_berth_branch_opt_in_marker.txt",
-        objective="Resume alias berth+branch run opt-in mutation baseline",
-        decisions="Verify r <berth> --branch <branch> --run may mutate repo",
-        next_step="run r <berth> --branch <branch> --run",
-    )
-
-
-def test_undock_alias_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
-    git_repo: Path,
-    tmp_path: Path,
-) -> None:
-    """Alias `undock <berth> --branch <branch> --run` may mutate repo."""
-    _assert_opt_in_run_with_trimmed_berth_and_branch_mutates_repo(
-        git_repo,
-        tmp_path,
-        command_name="undock",
-        marker_name="undock_alias_run_with_berth_branch_opt_in_marker.txt",
-        objective="Undock alias berth+branch run opt-in mutation baseline",
-        decisions="Verify undock <berth> --branch <branch> --run may mutate repo",
-        next_step="run undock <berth> --branch <branch> --run",
+        command_name=command_name,
+        marker_name=marker_name,
+        objective=objective,
+        decisions=decisions,
+        next_step=next_step,
     )
