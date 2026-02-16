@@ -3123,6 +3123,56 @@ def test_resume_branch_flag_accepts_trimmed_value(
     assert selected["objective"] == "Trimmed branch resume objective"
 
 
+def test_resume_by_berth_accepts_trimmed_branch_option(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume should trim --branch when combined with explicit berth lookup."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Berth + branch trim objective",
+            "--decisions",
+            "Use trimmed branch with explicit berth context",
+            "--next-step",
+            "resume by berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo branch",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(
+        _run_dock(
+            ["resume", f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert payload["branch"] == branch
+    assert payload["project_name"] == git_repo.name
+
+
 def test_resume_unknown_branch_for_known_repo_is_actionable(
     git_repo: Path,
     tmp_path: Path,
@@ -7391,6 +7441,65 @@ def test_search_branch_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Pa
         ).stdout
     )
     assert len(rows) >= 1
+    assert {row["branch"] for row in rows} == {branch}
+
+
+def test_search_repo_and_branch_filters_accept_trimmed_values(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search should resolve trimmed repo+branch filters together."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Trimmed repo branch search objective",
+            "--decisions",
+            "Search should trim both repo and branch filters",
+            "--next-step",
+            "run combined search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                "search",
+                "Trimmed repo branch search objective",
+                "--repo",
+                f"  {git_repo.name}  ",
+                "--branch",
+                f"  {branch}  ",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["berth_name"] for row in rows} == {git_repo.name}
     assert {row["branch"] for row in rows} == {branch}
 
 
