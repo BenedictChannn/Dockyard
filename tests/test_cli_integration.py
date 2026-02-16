@@ -1617,6 +1617,58 @@ def test_resume_output_compacts_multiline_checkpoint_timestamp(
     assert "Last Checkpoint: 2000-01-01 00:00:00+00:00 (" in result.stdout
 
 
+def test_resume_output_falls_back_for_blank_checkpoint_timestamp(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume output should fallback when checkpoint timestamp is blank."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Checkpoint timestamp fallback",
+            "--decisions",
+            "Keep resume top-lines resilient for blank timestamps",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET created_at = ?",
+        ("   ",),
+    )
+    conn.commit()
+    conn.close()
+
+    result = _run_dock(["resume"], cwd=git_repo, env=env)
+    assert "Last Checkpoint: (unknown) (unknown ago)" in result.stdout
+
+
 def test_resume_output_falls_back_for_blank_project_label(
     git_repo: Path,
     tmp_path: Path,
