@@ -1078,3 +1078,84 @@ def test_resume_alias_run_opt_in_with_trimmed_berth_can_modify_repo(
         decisions="Verify r <berth> --run may execute mutating commands",
         next_step="run r <berth> --run",
     )
+
+
+def test_resume_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Primary `resume <berth> --branch <branch> --run` may mutate repo."""
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=[
+            "python3",
+            "-m",
+            "dockyard",
+            "resume",
+            f"  {git_repo.name}  ",
+            "--branch",
+            f"  {base_branch}  ",
+            "--run",
+        ],
+        run_cwd=tmp_path,
+        marker_name="resume_run_with_berth_branch_opt_in_marker.txt",
+        objective="Resume berth+branch run opt-in mutation baseline",
+        decisions="Verify resume <berth> --branch <branch> --run may mutate repo",
+        next_step="run resume <berth> --branch <branch> --run",
+    )
+
+
+def test_resume_alias_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `r <berth> --branch <branch> --run` may mutate repo."""
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=[
+            "python3",
+            "-m",
+            "dockyard",
+            "r",
+            f"  {git_repo.name}  ",
+            "--branch",
+            f"  {base_branch}  ",
+            "--run",
+        ],
+        run_cwd=tmp_path,
+        marker_name="resume_alias_run_with_berth_branch_opt_in_marker.txt",
+        objective="Resume alias berth+branch run opt-in mutation baseline",
+        decisions="Verify r <berth> --branch <branch> --run may mutate repo",
+        next_step="run r <berth> --branch <branch> --run",
+    )
+
+
+def test_undock_alias_run_opt_in_with_trimmed_berth_and_branch_can_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias `undock <berth> --branch <branch> --run` may mutate repo."""
+    base_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=git_repo)
+    _assert_opt_in_run_mutates_repo(
+        git_repo,
+        tmp_path,
+        run_command=[
+            "python3",
+            "-m",
+            "dockyard",
+            "undock",
+            f"  {git_repo.name}  ",
+            "--branch",
+            f"  {base_branch}  ",
+            "--run",
+        ],
+        run_cwd=tmp_path,
+        marker_name="undock_alias_run_with_berth_branch_opt_in_marker.txt",
+        objective="Undock alias berth+branch run opt-in mutation baseline",
+        decisions="Verify undock <berth> --branch <branch> --run may mutate repo",
+        next_step="run undock <berth> --branch <branch> --run",
+    )
