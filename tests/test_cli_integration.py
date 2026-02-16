@@ -813,6 +813,55 @@ def test_save_alias_s_template_verification_type_error_is_actionable(
     assert "Traceback" not in output
 
 
+def test_save_alias_s_template_bool_like_invalid_string_is_rejected(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save alias `s` should reject unknown bool-like verification values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_s_bad_bool_like.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "Alias s invalid bool-like",
+                "decisions": "bad tests_run value",
+                "next_steps": ["step"],
+                "risks_review": "none",
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
 def test_save_alias_s_template_must_be_object_or_table(
     git_repo: Path,
     tmp_path: Path,
@@ -1438,6 +1487,55 @@ def test_save_alias_dock_template_verification_type_error_is_actionable(
                 "[verification]",
                 "tests_run = 123",
             ]
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            "dock",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_dock_template_bool_like_invalid_string_is_rejected(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Dock alias should reject unknown bool-like verification values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    bad_template = tmp_path / "alias_dock_bad_bool_like.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "Dock alias invalid bool-like",
+                "decisions": "bad tests_run value",
+                "next_steps": ["step"],
+                "risks_review": "none",
+                "verification": {"tests_run": "maybe"},
+            }
         ),
         encoding="utf-8",
     )
