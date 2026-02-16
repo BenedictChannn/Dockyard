@@ -23,7 +23,7 @@ RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("r", "r", "r_alias"),
     ("undock", "undock", "undock_alias"),
 )
-RUN_COMMAND_IDS = tuple(case[2] for case in RUN_COMMAND_CASES)
+RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
 RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = (
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
@@ -38,7 +38,7 @@ RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = (
     ("r", True, True, "tmp", "r_berth_branch"),
     ("undock", True, True, "tmp", "undock_berth_branch"),
 )
-RUN_BRANCH_SCOPE_CASES = tuple(case for case in RUN_SCOPE_CASES if case[2])
+RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(case for case in RUN_SCOPE_CASES if case[2])
 RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
 RunDefaultFailureScenario = tuple[str, str, str, str, str, str]
 RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
@@ -51,8 +51,8 @@ def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
     return tuple(case[4] for case in cases)
 
 
-RUN_SCOPE_IDS = _scope_ids(RUN_SCOPE_CASES)
-RUN_BRANCH_SCOPE_IDS = _scope_ids(RUN_BRANCH_SCOPE_CASES)
+RUN_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES)
+RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_BRANCH_SCOPE_CASES)
 
 
 def _scope_label(scope_id: str) -> str:

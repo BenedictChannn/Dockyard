@@ -29,7 +29,7 @@ SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
     ("s", "alias_s", "s_alias"),
     ("dock", "alias_dock", "dock_alias"),
 )
-SAVE_COMMAND_IDS = tuple(case[2] for case in SAVE_COMMAND_CASES)
+SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in SAVE_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[str, ...] = ("resume", "r", "undock")
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
 
@@ -92,8 +92,8 @@ def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
     return tuple(case[4] for case in cases)
 
 
-RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
-RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
+RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
 
 
 def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list[RunNoCommandScenario]:
@@ -853,13 +853,13 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathCase, ...] = (
         "tmp",
     ),
 )
-RESUME_READ_PATH_IDS = tuple(case[0] for case in RESUME_READ_PATH_CASES)
+RESUME_READ_PATH_IDS: tuple[str, ...] = tuple(case[0] for case in RESUME_READ_PATH_CASES)
 
 METADATA_SCOPE_CASES: tuple[MetadataScopeCase, ...] = (
     ("in_repo", "repo", _build_metadata_commands_in_repo, _build_review_add_command_in_repo),
     ("root_override", "tmp", _build_metadata_commands_root_override, _build_review_add_command_root_override),
 )
-METADATA_SCOPE_IDS = tuple(case[0] for case in METADATA_SCOPE_CASES)
+METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case[0] for case in METADATA_SCOPE_CASES)
 
 
 @pytest.mark.parametrize(
