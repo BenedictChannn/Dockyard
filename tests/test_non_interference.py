@@ -45,6 +45,11 @@ class RunScopeContextMeta:
     command_label: str
     scope_descriptor: str
 
+    @property
+    def phrase(self) -> str:
+        """Return combined command/scope phrase for scenario text."""
+        return f"{self.command_label} {self.scope_descriptor}"
+
 
 ResumeReadPathScenario = tuple[str, str, str, str, ResumeReadCommandBuilder, RunCwdKind]
 MetadataScopeScenario = tuple[str, str, str, RunCwdKind, MetadataCommandBuilder, ReviewAddCommandBuilder]
@@ -228,9 +233,9 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
                 case.include_berth,
                 case.include_branch,
                 case.run_cwd_kind,
-                f"{context.command_label} {context.scope_descriptor} run no-commands baseline",
-                f"Verify {context.command_label} {context.scope_descriptor} --run no-op path remains non-mutating",
-                f"run {context.command_label} {context.scope_descriptor} --run",
+                f"{context.phrase} run no-commands baseline",
+                f"Verify {context.phrase} --run no-op path remains non-mutating",
+                f"run {context.phrase} --run",
             ),
         )
     return scenarios
@@ -261,9 +266,9 @@ def _build_opt_in_mutation_run_scope_scenarios(
                 case.include_branch,
                 case.run_cwd_kind,
                 f"{case.case_id}_opt_in_marker.txt",
-                f"{context.command_label} {context.scope_descriptor} opt-in mutation baseline",
-                f"Verify {context.command_label} {context.scope_descriptor} --run may execute mutating commands",
-                f"run {context.command_label} {context.scope_descriptor} --run",
+                f"{context.phrase} opt-in mutation baseline",
+                f"Verify {context.phrase} --run may execute mutating commands",
+                f"run {context.phrase} --run",
             ),
         )
     return scenarios

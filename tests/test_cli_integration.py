@@ -41,6 +41,11 @@ class RunScopeContextMeta:
     scope_descriptor: str
     scope_slug: str
 
+    @property
+    def phrase(self) -> str:
+        """Return combined command/scope phrase for scenario text."""
+        return f"{self.command_label} {self.scope_descriptor}"
+
 
 @dataclass(frozen=True)
 class RunCommandMeta:
@@ -228,9 +233,9 @@ def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
                 case.include_berth,
                 case.include_branch,
                 case.run_cwd_kind,
-                f"{context.command_label} {context.scope_descriptor} run success objective",
-                f"Validate {context.command_label} {context.scope_descriptor} run success-path behavior",
-                f"run {context.command_label} {context.scope_descriptor}",
+                f"{context.phrase} run success objective",
+                f"Validate {context.phrase} run success-path behavior",
+                f"run {context.phrase}",
                 [
                     f"echo {case.command_name}-{context.scope_slug}-run-one",
                     f"echo {case.command_name}-{context.scope_slug}-run-two",
@@ -262,9 +267,9 @@ def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
                 case.include_berth,
                 case.include_branch,
                 case.run_cwd_kind,
-                f"{context.command_label} {context.scope_descriptor} run failure objective",
-                f"Validate {context.command_label} {context.scope_descriptor} stop-on-failure behavior",
-                f"run {context.command_label} {context.scope_descriptor}",
+                f"{context.phrase} run failure objective",
+                f"Validate {context.phrase} stop-on-failure behavior",
+                f"run {context.phrase}",
                 f"echo {case.command_name}-{context.scope_slug}-first",
                 f"echo {case.command_name}-{context.scope_slug}-should-not-run",
             ),
@@ -294,9 +299,9 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
                 case.include_berth,
                 case.include_branch,
                 case.run_cwd_kind,
-                f"No command {context.command_label} {context.scope_descriptor} run",
-                f"Ensure {context.command_label} {context.scope_descriptor} run path handles empty command list",
-                f"run {context.command_label} {context.scope_descriptor} with run",
+                f"No command {context.phrase} run",
+                f"Ensure {context.phrase} run path handles empty command list",
+                f"run {context.phrase} with run",
             ),
         )
     return scenarios
