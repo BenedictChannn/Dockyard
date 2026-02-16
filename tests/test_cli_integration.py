@@ -1441,6 +1441,17 @@ def test_resume_rejects_blank_branch_option(git_repo: Path, tmp_path: Path) -> N
     assert "Traceback" not in output
 
 
+def test_resume_alias_rejects_blank_branch_option(git_repo: Path, tmp_path: Path) -> None:
+    """Resume alias should reject blank --branch option values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["r", "--branch", "   "], cwd=git_repo, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--branch must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> None:
     """Invoking dockyard without subcommand should run harbor listing."""
     env = dict(os.environ)
@@ -6486,6 +6497,77 @@ def test_search_alias_rejects_blank_tag_filter(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_search_alias_rejects_blank_repo_filter(tmp_path: Path) -> None:
+    """Search alias should reject blank repo filter values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["f", "query", "--repo", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--repo must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_search_alias_rejects_blank_branch_filter(tmp_path: Path) -> None:
+    """Search alias should reject blank branch filter values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["f", "query", "--branch", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--branch must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_search_alias_repo_filter_accepts_trimmed_berth_name(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search alias repo filter should accept trimmed berth name values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias trimmed repo objective",
+            "--decisions",
+            "Alias repo filter should trim berth names",
+            "--next-step",
+            "run alias repo search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["f", "Alias trimmed repo objective", "--repo", f"  {git_repo.name}  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["berth_name"] for row in rows} == {git_repo.name}
+
+
 def test_search_alias_tag_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
     """Search alias should resolve tag filters after whitespace trimming."""
     env = dict(os.environ)
@@ -6525,6 +6607,53 @@ def test_search_alias_tag_filter_accepts_trimmed_value(git_repo: Path, tmp_path:
 
     rows = json.loads(_run_dock(["f", "Alias trimmed tag objective", "--tag", "  alpha  ", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) >= 1
+
+
+def test_search_alias_branch_filter_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should resolve branch filters after whitespace trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias trimmed branch objective",
+            "--decisions",
+            "Alias branch filter should trim values",
+            "--next-step",
+            "run alias branch search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["f", "Alias trimmed branch objective", "--branch", f"  {branch}  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["branch"] for row in rows} == {branch}
 
 
 def test_search_alias_json_respects_limit(git_repo: Path, tmp_path: Path) -> None:
