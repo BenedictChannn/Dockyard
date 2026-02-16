@@ -859,6 +859,59 @@ def _resume_read_variants(
     return commands
 
 
+def test_build_opt_in_run_command_includes_optional_scope_selectors(tmp_path: Path) -> None:
+    """Opt-in run command helper should include optional berth/branch selectors."""
+    git_repo = tmp_path / "demo-repo"
+
+    assert _build_opt_in_run_command(command_name="resume", git_repo=git_repo) == _dockyard_command(
+        "resume",
+        "--run",
+    )
+    assert _build_opt_in_run_command(
+        command_name="undock",
+        git_repo=git_repo,
+        include_berth=True,
+    ) == _dockyard_command(
+        "undock",
+        "  demo-repo  ",
+        "--run",
+    )
+    assert _build_opt_in_run_command(
+        command_name="r",
+        git_repo=git_repo,
+        branch="main",
+        include_berth=True,
+    ) == _dockyard_command(
+        "r",
+        "  demo-repo  ",
+        "--branch",
+        "  main  ",
+        "--run",
+    )
+
+
+def test_resume_read_variants_respects_json_handoff_and_branch_flags() -> None:
+    """Resume variant builder should honor include-json/handoff and branch options."""
+    assert _resume_read_variants(
+        "resume",
+        include_json=False,
+        include_handoff=False,
+    ) == [_dockyard_command("resume")]
+
+    assert _resume_read_variants(
+        "resume",
+        berth="demo-repo",
+        branch="main",
+        include_json=False,
+        include_handoff=True,
+    ) == [
+        _dockyard_command("resume", "demo-repo"),
+        _dockyard_command("resume", "demo-repo", "--handoff"),
+        _dockyard_command("resume", "demo-repo", "--branch", "main"),
+        _dockyard_command("resume", "demo-repo", "--branch", "main", "--handoff"),
+    ]
+
+
 def _assert_resume_read_paths_do_not_execute_saved_commands(
     git_repo: Path,
     tmp_path: Path,
