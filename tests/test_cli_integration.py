@@ -1839,6 +1839,41 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_rows) == 1
     assert beta_rows[0]["branch"] == "feature/alias-tag-filter"
+    beta_feature_rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "Alias tag filter objective",
+                "--tag",
+                "beta",
+                "--branch",
+                "feature/alias-tag-filter",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(beta_feature_rows) == 1
+    assert beta_feature_rows[0]["branch"] == "feature/alias-tag-filter"
+    assert (
+        json.loads(
+            _run_dock(
+                [
+                    "f",
+                    "Alias tag filter objective",
+                    "--tag",
+                    "beta",
+                    "--branch",
+                    default_branch,
+                    "--json",
+                ],
+                cwd=tmp_path,
+                env=env,
+            ).stdout
+        )
+        == []
+    )
 
 
 def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> None:
