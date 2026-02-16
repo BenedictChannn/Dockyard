@@ -128,6 +128,8 @@ Parser normalization notes:
 - Next-step parser strips checklist prefixes from markdown list entries
   (for example, `- [ ] step` and `1. [x] step` normalize to `step`).
 - `resume commands` accepts `-`, `*`, or `+` bullet markers.
+- `resume commands` also accepts numbered list markers (`1.`, `1)`) as a
+  parser fallback for manually edited checkpoint files.
 - Resume command bullets may be backtick-wrapped (for renderer parity) or
   plain text when manually edited.
 - Resume command bullets accept optional spacing after bullet delimiters
