@@ -78,3 +78,44 @@ def test_harbor_filters_for_tag_stale_and_limit(tmp_path) -> None:
 
     limited = store.list_harbor(limit=1)
     assert len(limited) == 1
+
+
+def test_harbor_sorting_places_unknown_status_after_known_statuses(tmp_path) -> None:
+    """Harbor sorting should relegate unknown statuses behind known priorities."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.upsert_berth(Berth(repo_id="red", name="Red", root_path="/tmp/red", remote_url=None))
+    store.upsert_berth(Berth(repo_id="mystery", name="Mystery", root_path="/tmp/mystery", remote_url=None))
+    store.upsert_berth(Berth(repo_id="green", name="Green", root_path="/tmp/green", remote_url=None))
+
+    store.upsert_slip(
+        Slip(
+            repo_id="red",
+            branch="main",
+            last_checkpoint_id=None,
+            status="red",
+            updated_at="2026-01-03T00:00:00+00:00",
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="mystery",
+            branch="main",
+            last_checkpoint_id=None,
+            status="paused",
+            updated_at="2026-01-01T00:00:00+00:00",
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="green",
+            branch="main",
+            last_checkpoint_id=None,
+            status="green",
+            updated_at="2026-01-02T00:00:00+00:00",
+        )
+    )
+
+    rows = store.list_harbor()
+    assert [row["repo_id"] for row in rows] == ["red", "green", "mystery"]
