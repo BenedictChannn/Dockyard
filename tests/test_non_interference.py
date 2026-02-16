@@ -132,11 +132,21 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
     _run(["python3", "-m", "dockyard", "ls", "--limit", "1", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "ls", "--stale", "0", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "ls", "--tag", "baseline", "--json"], cwd=tmp_path, env=env)
+    _run(
+        ["python3", "-m", "dockyard", "ls", "--tag", "baseline", "--stale", "0", "--limit", "1", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
     _run(["python3", "-m", "dockyard", "harbor"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "harbor", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "harbor", "--limit", "1", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "harbor", "--stale", "0", "--json"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--json"], cwd=tmp_path, env=env)
+    _run(
+        ["python3", "-m", "dockyard", "harbor", "--tag", "baseline", "--stale", "0", "--limit", "1", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
     _run(["python3", "-m", "dockyard", "search", "baseline"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "search", "baseline", "--tag", "baseline"], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "search", "baseline", "--tag", "missing-tag"], cwd=tmp_path, env=env)
