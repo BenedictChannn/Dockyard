@@ -16,7 +16,13 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
+RunCommandCase = tuple[str, str]
 RUN_COMMAND_IDS = ["resume", "r_alias", "undock_alias"]
+RUN_COMMAND_CASES: list[RunCommandCase] = [
+    ("resume", "resume"),
+    ("r", "r"),
+    ("undock", "undock"),
+]
 RUN_SCOPE_CASES: list[RunScopeCase] = [
     ("resume", False, False, "repo", "resume_default"),
     ("r", False, False, "repo", "r_default"),
@@ -34,9 +40,58 @@ RUN_SCOPE_CASES: list[RunScopeCase] = [
 RUN_BRANCH_SCOPE_CASES = [case for case in RUN_SCOPE_CASES if case[2]]
 RUN_SCOPE_IDS = [case[4] for case in RUN_SCOPE_CASES]
 RUN_BRANCH_SCOPE_IDS = [case[4] for case in RUN_BRANCH_SCOPE_CASES]
+RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
+RunDefaultFailureScenario = tuple[str, str, str, str, str, str]
 RunBranchSuccessScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, RunCommands]
 RunBranchFailureScenario = tuple[str, bool, bool, RunCwdKind, str, str, str, str, str]
 RunNoCommandScenario = tuple[str, bool, bool, RunCwdKind, str, str, str]
+
+
+def _build_default_run_success_scenarios(cases: list[RunCommandCase]) -> list[RunDefaultSuccessScenario]:
+    """Build default-scope run success scenarios from command metadata.
+
+    Args:
+        cases: Command metadata tuples for default-scope run scenarios.
+
+    Returns:
+        Parameter tuples for default-scope run success tests.
+    """
+    scenarios: list[RunDefaultSuccessScenario] = []
+    for command_name, case_label in cases:
+        scenarios.append(
+            (
+                command_name,
+                f"{case_label} run success objective",
+                f"Validate {case_label} run success-path behavior",
+                f"run {case_label}",
+                [f"echo {case_label}-run-one", f"echo {case_label}-run-two"],
+            ),
+        )
+    return scenarios
+
+
+def _build_default_run_failure_scenarios(cases: list[RunCommandCase]) -> list[RunDefaultFailureScenario]:
+    """Build default-scope run failure scenarios from command metadata.
+
+    Args:
+        cases: Command metadata tuples for default-scope run scenarios.
+
+    Returns:
+        Parameter tuples for default-scope run stop-on-failure tests.
+    """
+    scenarios: list[RunDefaultFailureScenario] = []
+    for command_name, case_label in cases:
+        scenarios.append(
+            (
+                command_name,
+                f"{case_label} run failure objective",
+                f"Validate {case_label} run stop-on-failure behavior",
+                f"run {case_label}",
+                f"echo {case_label}-first",
+                f"echo {case_label}-should-not-run",
+            ),
+        )
+    return scenarios
 
 
 def _build_branch_run_success_scenarios(cases: list[RunScopeCase]) -> list[RunBranchSuccessScenario]:
@@ -2467,29 +2522,7 @@ def test_save_editor_trims_outer_blank_lines(
 
 @pytest.mark.parametrize(
     ("command_name", "objective", "decisions", "next_step", "resume_commands"),
-    [
-        (
-            "resume",
-            "Run success path",
-            "Verify all commands execute when successful",
-            "Run resume --run",
-            ["echo first-ok", "echo second-ok"],
-        ),
-        (
-            "r",
-            "Resume alias run success objective",
-            "Validate run alias success-path parity",
-            "run alias",
-            ["echo alias-run-one", "echo alias-run-two"],
-        ),
-        (
-            "undock",
-            "Undock run success objective",
-            "Validate undock --run alias path",
-            "run undock alias",
-            ["echo undock-one", "echo undock-two"],
-        ),
-    ],
+    _build_default_run_success_scenarios(RUN_COMMAND_CASES),
     ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_executes_commands_on_success(
@@ -2516,32 +2549,7 @@ def test_run_default_scope_executes_commands_on_success(
 
 @pytest.mark.parametrize(
     ("command_name", "objective", "decisions", "next_step", "first_command", "skipped_command"),
-    [
-        (
-            "resume",
-            "Check run ordering",
-            "Run list should stop on first failing command",
-            "Observe command exit sequence",
-            "echo first",
-            "echo should-not-run",
-        ),
-        (
-            "r",
-            "Resume alias run failure objective",
-            "Validate run alias stop-on-failure parity",
-            "run alias",
-            "echo alias-first",
-            "echo alias-should-not-run",
-        ),
-        (
-            "undock",
-            "Undock run failure objective",
-            "Validate failure-stop behavior on undock alias",
-            "run undock alias",
-            "echo undock-first",
-            "echo undock-should-not-run",
-        ),
-    ],
+    _build_default_run_failure_scenarios(RUN_COMMAND_CASES),
     ids=RUN_COMMAND_IDS,
 )
 def test_run_default_scope_stops_on_failure(
