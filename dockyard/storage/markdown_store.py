@@ -177,7 +177,7 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
             continue
         match = re.match(r"^(?:\d+[.)]|[-*+])\s*(.*)$", stripped)
         if match:
-            item = match.group(1).strip()
+            item = _strip_checklist_prefix(match.group(1).strip())
             if item:
                 results.append(item)
     return results
@@ -199,3 +199,8 @@ def _normalize_commands(lines: list[str]) -> list[str]:
         if command:
             results.append(command)
     return results
+
+
+def _strip_checklist_prefix(item: str) -> str:
+    """Strip markdown checklist prefixes from list item text."""
+    return re.sub(r"^\[(?: |x|X)\]\s*", "", item)
