@@ -473,6 +473,11 @@ def test_dockyard_command_helper_returns_fresh_lists() -> None:
     assert second == ["python3", "-m", "dockyard", "ls"]
 
 
+def test_dockyard_command_helper_supports_empty_suffix() -> None:
+    """Dockyard command helper should support empty command suffix."""
+    assert _dockyard_command() == ["python3", "-m", "dockyard"]
+
+
 def test_build_run_args_renders_expected_scope_variants(tmp_path: Path) -> None:
     """Run-args helper should include optional berth and branch selectors."""
     git_repo = tmp_path / "demo-repo"
