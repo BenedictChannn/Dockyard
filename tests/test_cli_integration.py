@@ -457,6 +457,12 @@ def test_build_run_args_renders_expected_scope_variants(tmp_path: Path) -> None:
         "  demo-repo  ",
         "--run",
     ]
+    assert _build_run_args("resume", git_repo=git_repo, branch="main") == [
+        "resume",
+        "--branch",
+        "  main  ",
+        "--run",
+    ]
     assert _build_run_args("r", git_repo=git_repo, branch="main", include_berth=True) == [
         "r",
         "  demo-repo  ",
