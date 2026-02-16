@@ -138,7 +138,7 @@ def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int
     """Return sort key that prioritizes branch-only scopes before berth-only.
 
     Args:
-        case: Run-scope metadata tuple.
+        case: Run-scope metadata entry.
 
     Returns:
         Tuple sorted by scope family then command ordering.
@@ -209,10 +209,10 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """Build no-command run-scope scenarios from shared scope metadata.
 
     Args:
-        cases: Scope metadata tuples containing command/scope configuration.
+        cases: Scope metadata entries containing command/scope configuration.
 
     Returns:
-        Parameter tuples for no-command run-scope tests.
+        Parameter rows for no-command run-scope tests.
     """
     scenarios: list[RunNoCommandScenario] = []
     for case in cases:
@@ -241,10 +241,10 @@ def _build_opt_in_mutation_run_scope_scenarios(
     """Build opt-in mutation run-scope scenarios from shared scope metadata.
 
     Args:
-        cases: Scope metadata tuples containing command/scope configuration.
+        cases: Scope metadata entries containing command/scope configuration.
 
     Returns:
-        Parameter tuples for opt-in mutation run-scope tests.
+        Parameter rows for opt-in mutation run-scope tests.
     """
     scenarios: list[RunOptInMutationScenario] = []
     for case in cases:
@@ -272,10 +272,10 @@ def _build_save_no_prompt_scenarios(cases: Sequence[SaveCommandMeta]) -> list[Sa
     """Build no-prompt save scenarios from shared command metadata.
 
     Args:
-        cases: Save command metadata tuples.
+        cases: Save command metadata entries.
 
     Returns:
-        Parameter tuples for no-prompt save non-interference tests.
+        Parameter rows for no-prompt save non-interference tests.
     """
     scenarios: list[SaveNoPromptScenario] = []
     for case in cases:
@@ -297,10 +297,10 @@ def _build_save_editor_scenarios(cases: Sequence[SaveCommandMeta]) -> list[SaveE
     """Build save/editor scenarios from shared command metadata.
 
     Args:
-        cases: Save command metadata tuples.
+        cases: Save command metadata entries.
 
     Returns:
-        Parameter tuples for save/editor non-interference tests.
+        Parameter rows for save/editor non-interference tests.
     """
     scenarios: list[SaveEditorScenario] = []
     for case in cases:
@@ -319,10 +319,10 @@ def _build_save_template_scenarios(cases: Sequence[SaveCommandMeta]) -> list[Sav
     """Build save/template scenarios from shared command metadata.
 
     Args:
-        cases: Save command metadata tuples.
+        cases: Save command metadata entries.
 
     Returns:
-        Parameter tuples for save/template non-interference tests.
+        Parameter rows for save/template non-interference tests.
     """
     scenarios: list[SaveTemplateScenario] = []
     for case in cases:
@@ -908,10 +908,10 @@ def _build_resume_read_path_scenarios(
     """Build resume-read non-interference scenarios from shared case metadata.
 
     Args:
-        cases: Resume-read case metadata tuples.
+        cases: Resume-read case metadata entries.
 
     Returns:
-        Parameter tuples for resume-read non-interference test coverage.
+        Parameter rows for resume-read non-interference test coverage.
     """
     scenarios: list[ResumeReadPathScenario] = []
     for case in cases:
@@ -932,10 +932,10 @@ def _build_metadata_scope_scenarios(cases: Sequence[MetadataScopeMeta]) -> list[
     """Build metadata-scope non-interference scenarios from shared cases.
 
     Args:
-        cases: Metadata-scope case metadata tuples.
+        cases: Metadata-scope case metadata entries.
 
     Returns:
-        Parameter tuples for metadata-scope non-interference tests.
+        Parameter rows for metadata-scope non-interference tests.
     """
     scenarios: list[MetadataScopeScenario] = []
     for case in cases:

@@ -160,10 +160,10 @@ def _build_default_run_success_scenarios(
     """Build default-scope run success scenarios from command metadata.
 
     Args:
-        cases: Command metadata tuples for default-scope run scenarios.
+        cases: Command metadata entries for default-scope run scenarios.
 
     Returns:
-        Parameter tuples for default-scope run success tests.
+        Parameter entries for default-scope run success tests.
     """
     scenarios: list[RunDefaultSuccessScenario] = []
     for case in cases:
@@ -185,10 +185,10 @@ def _build_default_run_failure_scenarios(
     """Build default-scope run failure scenarios from command metadata.
 
     Args:
-        cases: Command metadata tuples for default-scope run scenarios.
+        cases: Command metadata entries for default-scope run scenarios.
 
     Returns:
-        Parameter tuples for default-scope run stop-on-failure tests.
+        Parameter entries for default-scope run stop-on-failure tests.
     """
     scenarios: list[RunDefaultFailureScenario] = []
     for case in cases:
@@ -209,10 +209,10 @@ def _build_branch_run_success_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     """Build branch-targeted run success scenarios from shared scope metadata.
 
     Args:
-        cases: Run-scope metadata tuples with branch-targeted scope settings.
+        cases: Run-scope metadata entries with branch-targeted scope settings.
 
     Returns:
-        Parameter tuples for branch-scope run-success tests.
+        Parameter entries for branch-scope run-success tests.
     """
     scenarios: list[RunBranchSuccessScenario] = []
     for case in cases:
@@ -243,10 +243,10 @@ def _build_branch_run_failure_scenarios(cases: Sequence[RunScopeCaseMeta]) -> li
     """Build branch-targeted run failure scenarios from shared scope metadata.
 
     Args:
-        cases: Run-scope metadata tuples with branch-targeted scope settings.
+        cases: Run-scope metadata entries with branch-targeted scope settings.
 
     Returns:
-        Parameter tuples for branch-scope stop-on-failure tests.
+        Parameter entries for branch-scope stop-on-failure tests.
     """
     scenarios: list[RunBranchFailureScenario] = []
     for case in cases:
@@ -275,10 +275,10 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> 
     """Build no-command run scenarios from shared scope metadata.
 
     Args:
-        cases: Run-scope metadata tuples.
+        cases: Run-scope metadata entries.
 
     Returns:
-        Parameter tuples for no-command run-path tests.
+        Parameter entries for no-command run-path tests.
     """
     scenarios: list[RunNoCommandScenario] = []
     for case in cases:
