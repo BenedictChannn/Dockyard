@@ -33,6 +33,7 @@ SAVE_COMMAND_CASES: tuple[SaveCommandCase, ...] = (
 SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in SAVE_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[str, ...] = ("resume", "r", "undock")
 RUN_SCOPE_COMMAND_ORDER = {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
+RUN_SCOPE_COMMAND_LABELS = {"resume": "resume", "r": "resume alias", "undock": "undock alias"}
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariant, ...] = (
     ("default", False, False, "repo"),
     ("berth", True, False, "tmp"),
@@ -91,6 +92,17 @@ def _scope_label(scope_id: str) -> str:
     return scope_id.replace("_", " ")
 
 
+def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:
+    """Return scope descriptor text for run-scenario metadata strings."""
+    if include_berth and include_branch:
+        return "berth+branch"
+    if include_berth:
+        return "berth"
+    if include_branch:
+        return "branch"
+    return "default"
+
+
 def _scope_ids(cases: Sequence[RunScopeCase]) -> tuple[str, ...]:
     """Return pytest ID labels derived from run-scope metadata."""
     return tuple(case[4] for case in cases)
@@ -111,16 +123,17 @@ def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCase]) -> list
     """
     scenarios: list[RunNoCommandScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = _scope_label(scope_id)
+        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
+        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
         scenarios.append(
             (
                 command_name,
                 include_berth,
                 include_branch,
                 run_cwd_kind,
-                f"{scope_label} run no-commands baseline",
-                f"Verify {scope_label} --run no-op path remains non-mutating",
-                f"run {scope_label} --run",
+                f"{command_label} {scope_descriptor} run no-commands baseline",
+                f"Verify {command_label} {scope_descriptor} --run no-op path remains non-mutating",
+                f"run {command_label} {scope_descriptor} --run",
             ),
         )
     return scenarios
@@ -139,7 +152,8 @@ def _build_opt_in_mutation_run_scope_scenarios(
     """
     scenarios: list[RunOptInMutationScenario] = []
     for command_name, include_berth, include_branch, run_cwd_kind, scope_id in cases:
-        scope_label = _scope_label(scope_id)
+        command_label = RUN_SCOPE_COMMAND_LABELS[command_name]
+        scope_descriptor = _run_scope_descriptor(include_berth, include_branch)
         scenarios.append(
             (
                 command_name,
@@ -147,9 +161,9 @@ def _build_opt_in_mutation_run_scope_scenarios(
                 include_branch,
                 run_cwd_kind,
                 f"{scope_id}_opt_in_marker.txt",
-                f"{scope_label} opt-in mutation baseline",
-                f"Verify {scope_label} --run may execute mutating commands",
-                f"run {scope_label} --run",
+                f"{command_label} {scope_descriptor} opt-in mutation baseline",
+                f"Verify {command_label} {scope_descriptor} --run may execute mutating commands",
+                f"run {command_label} {scope_descriptor} --run",
             ),
         )
     return scenarios
