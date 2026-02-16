@@ -121,6 +121,7 @@ python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workst
 python3 -m dockyard f "auth" --tag backend --json
 python3 -m dockyard f "auth" --tag backend --branch feature/workstream --json
 python3 -m dockyard f "auth" --tag backend --limit 5 --json
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --json
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
 # in --json mode, no matches are returned as []
