@@ -39,6 +39,11 @@ def test_format_age_returns_unknown_for_invalid_timestamp() -> None:
     assert format_age("not-a-timestamp") == "unknown"
 
 
+def test_format_age_returns_unknown_for_non_string_timestamp() -> None:
+    """Non-string timestamps should render as unknown age."""
+    assert format_age(None) == "unknown"  # type: ignore[arg-type]
+
+
 def test_format_age_clamps_future_timestamps_to_zero_seconds() -> None:
     """Future timestamps should render as 0s instead of negative age."""
     assert format_age("2999-01-01T00:00:00+00:00") == "0s"

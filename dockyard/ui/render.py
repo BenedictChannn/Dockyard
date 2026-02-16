@@ -16,7 +16,7 @@ def format_age(timestamp_iso: str) -> str:
     """Return compact human-readable age string for timestamp."""
     try:
         then = datetime.fromisoformat(timestamp_iso)
-    except ValueError:
+    except (TypeError, ValueError):
         return "unknown"
     if then.tzinfo is None:
         then = then.replace(tzinfo=timezone.utc)
