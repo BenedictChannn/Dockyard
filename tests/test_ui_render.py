@@ -304,6 +304,26 @@ def test_print_search_uses_repo_id_when_berth_name_is_blank() -> None:
     assert "repo_from_id" in output
 
 
+def test_print_search_strips_surrounding_whitespace_from_berth_label() -> None:
+    """Search renderer should trim berth labels before rendering."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "berth_name": "  repo-trim  ",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": "snippet",
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo-trim" in output
+    assert "  repo-trim  " not in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)
@@ -418,6 +438,29 @@ def test_print_harbor_uses_repo_id_when_berth_name_is_blank() -> None:
     assert "repo_from_id" in output
 
 
+def test_print_harbor_strips_surrounding_whitespace_from_berth_label() -> None:
+    """Harbor renderer should trim berth labels before rendering."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "  repo-trim  ",
+                "repo_id": "repo_from_id",
+                "branch": "main",
+                "status": "green",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": [],
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo-trim" in output
+    assert "  repo-trim  " not in output
+
+
 def test_print_harbor_handles_non_string_updated_at() -> None:
     """Harbor rendering should tolerate non-string updated_at values."""
     console = Console(record=True, width=120)
@@ -501,6 +544,27 @@ def test_print_harbor_handles_string_next_steps_field() -> None:
     output = console.export_text()
     assert "single next step" in output
     assert "text" in output
+
+
+def test_print_harbor_handles_tuple_next_steps_field() -> None:
+    """Harbor renderer should tolerate tuple next_steps payloads."""
+    console = Console(record=True, width=120)
+    print_harbor(
+        console,
+        [
+            {
+                "berth_name": "repo-next-step-tuple",
+                "branch": "main",
+                "status": "yellow",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "next_steps": ("tuple step",),
+                "objective": "obj",
+                "open_review_count": 0,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "tuple step" in output
 
 
 def test_print_harbor_next_step_preview_is_single_line() -> None:

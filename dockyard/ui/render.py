@@ -17,7 +17,7 @@ def _display_berth_label(row: dict[str, Any]) -> str:
     for key in ("berth_name", "repo_id"):
         value = row.get(key)
         if value is not None and str(value).strip():
-            return str(value)
+            return str(value).strip()
     return "(unknown)"
 
 
@@ -162,14 +162,12 @@ def print_harbor(console: Console, rows: list[dict[str, Any]]) -> None:
         berth = _display_berth_label(row)
         branch = row.get("branch", "")
         status = row.get("status", "unknown")
-        next_steps = row.get("next_steps")
+        next_steps = _coerce_text_items(row.get("next_steps"))
         objective = row.get("objective") or ""
         if not isinstance(objective, str):
             objective = str(objective)
-        if isinstance(next_steps, list) and next_steps:
-            next_step = str(next_steps[0])
-        elif isinstance(next_steps, str) and next_steps:
-            next_step = next_steps
+        if next_steps:
+            next_step = next_steps[0]
         else:
             next_step = objective
         table.add_row(
