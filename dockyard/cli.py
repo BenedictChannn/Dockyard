@@ -112,6 +112,16 @@ def _normalize_optional_text(value: str | None) -> str | None:
     return cleaned or None
 
 
+def _normalize_non_empty_option(value: str | None, field_name: str) -> str | None:
+    """Normalize optional text option and reject blank provided values."""
+    if value is None:
+        return None
+    normalized = _normalize_optional_text(value)
+    if normalized is None:
+        raise typer.BadParameter(f"{field_name} must be a non-empty string.")
+    return normalized
+
+
 def _normalize_text_values(values: list[str] | None, dedupe: bool = False) -> list[str]:
     """Normalize list-style text inputs by trimming and dropping blanks."""
     normalized: list[str] = []
@@ -373,8 +383,9 @@ def _resolve_repo_context(
     require_git: bool = True,
 ):
     """Resolve git snapshot for current context."""
+    normalized_root = _normalize_non_empty_option(root, "--root")
     try:
-        return inspect_repository(root_override=root)
+        return inspect_repository(root_override=normalized_root)
     except NotGitRepositoryError:
         if require_git:
             raise
@@ -864,7 +875,8 @@ def link_command(
     if not cleaned_url:
         raise typer.BadParameter("URL must be a non-empty string.")
     store, _ = _store()
-    snapshot = inspect_repository(root_override=root)
+    snapshot = _resolve_repo_context(root=root, require_git=True)
+    assert snapshot is not None
     item = LinkItem(
         id=f"lnk_{uuid.uuid4().hex[:10]}",
         repo_id=snapshot.repo_id,
@@ -882,7 +894,8 @@ def links_command(
 ) -> None:
     """List URLs attached to current slip."""
     store, _ = _store()
-    snapshot = inspect_repository(root_override=root)
+    snapshot = _resolve_repo_context(root=root, require_git=True)
+    assert snapshot is not None
     items = store.list_links(snapshot.repo_id, snapshot.branch)
     if not items:
         console.print("No links for current slip.")

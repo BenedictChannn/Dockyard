@@ -51,6 +51,7 @@ python3 -m dockyard save \
 
 `save` trims `--tag` / `--link` values, ignores blank entries, and de-duplicates
 exact repeats.
+`--root` override values are trimmed; blank values are rejected.
 
 Template-powered non-interactive mode:
 
@@ -176,6 +177,7 @@ python3 -m dockyard links
 
 `link` validates URL input as a non-empty string.
 Outer whitespace on URL input is trimmed before persistence/display.
+`--root` override values are trimmed; blank values are rejected.
 `links` output also compacts multiline values and uses `(unknown)` fallback for
 blank timestamp/URL fields.
 

@@ -63,6 +63,7 @@ Editor note:
   `$EDITOR`.
 - `--tag` / `--link` values are trimmed, blank entries are ignored, and exact
   duplicates are de-duplicated.
+- `--root` must be non-empty when provided.
 
 ## `resume` (`r`, `undock`)
 
@@ -219,6 +220,7 @@ python3 -m dockyard links
 Validation:
 - `link` URL must be a non-empty string
 - surrounding whitespace is trimmed from URL input before persistence/display
+- `--root` must be non-empty when provided
 
 `links` output compacts multiline URL/timestamp values to single-line previews
 and uses `(unknown)` fallback text for blank fields.

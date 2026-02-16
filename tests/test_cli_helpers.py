@@ -12,6 +12,7 @@ from dockyard.cli import (
     _comma_or_pipe_values,
     _emit_json,
     _normalize_editor_text,
+    _normalize_non_empty_option,
     _normalize_optional_text,
     _normalize_text_values,
     _safe_preview,
@@ -219,6 +220,18 @@ def test_normalize_optional_text_returns_none_for_blank_input() -> None:
     """Optional text normalizer should collapse blank values to None."""
     assert _normalize_optional_text("   ") is None
     assert _normalize_optional_text(None) is None
+
+
+def test_normalize_non_empty_option_trims_values() -> None:
+    """Non-empty option normalizer should trim surrounding whitespace."""
+    assert _normalize_non_empty_option("  /tmp/repo  ", "--root") == "/tmp/repo"
+
+
+def test_normalize_non_empty_option_rejects_blank_values() -> None:
+    """Non-empty option normalizer should reject blank provided values."""
+    with pytest.raises(cli_module.typer.BadParameter) as err:
+        _normalize_non_empty_option("   ", "--root")
+    assert "--root must be a non-empty string." in str(err.value)
 
 
 def test_normalize_text_values_trims_and_filters_blank_entries() -> None:

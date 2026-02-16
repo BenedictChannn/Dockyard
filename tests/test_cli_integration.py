@@ -436,6 +436,72 @@ def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     assert payload["objective"] == "Alias s objective"
 
 
+def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
+    """Save should accept root override values with surrounding whitespace."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    saved = _run_dock(
+        [
+            "save",
+            "--root",
+            f"  {git_repo}  ",
+            "--no-prompt",
+            "--objective",
+            "Trimmed root objective",
+            "--decisions",
+            "Trimmed root decisions",
+            "--next-step",
+            "trimmed root step",
+            "--risks",
+            "none",
+            "--command",
+            "echo trimmed-root",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in saved.stdout
+
+
+def test_save_rejects_blank_root_override(git_repo: Path, tmp_path: Path) -> None:
+    """Save should reject blank root override values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            "   ",
+            "--no-prompt",
+            "--objective",
+            "Blank root objective",
+            "--decisions",
+            "Blank root decisions",
+            "--next-step",
+            "blank root step",
+            "--risks",
+            "none",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--root must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_save_editor_populates_decisions(git_repo: Path, tmp_path: Path) -> None:
     """Save should capture decisions from the configured editor."""
     env = dict(os.environ)
@@ -7911,6 +7977,50 @@ def test_link_commands_support_root_override_outside_repo(
     )
     listed = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
     assert "https://example.com/root-override" in listed
+
+
+def test_link_and_links_accept_trimmed_root_override(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Link and links should resolve root override values after trimming."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    trimmed_root = f"  {git_repo}  "
+
+    _run_dock(
+        ["link", "https://example.com/trimmed-root", "--root", trimmed_root],
+        cwd=tmp_path,
+        env=env,
+    )
+    listed = _run_dock(["links", "--root", trimmed_root], cwd=tmp_path, env=env).stdout
+    assert "https://example.com/trimmed-root" in listed
+
+
+def test_link_and_links_reject_blank_root_override(tmp_path: Path) -> None:
+    """Link and links should reject blank root override values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    link_failed = _run_dock(
+        ["link", "https://example.com/no-root", "--root", "   "],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    link_output = f"{link_failed.stdout}\n{link_failed.stderr}"
+    assert "--root must be a non-empty string." in link_output
+    assert "Traceback" not in link_output
+
+    links_failed = _run_dock(
+        ["links", "--root", "   "],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    links_output = f"{links_failed.stdout}\n{links_failed.stderr}"
+    assert "--root must be a non-empty string." in links_output
+    assert "Traceback" not in links_output
 
 
 def test_link_rejects_blank_url(git_repo: Path, tmp_path: Path) -> None:
