@@ -119,6 +119,24 @@ def test_print_search_truncates_long_snippets() -> None:
     assert "…" in output
 
 
+def test_print_search_handles_non_string_snippet() -> None:
+    """Search renderer should tolerate non-string snippet payloads."""
+    console = Console(record=True, width=120)
+    print_search(
+        console,
+        [
+            {
+                "repo_id": "repo_non_string",
+                "branch": "main",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "snippet": None,
+            }
+        ],
+    )
+    output = console.export_text()
+    assert "repo_non_string" in output
+
+
 def test_print_harbor_renders_title_for_empty_rows() -> None:
     """Harbor renderer should still render a titled table when empty."""
     console = Console(record=True, width=120)

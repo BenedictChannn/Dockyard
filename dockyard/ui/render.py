@@ -134,10 +134,13 @@ def print_search(console: Console, rows: list[dict[str, Any]]) -> None:
     table.add_column("Timestamp")
     table.add_column("Snippet")
     for row in rows:
+        snippet = row.get("snippet") or ""
+        if not isinstance(snippet, str):
+            snippet = str(snippet)
         table.add_row(
             row.get("berth_name", row["repo_id"]),
             row["branch"],
             row["created_at"],
-            row["snippet"][:120],
+            snippet[:120],
         )
     console.print(table)
