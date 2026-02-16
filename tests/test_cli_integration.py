@@ -7,10 +7,10 @@ import os
 import re
 import sqlite3
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeVar
 
 import pytest
 
@@ -18,6 +18,7 @@ RunArgs = list[str]
 RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
+CaseT = TypeVar("CaseT")
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,6 @@ RUN_COMMAND_CASES: tuple[RunCommandMeta, ...] = (
     RunCommandMeta(name="r", slug="r", case_id="r_alias", label="resume alias"),
     RunCommandMeta(name="undock", slug="undock", case_id="undock_alias", label="undock alias"),
 )
-RUN_COMMAND_IDS: tuple[str, ...] = tuple(case.case_id for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_COMMAND_CASES)
 RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
     case.name: case.label for case in RUN_COMMAND_CASES
@@ -96,6 +96,11 @@ def _run_scope_case_command_sort_key(case: RunScopeCaseMeta) -> int:
     return RUN_SCOPE_COMMAND_INDEX[case.command_name]
 
 
+def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
+    """Return pytest ID labels derived from metadata collection."""
+    return tuple(get_id(case) for case in cases)
+
+
 RUN_SCOPE_CASES: tuple[RunScopeCaseMeta, ...] = tuple(
     RunScopeCaseMeta(
         command_name=command_name,
@@ -120,13 +125,9 @@ RunBranchFailureScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, st
 RunNoCommandScenario = tuple[RunCommandName, bool, bool, RunCwdKind, str, str, str]
 
 
-def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:
-    """Return pytest ID labels derived from run-scope case metadata."""
-    return tuple(case.case_id for case in cases)
-
-
-RUN_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES)
-RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _scope_ids(RUN_BRANCH_SCOPE_CASES)
+RUN_COMMAND_IDS: tuple[str, ...] = _case_ids(RUN_COMMAND_CASES, get_id=lambda case: case.case_id)
+RUN_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_SCOPE_CASES, get_id=lambda case: case.case_id)
+RUN_BRANCH_SCOPE_IDS: tuple[str, ...] = _case_ids(RUN_BRANCH_SCOPE_CASES, get_id=lambda case: case.case_id)
 
 
 def _run_scope_descriptor(include_berth: bool, include_branch: bool) -> str:

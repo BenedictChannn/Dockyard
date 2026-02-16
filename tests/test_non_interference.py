@@ -9,7 +9,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeVar
 
 import pytest
 
@@ -23,6 +23,7 @@ RunCommandName = Literal["resume", "r", "undock"]
 SaveCommandName = Literal["save", "s", "dock"]
 DashboardCommandName = Literal["ls", "harbor"]
 SearchCommandName = Literal["search", "f"]
+CaseT = TypeVar("CaseT")
 
 
 @dataclass(frozen=True)
@@ -103,7 +104,6 @@ SAVE_COMMAND_CASES: tuple[SaveCommandMeta, ...] = (
     SaveCommandMeta("s", "alias_s", "s_alias"),
     SaveCommandMeta("dock", "alias_dock", "dock_alias"),
 )
-SAVE_COMMAND_IDS: tuple[str, ...] = tuple(case.case_id for case in SAVE_COMMAND_CASES)
 RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandMeta, ...] = (
     RunScopeCommandMeta("resume", "resume"),
     RunScopeCommandMeta("r", "resume alias"),
@@ -189,13 +189,20 @@ def _run_scope_context(
     )
 
 
-def _scope_ids(cases: Sequence[RunScopeCaseMeta]) -> tuple[str, ...]:
-    """Return pytest ID labels derived from run-scope metadata."""
-    return tuple(case.case_id for case in cases)
+def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tuple[str, ...]:
+    """Return pytest ID labels derived from metadata collection."""
+    return tuple(get_id(case) for case in cases)
 
 
-RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
-RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _scope_ids(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
+SAVE_COMMAND_IDS: tuple[str, ...] = _case_ids(SAVE_COMMAND_CASES, get_id=lambda case: case.case_id)
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = _case_ids(
+    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+    get_id=lambda case: case.case_id,
+)
+RUN_SCOPE_IDS_DEFAULT_BRANCH_BERTH: tuple[str, ...] = _case_ids(
+    RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH,
+    get_id=lambda case: case.case_id,
+)
 
 
 def _build_no_command_run_scope_scenarios(cases: Sequence[RunScopeCaseMeta]) -> list[RunNoCommandScenario]:
@@ -975,7 +982,10 @@ RESUME_READ_PATH_CASES: tuple[ResumeReadPathMeta, ...] = (
         "tmp",
     ),
 )
-RESUME_READ_PATH_IDS: tuple[str, ...] = tuple(case.case_id for case in RESUME_READ_PATH_CASES)
+RESUME_READ_PATH_IDS: tuple[str, ...] = _case_ids(
+    RESUME_READ_PATH_CASES,
+    get_id=lambda case: case.case_id,
+)
 
 METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
     MetadataScopeMeta(
@@ -993,7 +1003,10 @@ METADATA_SCOPE_CASES: tuple[MetadataScopeMeta, ...] = (
         _build_review_add_command_root_override,
     ),
 )
-METADATA_SCOPE_IDS: tuple[str, ...] = tuple(case.case_id for case in METADATA_SCOPE_CASES)
+METADATA_SCOPE_IDS: tuple[str, ...] = _case_ids(
+    METADATA_SCOPE_CASES,
+    get_id=lambda case: case.case_id,
+)
 
 
 @pytest.mark.parametrize(
