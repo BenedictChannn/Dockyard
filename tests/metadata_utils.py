@@ -3,16 +3,25 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 CaseT = TypeVar("CaseT")
 ContextT = TypeVar("ContextT")
+ScopeCaseT = TypeVar("ScopeCaseT", bound="SupportsRunScopeCase")
 
 
 class SupportsCaseId(Protocol):
     """Protocol for metadata records that include pytest case IDs."""
 
     case_id: str
+
+
+class SupportsRunScopeCase(Protocol):
+    """Protocol for scope-aware metadata with command + flags."""
+
+    command_name: Any
+    include_berth: bool
+    include_branch: bool
 
 
 def case_ids(cases: Sequence[SupportsCaseId]) -> tuple[str, ...]:
@@ -27,3 +36,22 @@ def pair_with_context(
 ) -> tuple[tuple[CaseT, ContextT], ...]:
     """Pair each case with its derived context metadata."""
     return tuple((case, context_builder(case)) for case in cases)
+
+
+def pair_scope_cases_with_context(
+    cases: Sequence[ScopeCaseT],
+    *,
+    context_builder: Callable[[Any, bool, bool], ContextT],
+) -> tuple[tuple[ScopeCaseT, ContextT], ...]:
+    """Pair each scope case with context derived from command/scope flags."""
+    return tuple(
+        (
+            case,
+            context_builder(
+                case.command_name,
+                case.include_berth,
+                case.include_branch,
+            ),
+        )
+        for case in cases
+    )

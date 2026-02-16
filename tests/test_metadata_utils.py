@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tests.metadata_utils import case_ids, pair_with_context
+from tests.metadata_utils import case_ids, pair_scope_cases_with_context, pair_with_context
 
 
 @dataclass(frozen=True)
@@ -13,6 +13,16 @@ class _CaseMeta:
 
     case_id: str
     label: str
+
+
+@dataclass(frozen=True)
+class _ScopeCaseMeta:
+    """Simple scope-case metadata fixture for utility tests."""
+
+    case_id: str
+    command_name: str
+    include_berth: bool
+    include_branch: bool
 
 
 def test_case_ids_returns_case_id_order() -> None:
@@ -62,4 +72,24 @@ def test_pair_with_context_preserves_order_for_empty_and_non_empty() -> None:
     assert paired == (
         (cases[0], "ZETA"),
         (cases[1], "ALPHA"),
+    )
+
+
+def test_pair_scope_cases_with_context_uses_scope_fields() -> None:
+    """pair_scope_cases_with_context should pass command and scope flags."""
+    cases = (
+        _ScopeCaseMeta(case_id="a", command_name="resume", include_berth=False, include_branch=True),
+        _ScopeCaseMeta(case_id="b", command_name="undock", include_berth=True, include_branch=False),
+    )
+
+    paired = pair_scope_cases_with_context(
+        cases,
+        context_builder=lambda command_name, include_berth, include_branch: (
+            f"{command_name}:{include_berth}:{include_branch}"
+        ),
+    )
+
+    assert paired == (
+        (cases[0], "resume:False:True"),
+        (cases[1], "undock:True:False"),
     )
