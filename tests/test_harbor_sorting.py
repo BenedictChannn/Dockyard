@@ -212,3 +212,35 @@ def test_harbor_stale_filter_skips_non_string_timestamps(tmp_path) -> None:
 
     stale_rows = store.list_harbor(stale_days=1)
     assert [row["repo_id"] for row in stale_rows] == ["valid"]
+
+
+def test_harbor_sorting_handles_mixed_updated_at_types(tmp_path) -> None:
+    """Harbor sorting should tolerate mixed updated_at value types."""
+    store = SQLiteStore(tmp_path / "dock.sqlite")
+    store.initialize()
+
+    store.upsert_berth(Berth(repo_id="numeric", name="Numeric", root_path="/tmp/numeric", remote_url=None))
+    store.upsert_berth(Berth(repo_id="text", name="Text", root_path="/tmp/text", remote_url=None))
+
+    store.upsert_slip(
+        Slip(
+            repo_id="numeric",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at=0,  # type: ignore[arg-type]
+        )
+    )
+    store.upsert_slip(
+        Slip(
+            repo_id="text",
+            branch="main",
+            last_checkpoint_id=None,
+            status="yellow",
+            updated_at="2026-01-01T00:00:00+00:00",
+        )
+    )
+
+    rows = store.list_harbor()
+    assert len(rows) == 2
+    assert {row["repo_id"] for row in rows} == {"numeric", "text"}
