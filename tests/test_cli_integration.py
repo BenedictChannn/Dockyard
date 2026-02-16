@@ -7,10 +7,11 @@ import os
 import re
 import sqlite3
 import subprocess
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from operator import attrgetter
 from pathlib import Path
+from types import MappingProxyType
 from typing import Literal, TypeVar
 
 import pytest
@@ -77,29 +78,33 @@ RUN_COMMAND_CASES: tuple[RunCommandMeta, ...] = (
     RunCommandMeta(name="undock", slug="undock", case_id="undock_alias", label="undock alias"),
 )
 RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_COMMAND_CASES)
-RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
-    case.name: case.label for case in RUN_COMMAND_CASES
-}
-RUN_SCOPE_COMMAND_INDEX: dict[RunCommandName, int] = {
-    command_name: index for index, command_name in enumerate(RUN_SCOPE_COMMANDS)
-}
+RUN_SCOPE_COMMAND_LABELS: Mapping[RunCommandName, str] = MappingProxyType(
+    {case.name: case.label for case in RUN_COMMAND_CASES}
+)
+RUN_SCOPE_COMMAND_INDEX: Mapping[RunCommandName, int] = MappingProxyType(
+    {command_name: index for index, command_name in enumerate(RUN_SCOPE_COMMANDS)}
+)
 RUN_SCOPE_VARIANTS: tuple[RunScopeVariantMeta, ...] = (
     RunScopeVariantMeta("default", False, False, "repo", "default", "default"),
     RunScopeVariantMeta("berth", True, False, "tmp", "berth", "berth"),
     RunScopeVariantMeta("branch", False, True, "repo", "branch", "branch"),
     RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch", "berth-branch"),
 )
-RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (variant.include_berth, variant.include_branch): variant.descriptor
-    for variant in RUN_SCOPE_VARIANTS
-}
-RUN_SCOPE_SLUG_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (variant.include_berth, variant.include_branch): variant.slug
-    for variant in RUN_SCOPE_VARIANTS
-}
-RUN_SCOPE_VARIANT_INDEX: dict[RunScopeVariantId, int] = {
-    variant.variant_id: index for index, variant in enumerate(RUN_SCOPE_VARIANTS)
-}
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyType(
+    {
+        (variant.include_berth, variant.include_branch): variant.descriptor
+        for variant in RUN_SCOPE_VARIANTS
+    }
+)
+RUN_SCOPE_SLUG_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyType(
+    {
+        (variant.include_berth, variant.include_branch): variant.slug
+        for variant in RUN_SCOPE_VARIANTS
+    }
+)
+RUN_SCOPE_VARIANT_INDEX: Mapping[RunScopeVariantId, int] = MappingProxyType(
+    {variant.variant_id: index for index, variant in enumerate(RUN_SCOPE_VARIANTS)}
+)
 
 
 def _run_scope_case_branch_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:

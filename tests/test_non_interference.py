@@ -6,10 +6,11 @@ import json
 import os
 import re
 import subprocess
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from operator import attrgetter
 from pathlib import Path
+from types import MappingProxyType
 from typing import Literal, TypeVar
 
 import pytest
@@ -117,28 +118,32 @@ RUN_SCOPE_COMMAND_CASES: tuple[RunScopeCommandMeta, ...] = (
     RunScopeCommandMeta("undock", "undock alias"),
 )
 RUN_SCOPE_COMMANDS: tuple[RunCommandName, ...] = tuple(case.name for case in RUN_SCOPE_COMMAND_CASES)
-RUN_SCOPE_COMMAND_ORDER: dict[RunCommandName, int] = {
-    name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)
-}
-RUN_SCOPE_COMMAND_LABELS: dict[RunCommandName, str] = {
-    case.name: case.label for case in RUN_SCOPE_COMMAND_CASES
-}
+RUN_SCOPE_COMMAND_ORDER: Mapping[RunCommandName, int] = MappingProxyType(
+    {name: index for index, name in enumerate(RUN_SCOPE_COMMANDS)}
+)
+RUN_SCOPE_COMMAND_LABELS: Mapping[RunCommandName, str] = MappingProxyType(
+    {case.name: case.label for case in RUN_SCOPE_COMMAND_CASES}
+)
 RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH: tuple[RunScopeVariantMeta, ...] = (
     RunScopeVariantMeta("default", False, False, "repo", "default"),
     RunScopeVariantMeta("berth", True, False, "tmp", "berth"),
     RunScopeVariantMeta("branch", False, True, "repo", "branch"),
     RunScopeVariantMeta("berth_branch", True, True, "tmp", "berth+branch"),
 )
-RUN_SCOPE_DESCRIPTOR_BY_FLAGS: dict[tuple[bool, bool], str] = {
-    (variant.include_berth, variant.include_branch): variant.descriptor
-    for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
-}
-RUN_SCOPE_RANK_BY_FLAGS: dict[tuple[bool, bool], int] = {
-    (False, False): 0,
-    (False, True): 1,
-    (True, False): 2,
-    (True, True): 3,
-}
+RUN_SCOPE_DESCRIPTOR_BY_FLAGS: Mapping[tuple[bool, bool], str] = MappingProxyType(
+    {
+        (variant.include_berth, variant.include_branch): variant.descriptor
+        for variant in RUN_SCOPE_VARIANTS_DEFAULT_BERTH_BRANCH
+    }
+)
+RUN_SCOPE_RANK_BY_FLAGS: Mapping[tuple[bool, bool], int] = MappingProxyType(
+    {
+        (False, False): 0,
+        (False, True): 1,
+        (True, False): 2,
+        (True, True): 3,
+    }
+)
 
 
 def _run_scope_branch_before_berth_sort_key(case: RunScopeCaseMeta) -> tuple[int, int]:
