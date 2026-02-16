@@ -375,9 +375,6 @@ def _case_ids(cases: Sequence[CaseT], *, get_id: Callable[[CaseT], str]) -> tupl
     return tuple(get_id(case) for case in cases)
 
 
-SAVE_COMMAND_IDS: tuple[str, ...] = _case_ids(SAVE_COMMAND_CASES, get_id=attrgetter("case_id"))
-
-
 def _build_no_command_run_scope_scenarios(
     cases: Sequence[RunScopeCaseMeta],
 ) -> tuple[RunNoCommandScenarioMeta, ...]:
@@ -1182,6 +1179,18 @@ SAVE_EDITOR_SCENARIOS: tuple[SaveEditorScenarioMeta, ...] = _build_save_editor_s
 SAVE_TEMPLATE_SCENARIOS: tuple[SaveTemplateScenarioMeta, ...] = _build_save_template_scenarios(
     SAVE_COMMAND_CASES,
 )
+SAVE_NO_PROMPT_IDS: tuple[str, ...] = _case_ids(
+    SAVE_NO_PROMPT_SCENARIOS,
+    get_id=attrgetter("case_id"),
+)
+SAVE_EDITOR_IDS: tuple[str, ...] = _case_ids(
+    SAVE_EDITOR_SCENARIOS,
+    get_id=attrgetter("case_id"),
+)
+SAVE_TEMPLATE_IDS: tuple[str, ...] = _case_ids(
+    SAVE_TEMPLATE_SCENARIOS,
+    get_id=attrgetter("case_id"),
+)
 RUN_NO_COMMAND_SCENARIOS: tuple[RunNoCommandScenarioMeta, ...] = _build_no_command_run_scope_scenarios(
     RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
 )
@@ -1201,7 +1210,7 @@ RUN_OPT_IN_MUTATION_IDS: tuple[str, ...] = _case_ids(
 @pytest.mark.parametrize(
     "case",
     SAVE_NO_PROMPT_SCENARIOS,
-    ids=SAVE_COMMAND_IDS,
+    ids=SAVE_NO_PROMPT_IDS,
 )
 def test_save_no_prompt_flows_do_not_modify_repo(
     git_repo: Path,
@@ -1434,7 +1443,7 @@ def test_review_and_link_commands_do_not_modify_repo(
 @pytest.mark.parametrize(
     "case",
     SAVE_EDITOR_SCENARIOS,
-    ids=SAVE_COMMAND_IDS,
+    ids=SAVE_EDITOR_IDS,
 )
 def test_save_editor_flows_do_not_modify_repo(
     git_repo: Path,
@@ -1488,7 +1497,7 @@ def test_save_editor_flows_do_not_modify_repo(
 @pytest.mark.parametrize(
     "case",
     SAVE_TEMPLATE_SCENARIOS,
-    ids=SAVE_COMMAND_IDS,
+    ids=SAVE_TEMPLATE_IDS,
 )
 def test_save_template_flows_do_not_modify_repo(
     git_repo: Path,
