@@ -529,8 +529,7 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
         env=env,
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         ["python3", "-m", "dockyard", "link", "https://example.com/non-interference"],
@@ -565,8 +564,7 @@ def test_review_and_link_commands_do_not_modify_repo(git_repo: Path, tmp_path: P
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_review_and_link_root_override_commands_do_not_modify_repo(
@@ -611,8 +609,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
         env=env,
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -660,8 +657,7 @@ def test_review_and_link_root_override_commands_do_not_modify_repo(
     _run(["python3", "-m", "dockyard", "review", "open", review_id], cwd=tmp_path, env=env)
     _run(["python3", "-m", "dockyard", "review", "done", review_id], cwd=tmp_path, env=env)
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -682,8 +678,7 @@ def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -
     editor_script.chmod(0o755)
     env["EDITOR"] = str(editor_script)
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -717,8 +712,7 @@ def test_save_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -741,8 +735,7 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
         encoding="utf-8",
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -761,8 +754,7 @@ def test_save_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path)
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -785,8 +777,7 @@ def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_pat
         encoding="utf-8",
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -805,8 +796,7 @@ def test_save_alias_s_with_template_does_not_modify_repo(git_repo: Path, tmp_pat
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -827,8 +817,7 @@ def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path:
     editor_script.chmod(0o755)
     env["EDITOR"] = str(editor_script)
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -862,8 +851,7 @@ def test_save_alias_s_with_editor_does_not_modify_repo(git_repo: Path, tmp_path:
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -871,8 +859,7 @@ def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: P
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -907,8 +894,7 @@ def test_save_alias_s_no_prompt_does_not_modify_repo(git_repo: Path, tmp_path: P
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -931,8 +917,7 @@ def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_
         encoding="utf-8",
     )
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -951,8 +936,7 @@ def test_save_alias_dock_with_template_does_not_modify_repo(git_repo: Path, tmp_
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -973,8 +957,7 @@ def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_pa
     editor_script.chmod(0o755)
     env["EDITOR"] = str(editor_script)
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -1008,8 +991,7 @@ def test_save_alias_dock_with_editor_does_not_modify_repo(git_repo: Path, tmp_pa
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -1017,13 +999,11 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(["python3", "-m", "dockyard"], cwd=git_repo, env=env)
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
 
 
 def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
@@ -1031,8 +1011,7 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    status_before = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_before == ""
+    _assert_repo_clean(git_repo)
 
     _run(
         [
@@ -1067,5 +1046,4 @@ def test_dock_alias_save_does_not_modify_repo(git_repo: Path, tmp_path: Path) ->
         env=env,
     )
 
-    status_after = _run(["git", "status", "--porcelain"], cwd=git_repo)
-    assert status_after == ""
+    _assert_repo_clean(git_repo)
