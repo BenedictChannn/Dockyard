@@ -50,7 +50,11 @@ def _store() -> tuple[SQLiteStore, Path]:
 
 
 def _comma_or_pipe_values(raw: str) -> list[str]:
-    """Parse comma- or pipe-separated user input into a value list."""
+    """Parse comma- or pipe-separated input into stripped values.
+
+    If the text contains a pipe (`|`), pipe separation is used for the full
+    string so commas can be preserved inside values.
+    """
     if "|" in raw:
         parts = raw.split("|")
     else:
