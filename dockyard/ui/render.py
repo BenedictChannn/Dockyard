@@ -75,7 +75,10 @@ def print_resume(
         project_name: Human-readable berth/project label.
     """
     summary_lines = [
-        f"Project/Branch: {project_name} / {checkpoint.branch}",
+        (
+            "Project/Branch: "
+            f"{_preview_text(project_name, 120)} / {_preview_text(checkpoint.branch, 120)}"
+        ),
         f"Last Checkpoint: {checkpoint.created_at} ({format_age(checkpoint.created_at)} ago)",
         f"Objective: {_preview_text(checkpoint.objective, 200)}",
         "Next Steps:",
