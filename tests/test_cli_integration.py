@@ -18,25 +18,30 @@ RunCommands = list[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunScopeCase = tuple[str, bool, bool, RunCwdKind, str]
 RunCommandCase = tuple[str, str, str]
+RunScopeVariant = tuple[str, bool, bool, RunCwdKind]
 RUN_COMMAND_CASES: tuple[RunCommandCase, ...] = (
     ("resume", "resume", "resume"),
     ("r", "r", "r_alias"),
     ("undock", "undock", "undock_alias"),
 )
 RUN_COMMAND_IDS: tuple[str, ...] = tuple(case[2] for case in RUN_COMMAND_CASES)
-RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = (
-    ("resume", False, False, "repo", "resume_default"),
-    ("r", False, False, "repo", "r_default"),
-    ("undock", False, False, "repo", "undock_default"),
-    ("resume", True, False, "tmp", "resume_berth"),
-    ("r", True, False, "tmp", "r_berth"),
-    ("undock", True, False, "tmp", "undock_berth"),
-    ("resume", False, True, "repo", "resume_branch"),
-    ("r", False, True, "repo", "r_branch"),
-    ("undock", False, True, "repo", "undock_branch"),
-    ("resume", True, True, "tmp", "resume_berth_branch"),
-    ("r", True, True, "tmp", "r_berth_branch"),
-    ("undock", True, True, "tmp", "undock_berth_branch"),
+RUN_SCOPE_COMMANDS: tuple[str, ...] = tuple(case[0] for case in RUN_COMMAND_CASES)
+RUN_SCOPE_VARIANTS: tuple[RunScopeVariant, ...] = (
+    ("default", False, False, "repo"),
+    ("berth", True, False, "tmp"),
+    ("branch", False, True, "repo"),
+    ("berth_branch", True, True, "tmp"),
+)
+RUN_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(
+    (
+        command_name,
+        include_berth,
+        include_branch,
+        run_cwd_kind,
+        f"{command_name}_{variant_id}",
+    )
+    for variant_id, include_berth, include_branch, run_cwd_kind in RUN_SCOPE_VARIANTS
+    for command_name in RUN_SCOPE_COMMANDS
 )
 RUN_BRANCH_SCOPE_CASES: tuple[RunScopeCase, ...] = tuple(case for case in RUN_SCOPE_CASES if case[2])
 RunDefaultSuccessScenario = tuple[str, str, str, str, RunCommands]
