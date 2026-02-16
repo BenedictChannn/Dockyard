@@ -1058,6 +1058,15 @@ def test_dockyard_command_supports_empty_suffix() -> None:
     assert _dockyard_command() == ["python3", "-m", "dockyard"]
 
 
+def test_dockyard_command_returns_fresh_list_each_call() -> None:
+    """Dockyard command helper should return a fresh mutable list per call."""
+    first = _dockyard_command("links")
+    second = _dockyard_command("links")
+
+    first.append("--json")
+    assert second == ["python3", "-m", "dockyard", "links"]
+
+
 def _build_link_command(url: str, *, root: Path | None = None) -> RunCommand:
     """Build link command with optional explicit root override."""
     command = _dockyard_command("link", url)
