@@ -436,6 +436,103 @@ def test_save_alias_s_works(git_repo: Path, tmp_path: Path) -> None:
     assert payload["objective"] == "Alias s objective"
 
 
+def test_save_alias_s_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should accept trimmed root override values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    saved = _run_dock(
+        [
+            "s",
+            "--root",
+            f"  {git_repo}  ",
+            "--no-prompt",
+            "--objective",
+            "Alias s trimmed root objective",
+            "--decisions",
+            "Alias s trimmed root decisions",
+            "--next-step",
+            "alias s step",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-s-trimmed",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in saved.stdout
+
+
+def test_save_alias_s_rejects_blank_root_override(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should reject blank root override values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            "   ",
+            "--no-prompt",
+            "--objective",
+            "Alias s blank root objective",
+            "--decisions",
+            "Alias s blank root decisions",
+            "--next-step",
+            "alias s step",
+            "--risks",
+            "none",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--root must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_save_alias_s_rejects_blank_template_path(git_repo: Path, tmp_path: Path) -> None:
+    """Save alias `s` should reject blank template option values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(
+        [
+            "s",
+            "--root",
+            str(git_repo),
+            "--template",
+            "   ",
+            "--no-prompt",
+            "--objective",
+            "Alias s template objective",
+            "--decisions",
+            "Alias s template decisions",
+            "--next-step",
+            "alias s step",
+            "--risks",
+            "none",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--template must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_save_accepts_trimmed_root_override(git_repo: Path, tmp_path: Path) -> None:
     """Save should accept root override values with surrounding whitespace."""
     env = dict(os.environ)
