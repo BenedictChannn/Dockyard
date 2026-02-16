@@ -649,7 +649,7 @@ def _build_opt_in_run_command(
     include_berth: bool = False,
 ) -> RunCommand:
     """Build dockyard opt-in run command for non-interference checks."""
-    run_command = ["python3", "-m", "dockyard", command_name]
+    run_command = _dockyard_command(command_name)
     if include_berth:
         run_command.append(f"  {git_repo.name}  ")
     if branch is not None:
@@ -840,7 +840,7 @@ def _resume_read_variants(
     Returns:
         Command argument matrix prefixed with ``python3 -m dockyard``.
     """
-    base_command = ["python3", "-m", "dockyard", command_name]
+    base_command = _dockyard_command(command_name)
     if berth is not None:
         base_command.append(berth)
 
@@ -979,8 +979,8 @@ def _assert_review_link_commands_do_not_modify_repo(
     review_match = re.search(r"rev_[a-f0-9]+", review_output)
     assert review_match is not None
     review_id = review_match.group(0)
-    _run(["python3", "-m", "dockyard", "review", "open", review_id], cwd=run_cwd, env=env)
-    _run(["python3", "-m", "dockyard", "review", "done", review_id], cwd=run_cwd, env=env)
+    _run(_dockyard_command("review", "open", review_id), cwd=run_cwd, env=env)
+    _run(_dockyard_command("review", "done", review_id), cwd=run_cwd, env=env)
     _assert_repo_clean(git_repo)
 
 
@@ -1357,13 +1357,13 @@ def test_save_no_prompt_flows_do_not_modify_repo(
 def _build_in_repo_read_only_commands(base_branch: str) -> CommandMatrix:
     """Build in-repo read-only command matrix for non-interference checks."""
     return [
-        ["python3", "-m", "dockyard", "resume"],
-        ["python3", "-m", "dockyard", "resume", "--json"],
-        ["python3", "-m", "dockyard", "resume", "--handoff"],
-        ["python3", "-m", "dockyard", "resume", "--branch", base_branch],
-        ["python3", "-m", "dockyard", "r"],
-        ["python3", "-m", "dockyard", "undock"],
-        ["python3", "-m", "dockyard", "links"],
+        _dockyard_command("resume"),
+        _dockyard_command("resume", "--json"),
+        _dockyard_command("resume", "--handoff"),
+        _dockyard_command("resume", "--branch", base_branch),
+        _dockyard_command("r"),
+        _dockyard_command("undock"),
+        _dockyard_command("links"),
     ]
 
 
@@ -1377,7 +1377,7 @@ def _build_dashboard_read_commands(
     for variant in DASHBOARD_READ_VARIANTS:
         if variant.include_only_when_requested and not include_non_json_tag_combo:
             continue
-        commands.append(["python3", "-m", "dockyard", command_name, *variant.args_suffix])
+        commands.append(_dockyard_command(command_name, *variant.args_suffix))
     return commands
 
 
@@ -1407,17 +1407,14 @@ def _build_search_read_command(
     base_branch: str,
 ) -> RunCommand:
     """Build a single search/f read command from template metadata."""
-    return [
-        "python3",
-        "-m",
-        "dockyard",
+    return _dockyard_command(
         command_name,
         *_render_search_args_suffix(
             args_suffix_template,
             repo_name=repo_name,
             base_branch=base_branch,
         ),
-    ]
+    )
 
 
 def _build_search_read_commands(command_name: SearchCommandName, repo_name: str, base_branch: str) -> CommandMatrix:
@@ -1457,10 +1454,10 @@ def _build_outside_repo_read_only_commands(repo_name: str, base_branch: str) -> 
         *_build_dashboard_read_commands("harbor", include_non_json_tag_combo=True),
         *_build_search_read_commands("search", repo_name, base_branch),
         *_build_search_read_commands("f", repo_name, base_branch),
-        ["python3", "-m", "dockyard", "review"],
-        ["python3", "-m", "dockyard", "review", "list"],
-        ["python3", "-m", "dockyard", "review", "--all"],
-        ["python3", "-m", "dockyard", "review", "list", "--all"],
+        _dockyard_command("review"),
+        _dockyard_command("review", "list"),
+        _dockyard_command("review", "--all"),
+        _dockyard_command("review", "list", "--all"),
     ]
 
 
@@ -1634,7 +1631,7 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
 
     _assert_repo_clean(git_repo)
 
-    _run(["python3", "-m", "dockyard"], cwd=git_repo, env=env)
+    _run(_dockyard_command(), cwd=git_repo, env=env)
 
     _assert_repo_clean(git_repo)
 
