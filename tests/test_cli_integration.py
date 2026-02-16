@@ -17,7 +17,7 @@ import pytest
 
 from tests.metadata_utils import case_ids, pair_scope_cases_with_context
 
-RunArgs = list[str]
+RunArgs = Sequence[str]
 RunCommands = Sequence[str]
 RunCwdKind = Literal["repo", "tmp"]
 RunCommandName = Literal["resume", "r", "undock"]
@@ -433,7 +433,7 @@ def _build_run_args(
     include_berth: bool = False,
 ) -> RunArgs:
     """Build run-command arguments with optional berth and branch scope."""
-    run_args = [command_name]
+    run_args: list[str] = [command_name]
     if include_berth:
         run_args.append(f"  {git_repo.name}  ")
     if branch is not None:
