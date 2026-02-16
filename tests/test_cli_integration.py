@@ -4609,6 +4609,56 @@ def test_harbor_alias_validates_stale_argument(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+def test_harbor_alias_renders_unknown_status_text(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should render unknown slip statuses as raw text."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Unknown status harbor baseline",
+            "--decisions",
+            "Render non-standard status token",
+            "--next-step",
+            "run harbor",
+            "--risks",
+            "none",
+            "--command",
+            "echo harbor",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ? WHERE branch = ?",
+        ("paused", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(["harbor"], cwd=tmp_path, env=env).stdout
+    assert "paused" in output
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
