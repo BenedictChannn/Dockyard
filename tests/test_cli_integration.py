@@ -4756,6 +4756,64 @@ def test_no_subcommand_tag_filter_no_match_with_limit_is_informative_in_repo(
     assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
 
 
+def test_no_subcommand_tag_filter_no_match_with_stale_is_informative_in_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare callback should handle missing tag+stale filters in repo cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback missing tag+stale baseline in repo",
+            "--decisions",
+            "ensure in-repo callback no-match stale semantics stay stable",
+            "--next-step",
+            "run bare dock with missing tag+stale filter in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-base",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(
+        ["--tag", "missing-tag", "--stale", "0"],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Dockyard Harbor" in table_output.stdout
+    assert "Default callback missing tag+stale baseline in repo" not in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_output = _run_dock(
+        ["--tag", "missing-tag", "--stale", "0", "--json"],
+        cwd=git_repo,
+        env=env,
+    )
+    assert json.loads(json_output.stdout) == []
+    assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
+
+
 def test_no_subcommand_tag_filter_no_match_with_stale_limit_is_informative_in_repo(
     git_repo: Path,
     tmp_path: Path,
@@ -5432,6 +5490,74 @@ def test_dashboard_tag_filter_no_match_with_stale_limit_is_informative(
     json_output = _run_dock(
         [*command_prefix, "--tag", "missing-tag", "--stale", "0", "--limit", "1", "--json"],
         cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(json_output.stdout) == []
+    assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
+
+
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_tag_filter_no_match_with_stale_limit_is_informative_in_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard commands should stay informative in repo for tag+stale+limit misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Dashboard {label} tag stale limit no-match objective in repo",
+            "--decisions",
+            "dashboard tag+stale+limit no-match baseline in repo",
+            "--next-step",
+            "run dashboard tag+stale+limit no-match in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(
+        [*command_prefix, "--tag", "missing-tag", "--stale", "0", "--limit", "1"],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Dockyard Harbor" in table_output.stdout
+    assert f"Dashboard {label} tag stale limit no-match objective in repo" not in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_output = _run_dock(
+        [*command_prefix, "--tag", "missing-tag", "--stale", "0", "--limit", "1", "--json"],
+        cwd=git_repo,
         env=env,
     )
     assert json.loads(json_output.stdout) == []
