@@ -91,7 +91,10 @@ def _remote_url(repo_root: Path) -> str | None:
         remotes = _run_git(["remote"], cwd=repo_root).splitlines()
     except subprocess.CalledProcessError:
         return None
-    remote_names = sorted({remote.strip() for remote in remotes if remote.strip()})
+    remote_names = sorted(
+        {remote.strip() for remote in remotes if remote.strip()},
+        key=str.casefold,
+    )
     for name in remote_names:
         if name == "origin":
             continue

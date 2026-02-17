@@ -274,3 +274,24 @@ def test_remote_url_returns_none_when_only_origin_is_blank(
 
     assert git_info_module._remote_url(Path("/tmp/repo")) is None
     assert origin_lookup_count == 1
+
+
+def test_remote_url_sorts_fallback_names_case_insensitively(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should sort fallback names case-insensitively."""
+
+    def _run_git_case_insensitive_sort(args: list[str], cwd: Path) -> str:
+        if args == ["config", "--get", "remote.origin.url"]:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+        if args == ["remote"]:
+            return "Zeta\nalpha"
+        if args == ["config", "--get", "remote.alpha.url"]:
+            return "https://example.com/team/alpha.git"
+        if args == ["config", "--get", "remote.Zeta.url"]:
+            raise AssertionError("Case-insensitive ordering should resolve alpha first")
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_case_insensitive_sort)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/alpha.git"
