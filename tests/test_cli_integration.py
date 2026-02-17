@@ -4623,6 +4623,53 @@ def test_harbor_alias_tag_filter_applies_before_limit(git_repo: Path, tmp_path: 
     assert "Traceback" not in output
 
 
+def test_harbor_alias_tag_filter_no_match_is_informative(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should show empty guidance for missing tag filters."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Harbor tag no-match objective",
+            "--decisions",
+            "harbor tag no-match baseline",
+            "--next-step",
+            "run harbor tag no-match",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(["harbor", "--tag", "missing-tag"], cwd=tmp_path, env=env)
+    assert "Dockyard Harbor" in table_output.stdout
+    assert "Harbor tag no-match objective" not in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_output = _run_dock(["harbor", "--tag", "missing-tag", "--json"], cwd=tmp_path, env=env)
+    assert json.loads(json_output.stdout) == []
+    assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
+
+
 def test_no_subcommand_defaults_to_harbor_inside_repo(
     git_repo: Path,
     tmp_path: Path,
