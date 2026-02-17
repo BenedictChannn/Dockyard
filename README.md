@@ -269,6 +269,9 @@ python3 scripts/perf_smoke.py --search-query "objective keyword"
 python3 scripts/perf_smoke.py --ls-limit 25 --search-limit 10
 # machine-readable benchmark payload
 python3 scripts/perf_smoke.py --json
+# write output to file (text or JSON mode)
+python3 scripts/perf_smoke.py --output-file /tmp/perf-smoke.txt
+python3 scripts/perf_smoke.py --json --output-file /tmp/perf-smoke.json
 ```
 
 The perf smoke output includes the active search workload query and effective
@@ -280,5 +283,7 @@ JSON output includes benchmark metrics plus run context (`db_path`, seed
 dataset sizes, active limits/targets/query), a `schema_version` field, and
 `measured_at` UTC timestamp metadata plus `failed_targets` details when
 thresholds are missed.
+Use `--output-file` to write either text or JSON output to disk (parent
+directories are created automatically).
 When `--enforce-targets` is used in text mode and thresholds are missed, output
 includes a `failed targets:` summary line.
