@@ -137,6 +137,9 @@ Root-level callback validation mirrors `ls` behavior (`--stale >= 0`,
 Combined filters are also supported via the callback path
 (`python3 -m dockyard --json --tag mvp --stale 3 --limit 20`).
 
+Example alias usage:
+`python3 -m dockyard harbor --tag mvp --limit 20`
+
 ### Options
 
 - `--stale <days>`
