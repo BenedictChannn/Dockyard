@@ -20,7 +20,10 @@ from dockyard.storage.sqlite_store import SQLiteStore
 
 def _positive_int_arg(value: str) -> int:
     """Parse argparse integer input requiring value > 0."""
-    parsed = int(value)
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("value must be an integer") from exc
     if parsed <= 0:
         raise argparse.ArgumentTypeError("value must be greater than zero")
     return parsed
@@ -28,7 +31,10 @@ def _positive_int_arg(value: str) -> int:
 
 def _non_negative_int_arg(value: str) -> int:
     """Parse argparse integer input requiring value >= 0."""
-    parsed = int(value)
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("value must be an integer") from exc
     if parsed < 0:
         raise argparse.ArgumentTypeError("value must be non-negative")
     return parsed
@@ -36,7 +42,10 @@ def _non_negative_int_arg(value: str) -> int:
 
 def _non_negative_float_arg(value: str) -> float:
     """Parse argparse float input requiring value >= 0."""
-    parsed = float(value)
+    try:
+        parsed = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("value must be a number") from exc
     if parsed < 0:
         raise argparse.ArgumentTypeError("value must be non-negative")
     return parsed

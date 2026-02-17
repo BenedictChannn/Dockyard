@@ -36,6 +36,12 @@ def test_positive_int_arg_rejects_zero_or_negative() -> None:
         _positive_int_arg("-1")
 
 
+def test_positive_int_arg_rejects_non_numeric_values() -> None:
+    """Positive integer parser should reject non-numeric input."""
+    with pytest.raises(argparse.ArgumentTypeError):
+        _positive_int_arg("abc")
+
+
 def test_non_negative_int_arg_accepts_zero_and_positive() -> None:
     """Non-negative parser should accept zero and positive values."""
     assert _non_negative_int_arg("0") == 0
@@ -48,6 +54,12 @@ def test_non_negative_int_arg_rejects_negative_values() -> None:
         _non_negative_int_arg("-2")
 
 
+def test_non_negative_int_arg_rejects_non_numeric_values() -> None:
+    """Non-negative integer parser should reject non-numeric input."""
+    with pytest.raises(argparse.ArgumentTypeError):
+        _non_negative_int_arg("abc")
+
+
 def test_non_negative_float_arg_accepts_zero_and_positive() -> None:
     """Non-negative float parser should accept zero and positive values."""
     assert _non_negative_float_arg("0") == 0.0
@@ -58,6 +70,12 @@ def test_non_negative_float_arg_rejects_negative_values() -> None:
     """Non-negative float parser should reject negative values."""
     with pytest.raises(argparse.ArgumentTypeError):
         _non_negative_float_arg("-0.1")
+
+
+def test_non_negative_float_arg_rejects_non_numeric_values() -> None:
+    """Non-negative float parser should reject non-numeric input."""
+    with pytest.raises(argparse.ArgumentTypeError):
+        _non_negative_float_arg("abc")
 
 
 def test_non_empty_query_arg_accepts_trimmed_values() -> None:
@@ -190,6 +208,29 @@ def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
 
     assert completed.returncode != 0
     assert "value must be greater than zero" in completed.stderr
+
+
+def test_perf_smoke_script_rejects_non_numeric_berths(tmp_path) -> None:
+    """Perf smoke script should reject non-numeric berth count values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_berths.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "abc",
+            "--checkpoints",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be an integer" in completed.stderr
 
 
 def test_perf_smoke_script_rejects_non_positive_ls_limit(tmp_path) -> None:
