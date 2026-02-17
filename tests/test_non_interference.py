@@ -1770,6 +1770,36 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
 
 
 @pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("--stale", "-1"), "--stale must be >= 0."),
+        (("--tag", "   "), "--tag must be a non-empty string."),
+    ],
+)
+def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Bare dock validation failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(*args),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    assert expected_fragment in f"{completed.stdout}\n{completed.stderr}"
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
     ids=RUN_NO_COMMAND_IDS,
