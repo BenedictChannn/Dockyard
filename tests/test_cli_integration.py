@@ -13763,6 +13763,140 @@ def test_harbor_alias_falls_back_for_blank_timestamp(git_repo: Path, tmp_path: P
     assert "unknown" in output
 
 
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_paths_fallback_for_blank_branch_text(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard command paths should show unknown label for blank branch text."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"dbbb-{label}",
+            "--decisions",
+            "Fallback branch rendering should remain explicit across dashboard paths",
+            "--next-step",
+            "run dashboard path",
+            "--risks",
+            "none",
+            "--command",
+            "echo dashboard",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET branch = ? WHERE branch = ?",
+        ("   ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(command_prefix, cwd=tmp_path, env=env).stdout
+    assert "(unknown)" in output
+    assert "Traceback" not in output
+    rows = json.loads(_run_dock([*command_prefix, "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["branch"].strip() == ""
+
+
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_paths_fallback_for_blank_updated_timestamp(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard command paths should show unknown age for blank timestamps."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"dbbt-{label}",
+            "--decisions",
+            "Fallback timestamp rendering should remain explicit across dashboard paths",
+            "--next-step",
+            "run dashboard path",
+            "--risks",
+            "none",
+            "--command",
+            "echo dashboard",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET updated_at = ? WHERE branch = ?",
+        ("   ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(command_prefix, cwd=tmp_path, env=env).stdout
+    assert "unknown" in output
+    assert "Traceback" not in output
+    rows = json.loads(_run_dock([*command_prefix, "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["updated_at"].strip() == ""
+
+
 def test_ls_stale_zero_is_accepted(git_repo: Path, tmp_path: Path) -> None:
     """Stale threshold of zero days should be valid input."""
     env = dict(os.environ)
