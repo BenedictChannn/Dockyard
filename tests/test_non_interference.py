@@ -1773,6 +1773,7 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
     ("args", "expected_fragment"),
     [
         (("--stale", "-1"), "--stale must be >= 0."),
+        (("--limit", "0"), "--limit must be >= 1."),
         (("--tag", "   "), "--tag must be a non-empty string."),
     ],
 )
