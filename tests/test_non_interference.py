@@ -199,7 +199,9 @@ DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
 SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("baseline",)),
     SearchReadVariantMeta(("definitely-no-match",)),
+    SearchReadVariantMeta(("security/path",)),
     SearchReadVariantMeta(("baseline", "--json")),
+    SearchReadVariantMeta(("security/path", "--json")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline")),
     SearchReadVariantMeta(("baseline", "--tag", "missing-tag")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--limit", "1")),
@@ -245,6 +247,8 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     ),
     SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER)),
     SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json")),
+    SearchReadVariantMeta(("security/path", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER)),
+    SearchReadVariantMeta(("security/path", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json")),
 )
 SEARCH_ALIAS_EXTRA_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER)),
