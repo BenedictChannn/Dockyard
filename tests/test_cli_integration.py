@@ -8902,9 +8902,11 @@ def test_review_outputs_preserve_literal_markup_like_text(
     assert "files: [cyan]src/core.py[/cyan]" in opened
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_review_open_compacts_multiline_metadata_fields(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
     """Review open output should compact multiline metadata values."""
     env = dict(os.environ)
@@ -8912,12 +8914,12 @@ def test_review_open_compacts_multiline_metadata_fields(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Review open compaction baseline",
+            f"Review open compaction baseline ({command_name})",
             "--decisions",
             "Need review context",
             "--next-step",
