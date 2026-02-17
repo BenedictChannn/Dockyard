@@ -10839,6 +10839,23 @@ def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     )
     assert len(tag_filtered_json) == 1
     assert tag_filtered_json[0]["branch"] == "feature/filters"
+    tag_repo_branch_table = _run_dock(
+        [
+            "search",
+            "Filter target objective",
+            "--tag",
+            "beta",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            "feature/filters",
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "feature/filters" in tag_repo_branch_table
+    assert "No checkpoint matches found." not in tag_repo_branch_table
+    assert "Traceback" not in tag_repo_branch_table
     tag_repo_branch_json = json.loads(
         _run_dock(
             [
