@@ -14167,6 +14167,197 @@ def test_search_tag_repo_filter_semantics_across_multiple_berths(
     assert "Traceback" not in table_output
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_repo_branch_filter_semantics_across_multi_branch_matches(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Combined tag+repo+branch filters should isolate target-branch rows."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+    target_branch = "feature/matrix-target"
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbtoken tm-{command_name}",
+            "--decisions",
+            "target main checkpoint for combined filter matrix",
+            "--next-step",
+            "run combined filter matrix",
+            "--risks",
+            "none",
+            "--command",
+            "echo target-main",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", target_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbtoken tf-{command_name}",
+            "--decisions",
+            "target feature checkpoint for combined filter matrix",
+            "--next-step",
+            "run combined filter matrix",
+            "--risks",
+            "none",
+            "--command",
+            "echo target-feature",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    other_repo = tmp_path / f"multi-tag-repo-branch-{command_name}"
+    other_repo.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "dockyard@example.com"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Dockyard Test"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", f"git@github.com:org/{command_name}-multi-tag-branch.git"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    (other_repo / "README.md").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "checkout", "-b", target_branch],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(other_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbtoken of-{command_name}",
+            "--decisions",
+            "other repo feature checkpoint for combined filter matrix",
+            "--next-step",
+            "run combined filter matrix",
+            "--risks",
+            "none",
+            "--command",
+            "echo other-feature",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=other_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                command_name,
+                    "mtrbtoken",
+                "--tag",
+                "alpha",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                target_branch,
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] == f"mtrbtoken tf-{command_name}"
+    assert rows[0]["berth_name"] == git_repo.name
+    assert rows[0]["branch"] == target_branch
+
+    table_output = _run_dock(
+        [
+            command_name,
+            "mtrbtoken",
+            "--tag",
+            "alpha",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            target_branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert f"tf-{command_name}" in table_output
+    assert f"tm-{command_name}" not in table_output
+    assert f"of-{command_name}" not in table_output
+    assert "Traceback" not in table_output
+
+
 def test_search_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
     """Search should honor branch filters in non-JSON table output."""
     env = dict(os.environ)
