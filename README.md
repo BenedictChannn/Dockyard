@@ -198,6 +198,7 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # unicode characters are emitted as-is in --json output
 # filtered searches keep the same no-match behavior/message semantics
 # including combined --repo+--branch and --tag+--repo+--branch filters
+# this no-match behavior also holds when --limit is combined with filters
 # queries containing FTS-special syntax (for example `security/path`) are
 # handled with parser-safe fallback matching
 # parser-safe fallback keeps --tag/--repo/--branch filter semantics in both

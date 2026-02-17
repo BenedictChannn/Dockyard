@@ -195,6 +195,8 @@ This no-match behavior is consistent even when `--tag`, `--repo`, or
 `--branch` filters are provided.
 The same contract applies to combined filter paths like
 `--repo + --branch` and `--tag + --repo + --branch` for both `search` and `f`.
+No-match semantics are unchanged when `--limit` is also supplied alongside
+those filters.
 Queries that contain FTS parser-sensitive syntax (for example `security/path`)
 automatically fall back to parser-safe matching while preserving the same
 filter semantics.
