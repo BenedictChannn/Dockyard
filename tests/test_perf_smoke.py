@@ -577,6 +577,7 @@ def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
     assert payload["search"]["limit"] == 20
     assert payload["search"]["query"] == "search pipeline"
     assert isinstance(payload["targets_met"], bool)
+    assert "dock ls query:" not in completed.stdout
 
 
 def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:
