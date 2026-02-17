@@ -9661,6 +9661,9 @@ def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> No
     assert resume_payload["objective"] == "TOML objective"
     assert resume_payload["verification"]["tests_run"] is True
     assert resume_payload["verification"]["build_ok"] is True
+    tagged_rows = json.loads(_run_dock(["ls", "--tag", "toml", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
 
 
 def test_save_template_path_accepts_trimmed_value(git_repo: Path, tmp_path: Path) -> None:
