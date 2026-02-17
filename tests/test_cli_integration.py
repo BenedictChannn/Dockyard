@@ -4310,6 +4310,12 @@ def test_no_subcommand_supports_combined_tag_stale_filters(git_repo: Path, tmp_p
     assert len(rows) == 1
     assert rows[0]["objective"] == "Default callback combined filters alpha"
     assert "alpha" in rows[0]["tags"]
+    table_output = _run_dock(["--tag", "alpha", "--stale", "0"], cwd=tmp_path, env=env).stdout
+    assert "Dockyard Harbor" in table_output
+    assert base_branch in table_output
+    assert "feature/no-subcommand-combined-filter" not in table_output
+    assert "No checkpoints yet." not in table_output
+    assert "Traceback" not in table_output
 
 
 def test_no_subcommand_supports_combined_tag_stale_limit_filters(
