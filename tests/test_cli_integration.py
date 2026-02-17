@@ -12024,6 +12024,98 @@ def test_search_alias_limit_applies_after_tag_filter_non_json(git_repo: Path, tm
     assert "Traceback" not in output
 
 
+def test_search_limit_applies_after_tag_filter_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Primary search table output should honor --tag + --limit together."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "ptl-one",
+            "--decisions",
+            "primary tag-limit checkpoint one",
+            "--next-step",
+            "record first",
+            "--risks",
+            "none",
+            "--command",
+            "echo one",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/primary-tag-limit-table"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "ptl-two",
+            "--decisions",
+            "primary tag-limit checkpoint two",
+            "--next-step",
+            "record second",
+            "--risks",
+            "none",
+            "--command",
+            "echo two",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    output = _run_dock(
+        ["search", "ptl", "--tag", "alpha", "--limit", "1"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    shows_one = "ptl-one" in output
+    shows_two = "ptl-two" in output
+    assert shows_one ^ shows_two
+    assert "Traceback" not in output
+
+
 def test_harbor_alias_validates_limit_argument(tmp_path: Path) -> None:
     """Harbor alias should enforce the same limit validation as ls."""
     env = dict(os.environ)
