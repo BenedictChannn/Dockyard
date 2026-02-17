@@ -2193,10 +2193,12 @@ def test_run_with_branch_and_missing_berth_root_keeps_repo_clean(
 
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_unknown_explicit_berth_branch_resume_errors_keep_repo_clean(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    output_flag: str,
 ) -> None:
     """Unknown berth+branch resume failures should remain non-mutating."""
     env = _dockyard_env(tmp_path)
@@ -2232,8 +2234,12 @@ def test_unknown_explicit_berth_branch_resume_errors_keep_repo_clean(
     )
 
     _assert_repo_clean(git_repo)
+    args = [command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "]
+    if output_flag:
+        args.append(output_flag)
+
     completed = subprocess.run(
-        _dockyard_command(command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "),
+        _dockyard_command(*args),
         cwd=str(tmp_path),
         check=False,
         capture_output=True,
