@@ -13107,6 +13107,74 @@ def test_harbor_alias_renders_unknown_status_text(git_repo: Path, tmp_path: Path
     assert json_rows[0]["status"] == "paused"
 
 
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_paths_render_unknown_status_text(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard command paths should preserve unknown status tokens."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Dashboard {label} unknown status baseline",
+            "--decisions",
+            "Render non-standard status token across dashboard paths",
+            "--next-step",
+            "run dashboard views",
+            "--risks",
+            "none",
+            "--command",
+            "echo dashboard",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ? WHERE branch = ?",
+        ("paused", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    table_output = _run_dock(command_prefix, cwd=tmp_path, env=env)
+    assert "paused" in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_rows = json.loads(_run_dock([*command_prefix, "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(json_rows) == 1
+    assert json_rows[0]["status"] == "paused"
+
+
 def test_harbor_alias_maps_short_status_token(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should map short status token values to known badges."""
     env = dict(os.environ)
