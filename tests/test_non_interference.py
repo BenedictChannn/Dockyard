@@ -1754,6 +1754,21 @@ def test_bare_dock_command_with_ls_flags_does_not_modify_repo(git_repo: Path, tm
     _assert_repo_clean(git_repo)
 
 
+def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock tag/stale filter flags should remain read-only."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command("--json", "--tag", "baseline", "--stale", "0", "--limit", "1"),
+        cwd=git_repo,
+        env=env,
+    )
+
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
