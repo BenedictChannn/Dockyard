@@ -13660,3 +13660,45 @@ def test_links_in_repo_with_no_items_is_informative(git_repo: Path, tmp_path: Pa
 
     output = _run_dock(["links"], cwd=git_repo, env=env).stdout
     assert "No links for current slip." in output
+
+
+def test_save_with_non_git_root_is_actionable(tmp_path: Path) -> None:
+    """Save should fail clearly when --root points to a non-git directory."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    non_git_root = tmp_path / "not_a_repo"
+    non_git_root.mkdir()
+
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(non_git_root),
+            "--no-prompt",
+            "--objective",
+            "Non-git root validation objective",
+            "--decisions",
+            "Ensure actionable root validation error",
+            "--next-step",
+            "do not write checkpoint",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "git repository" in output
+    assert "Traceback" not in output
