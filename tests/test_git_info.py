@@ -236,3 +236,20 @@ def test_remote_url_skips_duplicate_origin_lookup_when_origin_blank(
 
     assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/beta.git"
     assert origin_lookup_count == 1
+
+
+def test_remote_url_returns_none_for_blank_remote_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should ignore blank remote-name entries."""
+
+    def _run_git_with_blank_remote_names(args: list[str], cwd: Path) -> str:
+        if args == ["config", "--get", "remote.origin.url"]:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+        if args == ["remote"]:
+            return " \n\n"
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_with_blank_remote_names)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) is None
