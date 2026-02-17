@@ -4902,6 +4902,55 @@ def test_resume_by_trimmed_berth_branch_from_outside_repo_preserves_top_lines_co
     _assert_resume_top_lines_contract(result.stdout)
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_by_trimmed_berth_branch_from_outside_repo_reports_expected_header(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Trimmed berth/branch outside-repo resume should render canonical header."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} trimmed berth+branch header objective",
+            "--decisions",
+            "Validate canonical project/branch header rendering",
+            "--next-step",
+            "Resume by trimmed berth+branch from outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  "],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert f"Project/Branch: {git_repo.name} / {branch}" in result.stdout
+
+
 def test_resume_output_handles_empty_next_steps_payload(
     git_repo: Path,
     tmp_path: Path,
