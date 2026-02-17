@@ -6916,6 +6916,139 @@ def test_search_alias_tag_filter_no_match_message(git_repo: Path, tmp_path: Path
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+def test_search_alias_branch_filter_no_match_message(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should show no-match guidance for branch-filter misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias branch filter message objective",
+            "--decisions",
+            "Alias branch filter message decision",
+            "--next-step",
+            "validate branch filter miss message",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["f", "Alias branch filter message objective", "--branch", "missing/branch"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+def test_search_alias_tag_branch_filter_no_match_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias JSON should return [] for combined tag+branch misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias tag branch json objective",
+            "--decisions",
+            "Alias tag branch json decision",
+            "--next-step",
+            "validate tag+branch json miss",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["f", "Alias tag branch json objective", "--tag", "alpha", "--branch", "missing/branch", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+def test_search_alias_tag_branch_filter_no_match_message(git_repo: Path, tmp_path: Path) -> None:
+    """Search alias should show no-match guidance for combined tag+branch misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias tag branch message objective",
+            "--decisions",
+            "Alias tag branch message decision",
+            "--next-step",
+            "validate tag+branch miss message",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        ["f", "Alias tag branch message objective", "--tag", "alpha", "--branch", "missing/branch"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
 def test_search_alias_tag_repo_filter_no_match_message(git_repo: Path, tmp_path: Path) -> None:
     """Search alias should show no-match guidance for tag+repo misses."""
     env = dict(os.environ)
