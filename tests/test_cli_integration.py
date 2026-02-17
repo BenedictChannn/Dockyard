@@ -6537,6 +6537,14 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_repo_rows) == 1
     assert beta_repo_rows[0]["branch"] == "feature/alias-tag-filter"
+    beta_repo_table = _run_dock(
+        ["f", "Alias tag filter objective", "--tag", "beta", "--repo", git_repo.name],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "feature" in beta_repo_table
+    assert "default" not in beta_repo_table
+    assert "Traceback" not in beta_repo_table
     missing_repo_result = _run_dock(
         ["f", "Alias tag filter objective", "--tag", "beta", "--repo", "missing-berth", "--json"],
         cwd=tmp_path,
