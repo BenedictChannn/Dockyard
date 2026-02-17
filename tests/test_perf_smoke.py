@@ -749,6 +749,35 @@ def test_perf_smoke_script_rejects_directory_output_file_in_text_mode(tmp_path) 
     assert "Traceback" not in f"{completed.stdout}\n{completed.stderr}"
 
 
+def test_perf_smoke_script_rejects_output_file_when_parent_is_file_in_text_mode(tmp_path) -> None:
+    """Perf smoke text mode should fail when output-file parent is a file."""
+    db_path = tmp_path / "perf_smoke_cli_text_parent_file.sqlite"
+    output_parent_file = tmp_path / "output-parent-file"
+    output_parent_file.write_text("occupied", encoding="utf-8")
+    output_path = output_parent_file / "perf.txt"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--output-file",
+            str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "error writing output file:" in completed.stderr
+    assert "Traceback" not in f"{completed.stdout}\n{completed.stderr}"
+
+
 def test_perf_smoke_script_text_enforce_failure_writes_output_file(tmp_path) -> None:
     """Text enforce-target failures should still write output-file diagnostics."""
     db_path = tmp_path / "perf_smoke_cli_text_file_strict.sqlite"
@@ -901,6 +930,36 @@ def test_perf_smoke_script_rejects_directory_output_file_in_json_mode(tmp_path) 
             "--json",
             "--output-file",
             str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "error writing output file:" in completed.stderr
+    assert "Traceback" not in f"{completed.stdout}\n{completed.stderr}"
+
+
+def test_perf_smoke_script_rejects_output_file_when_parent_is_file_in_json_mode(tmp_path) -> None:
+    """Perf smoke JSON mode should fail when output-file parent is a file."""
+    db_path = tmp_path / "perf_smoke_cli_json_parent_file.sqlite"
+    output_parent_file = tmp_path / "output-parent-file-json"
+    output_parent_file.write_text("occupied", encoding="utf-8")
+    output_path = output_parent_file / "perf.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--json",
+            "--output-file",
+            str(output_path),
         ],
         check=False,
         capture_output=True,
