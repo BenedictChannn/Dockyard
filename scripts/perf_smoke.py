@@ -208,6 +208,7 @@ def _targets_met(
 def main() -> int:
     """Execute perf smoke scenario and optionally enforce PRD targets."""
     args = parse_args()
+    args.db_path.parent.mkdir(parents=True, exist_ok=True)
     if args.db_path.exists():
         args.db_path.unlink()
 

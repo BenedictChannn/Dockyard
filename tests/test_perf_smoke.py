@@ -146,6 +146,29 @@ def test_perf_smoke_script_runs_with_small_dataset(tmp_path) -> None:
     assert "search workload query: search pipeline" in completed.stdout
 
 
+def test_perf_smoke_script_creates_db_parent_directories(tmp_path) -> None:
+    """Perf smoke script should create missing parent directories for db-path."""
+    db_path = tmp_path / "nested" / "deeper" / "perf_smoke_cli.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert db_path.exists()
+
+
 def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
     """Perf smoke script should reject non-positive berth count at CLI level."""
     db_path = tmp_path / "perf_smoke_cli_invalid.sqlite"
