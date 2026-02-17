@@ -2057,7 +2057,9 @@ def test_review_open_after_save_alias_with_linked_checkpoint_keeps_repo_clean(
     assert review_match is not None
     review_id = review_match.group(0)
 
-    _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "created_at:" in opened
+    assert f"checkpoint_id: {checkpoint_id}" in opened
     _assert_repo_clean(git_repo)
 
 
