@@ -2068,6 +2068,74 @@ def test_run_with_missing_berth_root_keeps_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_run_with_branch_and_missing_berth_root_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Branch-scoped run failures on stale roots should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    branch = _current_branch(git_repo)
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "branch stale berth root non-interference",
+            "--decisions",
+            "validate branch-scoped stale run root error path",
+            "--next-step",
+            "run branch-scoped resume with stale berth root",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run(_dockyard_command("resume", "--json"), cwd=git_repo, env=env))
+    repo_id = payload["repo_id"]
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE berths SET root_path = ? WHERE repo_id = ?",
+        (str(tmp_path / f"missing-run-root-branch-{command_name}"), repo_id),
+    )
+    conn.commit()
+    conn.close()
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, git_repo.name, "--branch", branch, "--run"),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode == 2
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "Repository root for --run does not exist:" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
