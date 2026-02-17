@@ -8836,9 +8836,11 @@ def test_review_list_falls_back_for_blank_metadata_fields(git_repo: Path, tmp_pa
     assert "| (none)" in listed
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_review_outputs_preserve_literal_markup_like_text(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
     """Review list/open output should preserve literal bracketed text."""
     env = dict(os.environ)
@@ -8846,12 +8848,12 @@ def test_review_outputs_preserve_literal_markup_like_text(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Review literal text baseline",
+            f"Review literal text baseline ({command_name})",
             "--decisions",
             "Need context for manual review add",
             "--next-step",
