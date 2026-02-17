@@ -256,6 +256,31 @@ def test_perf_smoke_script_rejects_blank_search_query(tmp_path) -> None:
     assert "value must be a non-empty query" in completed.stderr
 
 
+def test_perf_smoke_script_trims_search_query_value(tmp_path) -> None:
+    """Perf smoke script should trim surrounding whitespace in search-query."""
+    db_path = tmp_path / "perf_smoke_cli_trim_query.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-query",
+            "  search term  ",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "search workload query: search term" in completed.stdout
+
+
 def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) -> None:
     """CLI should return non-zero when enforced targets are set to zero."""
     db_path = tmp_path / "perf_smoke_cli_strict.sqlite"
