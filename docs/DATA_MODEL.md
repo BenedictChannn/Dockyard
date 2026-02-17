@@ -150,3 +150,5 @@ Parser normalization notes:
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
 - Known heading labels may be wrapped with simple markdown emphasis markers
   (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
+- Nested combinations of these wrappers are also normalized (for example,
+  `**`Objective`**`).
