@@ -2655,6 +2655,40 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    "args",
+    [
+        (),
+        ("--json",),
+        ("--limit", "1"),
+        ("--stale", "0"),
+        ("--tag", "missing-tag", "--limit", "1"),
+        ("--tag", "missing-tag", "--limit", "1", "--json"),
+    ],
+    ids=[
+        "default",
+        "json",
+        "limit",
+        "stale_zero",
+        "missing_tag_limit",
+        "missing_tag_limit_json",
+    ],
+)
+def test_bare_dock_command_in_repo_empty_store_read_variants_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+) -> None:
+    """Bare dock read variants should stay non-mutating in empty repo context."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command(*args), cwd=git_repo, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_with_ls_flags_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock ls-style flags should remain read-only for project repos."""
     env = _dockyard_env(tmp_path)
