@@ -165,6 +165,11 @@ python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --ta
 python3 -m dockyard search "auth" --json
 python3 -m dockyard search "auth" --tag backend --branch feature/workstream --json
 python3 -m dockyard search "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard f "auth" --branch feature/workstream
+python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream
+python3 -m dockyard f "auth" --tag backend
+python3 -m dockyard f "auth" --tag backend --branch feature/workstream
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name>
 python3 -m dockyard f "auth" --branch feature/workstream --json
 python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream --json
 python3 -m dockyard f "auth" --tag backend --json
