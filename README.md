@@ -263,4 +263,6 @@ python3 scripts/perf_smoke.py --enforce-targets
 python3 scripts/perf_smoke.py --berths 200 --checkpoints 5000
 # custom latency thresholds (milliseconds)
 python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-target-ms 450
+# custom search workload query
+python3 scripts/perf_smoke.py --search-query "objective keyword"
 ```
