@@ -212,6 +212,8 @@ python3 -m dockyard review list --all
 
 Both `review` and `review list` print `No review items.` when the ledger is empty.
 `review list` uses the same severity-first ordering as the default `review` command.
+`review --all` and `review list --all` return the same ordered set of open and
+resolved items.
 List rows compact multiline values into single-line previews and show explicit
 fallbacks (`(unknown)` / `(none)`) for blank metadata fields.
 

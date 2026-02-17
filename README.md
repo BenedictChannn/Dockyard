@@ -189,7 +189,9 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 
 ```bash
 python3 -m dockyard review            # list open
+python3 -m dockyard review list       # explicit list subcommand
 python3 -m dockyard review --all      # include resolved
+python3 -m dockyard review list --all # explicit list subcommand + resolved
 python3 -m dockyard review add --reason "manual check" --severity med
 # outside repo context:
 python3 -m dockyard review add --reason "manual check" --severity med --repo <repo_id|berth_name> --branch <branch>
@@ -211,6 +213,8 @@ treated as missing.
 `--repo` / `--branch` must be non-empty when provided.
 `--severity` must be non-empty and one of `low|med|high`.
 `review open` / `review done` IDs are trimmed; blank IDs are rejected.
+`review --all` and `review list --all` return the same ordered set of open and
+resolved items.
 
 ### 6) Link URLs to a branch context
 
