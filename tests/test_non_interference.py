@@ -2128,6 +2128,8 @@ def test_review_open_after_save_alias_with_missing_checkpoint_keeps_repo_clean(
     review_id = review_match.group(0)
 
     opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "created_at:" in opened
+    assert "checkpoint_id: cp_missing_123" in opened
     assert "status: missing from index" in opened
     _assert_repo_clean(git_repo)
 
@@ -2360,6 +2362,8 @@ def test_review_open_after_save_alias_with_blank_metadata_keeps_repo_clean(
     conn.close()
 
     opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "created_at: (unknown)" in opened
+    assert "checkpoint_id: (none)" in opened
     assert "reason: (none)" in opened
     assert "status: (unknown)" in opened
     _assert_repo_clean(git_repo)
