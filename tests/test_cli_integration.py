@@ -11128,6 +11128,70 @@ def test_configured_heuristics_can_disable_default_review_trigger(
     assert "No review items." in review_list.stdout
 
 
+def test_configured_heuristics_can_force_review_trigger(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Configured thresholds should be able to force review creation."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                # Force trigger even on clean snapshots.
+                "files_changed_threshold = 0",
+                # Keep other trigger paths effectively disabled for clarity.
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'risky_path_patterns = ["(^|/)never-match/"]',
+                'branch_prefixes = ["never/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    save_result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Configurable force review trigger behavior",
+            "--decisions",
+            "Threshold override should force review creation",
+            "--next-step",
+            "Confirm auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    output = f"{save_result.stdout}\n{save_result.stderr}"
+    assert "Created review item" in output
+    assert "Review triggers:" in output
+    assert "many_files_changed" in output
+    assert "Traceback" not in output
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "No review items." not in review_list
+
+
 def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     """CLI filters for harbor and search should narrow results correctly."""
     env = dict(os.environ)
