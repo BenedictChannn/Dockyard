@@ -74,7 +74,12 @@ def _repo_id(remote_url: str | None, root_path: Path) -> str:
 
 
 def _remote_url(repo_root: Path) -> str | None:
-    """Return preferred remote URL for repo identity, if available."""
+    """Return preferred remote URL for repo identity, if available.
+
+    Preference order:
+      1) `remote.origin.url`
+      2) other configured remotes in normalized sorted-name order
+    """
     try:
         url = _run_git(["config", "--get", "remote.origin.url"], cwd=repo_root)
         if url:
