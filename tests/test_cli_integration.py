@@ -6900,6 +6900,63 @@ def test_save_repo_id_prefers_origin_when_multiple_remotes_exist(
     assert payload["repo_id"] == hashlib.sha1(origin_url.encode("utf-8")).hexdigest()[:16]
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save command aliases should honor non-origin remote repo-id fallback."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    upstream_url = "https://example.com/team/alias-fallback-upstream.git"
+    subprocess.run(
+        ["git", "remote", "add", "upstream", upstream_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} alias non-origin repo-id objective",
+            "--decisions",
+            "Use non-origin remote in alias fallback flow",
+            "--next-step",
+            "assert alias fallback repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["repo_id"] == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]
+
+
 def test_review_add_accepts_trimmed_repo_and_branch_override(
     git_repo: Path,
     tmp_path: Path,
