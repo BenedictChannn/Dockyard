@@ -193,6 +193,7 @@ def test_perf_smoke_script_runs_with_small_dataset(tmp_path) -> None:
     assert "harbor query limit: 50" in completed.stdout
     assert "search query limit: 20" in completed.stdout
     assert "search workload query: search pipeline" in completed.stdout
+    assert "failed targets:" not in completed.stdout
 
 
 def test_perf_smoke_script_creates_db_parent_directories(tmp_path) -> None:
