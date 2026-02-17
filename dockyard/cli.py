@@ -403,10 +403,32 @@ def _resolve_repo_context(
 
 
 @app.callback()
-def root_callback(ctx: typer.Context) -> None:
+def root_callback(
+    ctx: typer.Context,
+    stale: int | None = typer.Option(
+        None,
+        "--stale",
+        help="Only show slips stale for N days (bare dock default listing).",
+    ),
+    tag: str | None = typer.Option(
+        None,
+        "--tag",
+        help="Filter bare dock default listing by tag.",
+    ),
+    limit: int | None = typer.Option(
+        None,
+        "--limit",
+        help="Max rows for bare dock default listing.",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--json",
+        help="Output bare dock default listing as JSON.",
+    ),
+) -> None:
     """Default to `dock ls` when no explicit subcommand is provided."""
     if ctx.invoked_subcommand is None:
-        ctx.invoke(ls_command, stale=None, tag=None, limit=None, as_json=False)
+        ctx.invoke(ls_command, stale=stale, tag=tag, limit=limit, as_json=as_json)
 
 
 @app.command("save")

@@ -3781,6 +3781,51 @@ def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> Non
     assert "Dockyard Harbor" in result.stdout
 
 
+def test_no_subcommand_supports_ls_flags(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock invocation should honor ls-style filter/output flags."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback flag parity",
+            "--decisions",
+            "Support bare command ls flags",
+            "--next-step",
+            "run bare dock json with filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "callback-flags",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(
+        _run_dock(["--json", "--tag", "callback-flags", "--limit", "1"], cwd=tmp_path, env=env).stdout
+    )
+    assert len(payload) == 1
+    assert payload[0]["objective"] == "Default callback flag parity"
+    assert "callback-flags" in payload[0]["tags"]
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)

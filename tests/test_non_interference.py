@@ -1743,6 +1743,17 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
     _assert_repo_clean(git_repo)
 
 
+def test_bare_dock_command_with_ls_flags_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock ls-style flags should remain read-only for project repos."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command("--json", "--limit", "1"), cwd=git_repo, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
