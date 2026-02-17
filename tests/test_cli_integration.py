@@ -4167,9 +4167,33 @@ def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("args", "expected_fragment"),
     [
+        (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
+        (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
+    ],
+)
+def test_no_subcommand_rejects_invalid_combined_filters(
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Bare dock should reject invalid values in combined filter sets."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(list(args), cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
         (("--stale", "-1"), "--stale must be >= 0."),
         (("--limit", "0"), "--limit must be >= 1."),
         (("--tag", "   "), "--tag must be a non-empty string."),
+        (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
+        (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
     ],
 )
 def test_no_subcommand_rejects_invalid_filters_in_repo_context(
