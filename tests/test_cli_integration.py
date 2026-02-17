@@ -7169,19 +7169,24 @@ def test_review_open_shows_associated_checkpoint(
     assert f"Trigger risky review linkage ({command_name})" in open_result.stdout
 
 
-def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_shows_missing_checkpoint_notice(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
     """Review open should indicate when checkpoint link is missing."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Missing checkpoint notice baseline",
+            f"Missing checkpoint notice baseline ({command_name})",
             "--decisions",
             "Create manual review tied to fake checkpoint id",
             "--next-step",
