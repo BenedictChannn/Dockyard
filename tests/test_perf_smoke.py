@@ -170,6 +170,31 @@ def test_perf_smoke_script_rejects_negative_latency_target(tmp_path) -> None:
     assert "value must be non-negative" in completed.stderr
 
 
+def test_perf_smoke_script_rejects_negative_search_target(tmp_path) -> None:
+    """Perf smoke script should reject negative search latency thresholds."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_search_target.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-target-ms",
+            "-1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be non-negative" in completed.stderr
+
+
 def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) -> None:
     """CLI should return non-zero when enforced targets are set to zero."""
     db_path = tmp_path / "perf_smoke_cli_strict.sqlite"
@@ -196,3 +221,31 @@ def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) 
 
     assert completed.returncode == 1
     assert "target < 0.00 ms" in completed.stdout
+
+
+def test_perf_smoke_script_enforce_targets_succeeds_with_high_thresholds(tmp_path) -> None:
+    """CLI should succeed when enforce-targets thresholds are permissive."""
+    db_path = tmp_path / "perf_smoke_cli_relaxed.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--enforce-targets",
+            "--ls-target-ms",
+            "10000",
+            "--search-target-ms",
+            "10000",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "target < 10000.00 ms" in completed.stdout
