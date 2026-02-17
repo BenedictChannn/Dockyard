@@ -6224,11 +6224,13 @@ def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path)
     search_alias_json = json.loads(_run_dock(["f", "Alias coverage", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(search_alias_json) >= 1
     assert "branch" in search_alias_json[0]
-    assert json.loads(_run_dock(["f", "definitely-no-match", "--json"], cwd=tmp_path, env=env).stdout) == []
-    filtered_alias_json = json.loads(
-        _run_dock(["f", "Alias coverage", "--tag", "missing-tag", "--json"], cwd=tmp_path, env=env).stdout
-    )
+    no_match_alias = _run_dock(["f", "definitely-no-match", "--json"], cwd=tmp_path, env=env)
+    assert json.loads(no_match_alias.stdout) == []
+    assert "Traceback" not in f"{no_match_alias.stdout}\n{no_match_alias.stderr}"
+    filtered_alias_result = _run_dock(["f", "Alias coverage", "--tag", "missing-tag", "--json"], cwd=tmp_path, env=env)
+    filtered_alias_json = json.loads(filtered_alias_result.stdout)
     assert filtered_alias_json == []
+    assert "Traceback" not in f"{filtered_alias_result.stdout}\n{filtered_alias_result.stderr}"
 
     resume_alias = _run_dock(["r"], cwd=git_repo, env=env)
     assert "Objective: Alias coverage objective" in resume_alias.stdout
@@ -6714,6 +6716,99 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     )
     assert len(combo_rows) == 1
     assert combo_rows[0]["branch"] == "feature/alias-branch-filter"
+
+
+def test_search_alias_repo_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Alias search should honor combined repo+branch filters in table mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias repo branch semantics objective default",
+            "--decisions",
+            "default branch checkpoint for alias repo+branch filtering",
+            "--next-step",
+            "run alias repo+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/alias-repo-branch-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias repo branch semantics objective feature",
+            "--decisions",
+            "feature branch checkpoint for alias repo+branch filtering",
+            "--next-step",
+            "run alias repo+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    filtered = _run_dock(
+        [
+            "f",
+            "Alias repo branch semantics objective",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            "feature/alias-repo-branch-filter",
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "feature" in filtered
+    assert "default" not in filtered
 
 
 def test_search_alias_shows_no_match_message(tmp_path: Path) -> None:
