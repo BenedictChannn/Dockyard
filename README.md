@@ -278,4 +278,5 @@ be greater than zero. Parent directories for `--db-path` are created
 automatically. Use `--json` for machine-readable benchmark output.
 JSON output includes benchmark metrics plus run context (`db_path`, seed
 dataset sizes, active limits/targets/query), a `schema_version` field, and
-`measured_at` UTC timestamp metadata.
+`measured_at` UTC timestamp metadata plus `failed_targets` details when
+thresholds are missed.
