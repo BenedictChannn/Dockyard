@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dockyard.models import Berth, Checkpoint, Slip, VerificationState
@@ -252,6 +253,7 @@ def main() -> int:
 
     payload = {
         "schema_version": 1,
+        "measured_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "db_path": str(args.db_path),
         "seed": {
             "berths": args.berths,

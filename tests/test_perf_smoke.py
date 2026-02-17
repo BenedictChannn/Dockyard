@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -567,6 +568,9 @@ def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
     assert completed.returncode == 0
     payload = json.loads(completed.stdout)
     assert payload["schema_version"] == 1
+    measured_at = payload["measured_at"]
+    assert measured_at.endswith("Z")
+    datetime.fromisoformat(measured_at.replace("Z", "+00:00"))
     assert payload["db_path"] == str(db_path)
     assert payload["seed"] == {"berths": 1, "checkpoints": 0}
     assert payload["ls"]["limit"] == 50
