@@ -2061,6 +2061,75 @@ def test_review_open_after_save_alias_with_linked_checkpoint_keeps_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_after_save_alias_with_missing_checkpoint_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save-alias + missing-checkpoint review-open flow should not mutate repo."""
+    env = _dockyard_env(tmp_path)
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} missing-checkpoint review-open non-interference",
+            "--decisions",
+            "create checkpoint then open missing-checkpoint review",
+            "--next-step",
+            "open missing-checkpoint linked review",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    branch = _current_branch(git_repo)
+    created = _run(
+        _dockyard_command(
+            "review",
+            "add",
+            "--reason",
+            "non_interference_alias_missing_checkpoint",
+            "--severity",
+            "low",
+            "--checkpoint-id",
+            "cp_missing_123",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "status: missing from index" in opened
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
