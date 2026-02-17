@@ -213,3 +213,26 @@ def test_remote_url_skips_failed_remote_entries(
 
     assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/beta.git"
     assert alpha_lookup_count == 1
+
+
+def test_remote_url_skips_duplicate_origin_lookup_when_origin_blank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should not re-query origin in fallback remote loop."""
+    origin_lookup_count = 0
+
+    def _run_git_with_blank_origin(args: list[str], cwd: Path) -> str:
+        nonlocal origin_lookup_count
+        if args == ["config", "--get", "remote.origin.url"]:
+            origin_lookup_count += 1
+            return ""
+        if args == ["remote"]:
+            return "origin\nbeta"
+        if args == ["config", "--get", "remote.beta.url"]:
+            return "https://example.com/team/beta.git"
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_with_blank_origin)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/beta.git"
+    assert origin_lookup_count == 1
