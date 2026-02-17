@@ -295,3 +295,24 @@ def test_remote_url_sorts_fallback_names_case_insensitively(
     monkeypatch.setattr(git_info_module, "_run_git", _run_git_case_insensitive_sort)
 
     assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/alpha.git"
+
+
+def test_remote_url_tie_breaks_case_insensitive_name_collisions_deterministically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should deterministically order case-colliding names."""
+
+    def _run_git_case_collision(args: list[str], cwd: Path) -> str:
+        if args == ["config", "--get", "remote.origin.url"]:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+        if args == ["remote"]:
+            return "alpha\nAlpha"
+        if args == ["config", "--get", "remote.Alpha.url"]:
+            return "https://example.com/team/alpha-upper.git"
+        if args == ["config", "--get", "remote.alpha.url"]:
+            return "https://example.com/team/alpha-lower.git"
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_case_collision)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/alpha-upper.git"

@@ -93,7 +93,7 @@ def _remote_url(repo_root: Path) -> str | None:
         return None
     remote_names = sorted(
         {remote.strip() for remote in remotes if remote.strip()},
-        key=str.casefold,
+        key=lambda name: (name.casefold(), name),
     )
     for name in remote_names:
         if name == "origin":
