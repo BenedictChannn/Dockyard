@@ -4091,6 +4091,46 @@ def test_no_subcommand_supports_stale_flag(git_repo: Path, tmp_path: Path) -> No
     assert payload[0]["objective"] == "Default callback stale flag parity"
 
 
+def test_no_subcommand_supports_stale_flag_in_repo_context(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock invocation should honor stale filter flag from repo cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback stale flag parity in repo",
+            "--decisions",
+            "Support bare command stale flag from repo cwd",
+            "--next-step",
+            "run bare dock stale filter from repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["--json", "--stale", "0"], cwd=git_repo, env=env).stdout)
+    assert len(payload) == 1
+    assert payload[0]["objective"] == "Default callback stale flag parity in repo"
+
+
 def test_no_subcommand_rejects_invalid_stale_flag(tmp_path: Path) -> None:
     """Bare dock invocation should validate stale option bounds."""
     env = dict(os.environ)
