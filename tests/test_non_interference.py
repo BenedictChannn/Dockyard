@@ -1733,6 +1733,52 @@ def test_save_template_flows_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def test_save_with_blank_origin_remote_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save should remain read-only when origin remote URL is blank."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "config", "remote.origin.url", ""],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "blank origin remote non-interference",
+            "--decisions",
+            "verify save remains read-only",
+            "--next-step",
+            "run save with blank origin remote",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
