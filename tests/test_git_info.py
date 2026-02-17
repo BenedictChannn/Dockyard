@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from dockyard import git_info as git_info_module
 from dockyard.errors import NotGitRepositoryError
 from dockyard.git_info import detect_repo_root, inspect_repository
 
@@ -174,3 +175,37 @@ def test_repo_id_ignores_empty_non_origin_remote_urls(git_repo: Path) -> None:
 
     assert snapshot.remote_url == beta_url
     assert snapshot.repo_id == hashlib.sha1(beta_url.encode("utf-8")).hexdigest()[:16]
+
+
+def test_remote_url_returns_none_when_remote_listing_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should return None when git remote listing fails."""
+
+    def _failing_run_git(args: list[str], cwd: Path) -> str:
+        raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+
+    monkeypatch.setattr(git_info_module, "_run_git", _failing_run_git)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) is None
+
+
+def test_remote_url_skips_failed_remote_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should continue when one remote URL lookup fails."""
+
+    def _run_git_with_failed_alpha(args: list[str], cwd: Path) -> str:
+        if args == ["config", "--get", "remote.origin.url"]:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+        if args == ["remote"]:
+            return "alpha\nbeta"
+        if args == ["config", "--get", "remote.alpha.url"]:
+            raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
+        if args == ["config", "--get", "remote.beta.url"]:
+            return "https://example.com/team/beta.git"
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_with_failed_alpha)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/beta.git"
