@@ -41,6 +41,13 @@ def test_run_commands_empty_sequence_is_success(tmp_path: Path) -> None:
     assert results == []
 
 
+def test_run_commands_all_blank_sequence_is_success(tmp_path: Path) -> None:
+    """Runner should treat all-blank commands as successful no-op."""
+    success, results = run_commands(["", "   ", "\t"], cwd=tmp_path)
+    assert success is True
+    assert results == []
+
+
 def test_run_commands_executes_relative_commands_in_provided_cwd(tmp_path: Path) -> None:
     """Runner should execute shell commands from the provided working directory."""
     command = "pwd > cwd_marker.txt"
