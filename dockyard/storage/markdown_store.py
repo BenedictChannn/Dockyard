@@ -11,6 +11,13 @@ from dockyard.models import Checkpoint
 SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
 LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
 CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
+SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
+    ("**", "**"),
+    ("__", "__"),
+    ("`", "`"),
+    ("*", "*"),
+    ("_", "_"),
+)
 SECTION_FIELD_MAP: dict[str, str] = {
     "objective": "objective",
     "decisions/findings": "decisions",
@@ -169,10 +176,9 @@ def _normalize_section_heading(title: str) -> str:
     collapsed = re.sub(r"\s*#+\s*$", "", collapsed).rstrip()
     if collapsed.endswith(":"):
         collapsed = collapsed[:-1].rstrip()
-    wrappers = (("**", "**"), ("__", "__"), ("`", "`"), ("*", "*"), ("_", "_"))
     while True:
         changed = False
-        for prefix, suffix in wrappers:
+        for prefix, suffix in SECTION_HEADING_WRAPPERS:
             if collapsed.startswith(prefix) and collapsed.endswith(suffix):
                 inner = collapsed[len(prefix) : len(collapsed) - len(suffix)].strip()
                 if inner:
@@ -217,7 +223,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
             if len(command) < 2 or not command.endswith("`"):
                 continue
             command = command[1:-1].strip()
-        command = re.sub(r"^\[(?: |x|X)\]\s+", "", command)
+        command = _strip_checklist_prefix(command)
         if command:
             results.append(command)
     return results
