@@ -4546,6 +4546,55 @@ def test_ls_json_preserves_multiline_objective(git_repo: Path, tmp_path: Path) -
     assert multiline_objective in [row["objective"] for row in callback_rows]
 
 
+def test_harbor_json_preserves_multiline_next_steps(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor and callback JSON should preserve multiline next-step entries."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    objective = "Multiline next steps harbor json"
+    multiline_next_step = "line one\nline two"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            objective,
+            "--decisions",
+            "multiline next-step regression",
+            "--next-step",
+            multiline_next_step,
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    ls_rows = json.loads(_run_dock(["ls", "--json"], cwd=tmp_path, env=env).stdout)
+    harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
+    callback_rows = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
+
+    ls_target = next(row for row in ls_rows if row.get("objective") == objective)
+    harbor_target = next(row for row in harbor_rows if row.get("objective") == objective)
+    callback_target = next(row for row in callback_rows if row.get("objective") == objective)
+    assert multiline_next_step in ls_target.get("next_steps", [])
+    assert multiline_next_step in harbor_target.get("next_steps", [])
+    assert multiline_next_step in callback_target.get("next_steps", [])
+
+
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should honor tag filtering like ls."""
     env = dict(os.environ)
