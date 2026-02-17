@@ -187,6 +187,7 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # --repo must be non-empty when provided
 # --branch must be non-empty when provided
 # in --json mode, no matches are returned as []
+# when --repo matches both a repo_id and a berth name, exact repo_id wins
 # --limit is applied after --tag/--repo/--branch filtering
 # search/f --json rows expose: id, repo_id, berth_name, branch,
 # created_at, snippet, objective

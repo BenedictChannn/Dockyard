@@ -208,6 +208,8 @@ Validation:
 - `--tag` must be non-empty when provided
 - `--repo` must be non-empty when provided
 - `--branch` must be non-empty when provided
+- if `--repo` matches both a `repo_id` and a berth `name`, Dockyard uses the
+  exact `repo_id` match first
 
 ## `review`
 
