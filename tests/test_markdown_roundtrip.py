@@ -611,19 +611,19 @@ Objective text
 ## Decisions/Findings
 Decision text
 ## Next Steps
-------
+   ------   
 Refine parser edge-case coverage
-```bash
+  ```bash  
 Document normalization behavior
-~~~~shell
+   ~~~~shell
 ## Risks/Review Needed
 None
 ## Resume Commands
-------
+  ------  
 echo valid-plain
-```zsh
+   ```zsh
 `echo valid-quoted`
-~~~~fish
+  ~~~~fish  
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
 `head`: abc (subject)
