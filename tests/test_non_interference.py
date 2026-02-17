@@ -2721,6 +2721,47 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("--tag", "baseline", "--stale", "0"),
+        ("--tag", "baseline", "--stale", "0", "--limit", "1"),
+        ("--json", "--tag", "baseline", "--stale", "0"),
+        ("--json", "--tag", "baseline", "--stale", "0", "--limit", "1"),
+    ],
+    ids=[
+        "table_tag_stale",
+        "table_tag_stale_limit",
+        "json_tag_stale",
+        "json_tag_stale_limit",
+    ],
+)
+def test_bare_dock_command_in_repo_seeded_filter_variants_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+) -> None:
+    """Bare dock seeded tag/stale variants should remain read-only in repo cwd."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="bare dock in-repo seeded filter baseline",
+        decisions="seed checkpoint for in-repo callback filter matrix",
+        next_step="run bare dock in-repo filter variants",
+        risks="none",
+        command="echo callback in-repo seeded matrix",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command(*args), cwd=git_repo, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_in_repo_with_missing_tag_limit_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
