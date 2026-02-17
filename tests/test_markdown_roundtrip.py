@@ -3,7 +3,21 @@
 from __future__ import annotations
 
 from dockyard.models import Checkpoint, VerificationState
-from dockyard.storage.markdown_store import parse_checkpoint_markdown, render_checkpoint_markdown
+from dockyard.storage.markdown_store import (
+    BASE_SECTION_FIELD_MAP,
+    SECTION_FIELD_MAP,
+    parse_checkpoint_markdown,
+    render_checkpoint_markdown,
+)
+
+
+def test_section_field_map_generates_space_aliases_for_slash_keys() -> None:
+    """Generated section map should include slash and space variants."""
+    for heading, field in BASE_SECTION_FIELD_MAP.items():
+        if "/" not in heading:
+            continue
+        assert SECTION_FIELD_MAP[heading] == field
+        assert SECTION_FIELD_MAP[heading.replace("/", " ")] == field
 
 
 def test_markdown_round_trip_sections() -> None:
