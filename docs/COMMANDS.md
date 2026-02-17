@@ -175,6 +175,8 @@ python3 -m dockyard f "<query>" --tag backend --repo my_repo --branch feature/wo
 When no results match, Dockyard prints: `No checkpoint matches found.`
 With `--json`, no-match output is `[]`.
 Snippets are normalized to compact single-line text for scanability.
+`search --json` and `f --json` rows share a stable schema:
+`id`, `repo_id`, `berth_name`, `branch`, `created_at`, `snippet`, `objective`.
 This no-match behavior is consistent even when `--tag`, `--repo`, or
 `--branch` filters are provided.
 Queries that contain FTS parser-sensitive syntax (for example `security/path`)
