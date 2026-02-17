@@ -1690,6 +1690,47 @@ def test_review_listing_commands_with_items_keep_repo_clean(
 
 
 @pytest.mark.parametrize(
+    ("command_name", "args_suffix"),
+    [
+        ("search", ("definitely-no-match", "--json")),
+        ("search", ("baseline", "--tag", "missing-tag", "--json")),
+        ("f", ("definitely-no-match", "--json")),
+        ("f", ("baseline", "--tag", "missing-tag", "--json")),
+    ],
+    ids=[
+        "search_query_no_match_json",
+        "search_tag_no_match_json",
+        "f_query_no_match_json",
+        "f_tag_no_match_json",
+    ],
+)
+def test_search_json_no_match_read_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+    args_suffix: tuple[str, ...],
+) -> None:
+    """JSON search no-match paths should remain read-only for project repos."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="baseline objective for search no-match non-interference",
+        decisions="seed checkpoint for no-match json path checks",
+        next_step="run json search no-match commands",
+        risks="none",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    output = _run(_dockyard_command(command_name, *args_suffix), cwd=tmp_path, env=env)
+    assert json.loads(output) == []
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
     ids=RESUME_READ_PATH_IDS,
