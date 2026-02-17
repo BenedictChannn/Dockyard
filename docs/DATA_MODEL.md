@@ -154,3 +154,5 @@ Parser normalization notes:
   (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
 - Nested combinations of these wrappers are also normalized (for example,
   `**`Objective`**`).
+- Triple-emphasis heading labels (for example, `***Objective***`) are also
+  normalized.
