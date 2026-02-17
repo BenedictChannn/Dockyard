@@ -195,6 +195,8 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # including combined --repo+--branch and --tag+--repo+--branch filters
 # queries containing FTS-special syntax (for example `security/path`) are
 # handled with parser-safe fallback matching
+# parser-safe fallback keeps --tag/--repo/--branch filter semantics in both
+# table and --json output modes
 ```
 
 ### 5) Review queue
