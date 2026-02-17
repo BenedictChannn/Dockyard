@@ -2681,6 +2681,32 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
     _assert_repo_clean(git_repo)
 
 
+def test_bare_dock_command_outside_repo_with_missing_tag_limit_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare dock miss-filter+limit paths should remain read-only outside repos."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="bare dock outside repo miss-filter baseline",
+        decisions="seed checkpoint for callback no-match tag+limit coverage",
+        next_step="run bare dock from outside repo",
+        risks="none",
+        command="echo callback non-interference",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command("--tag", "missing-tag", "--limit", "1"), cwd=tmp_path, env=env)
+    _run(_dockyard_command("--tag", "missing-tag", "--limit", "1", "--json"), cwd=tmp_path, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     ("args", "expected_fragment"),
     [
