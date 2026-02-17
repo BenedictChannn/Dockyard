@@ -563,6 +563,8 @@ def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) 
 
     assert completed.returncode == 1
     assert "target < 0.00 ms" in completed.stdout
+    assert "failed targets: ls, search" in completed.stdout
+    assert "failed targets: ls, search" in completed.stdout
 
 
 def test_perf_smoke_script_enforce_targets_succeeds_with_high_thresholds(tmp_path) -> None:
@@ -591,6 +593,8 @@ def test_perf_smoke_script_enforce_targets_succeeds_with_high_thresholds(tmp_pat
 
     assert completed.returncode == 0
     assert "target < 10000.00 ms" in completed.stdout
+    assert "failed targets:" not in completed.stdout
+    assert "failed targets:" not in completed.stdout
 
 
 def test_perf_smoke_script_allows_custom_search_query(tmp_path) -> None:

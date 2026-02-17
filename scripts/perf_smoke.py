@@ -316,6 +316,8 @@ def main() -> int:
     print(f"harbor query limit: {args.ls_limit}")
     print(f"search query limit: {args.search_limit}")
     print(f"search workload query: {args.search_query}")
+    if args.enforce_targets and failed_targets:
+        print(f"failed targets: {', '.join(failed_targets)}")
 
     if not args.enforce_targets:
         return 0
