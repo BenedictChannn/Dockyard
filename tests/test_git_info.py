@@ -194,13 +194,16 @@ def test_remote_url_skips_failed_remote_entries(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Remote resolver should continue when one remote URL lookup fails."""
+    alpha_lookup_count = 0
 
     def _run_git_with_failed_alpha(args: list[str], cwd: Path) -> str:
+        nonlocal alpha_lookup_count
         if args == ["config", "--get", "remote.origin.url"]:
             raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
         if args == ["remote"]:
-            return "alpha\nbeta"
+            return " alpha \n\nbeta\nalpha"
         if args == ["config", "--get", "remote.alpha.url"]:
+            alpha_lookup_count += 1
             raise subprocess.CalledProcessError(returncode=1, cmd=["git", *args])
         if args == ["config", "--get", "remote.beta.url"]:
             return "https://example.com/team/beta.git"
@@ -209,3 +212,4 @@ def test_remote_url_skips_failed_remote_entries(
     monkeypatch.setattr(git_info_module, "_run_git", _run_git_with_failed_alpha)
 
     assert git_info_module._remote_url(Path("/tmp/repo")) == "https://example.com/team/beta.git"
+    assert alpha_lookup_count == 1
