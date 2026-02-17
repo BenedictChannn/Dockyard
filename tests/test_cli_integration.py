@@ -8967,9 +8967,11 @@ def test_review_open_compacts_multiline_metadata_fields(
     assert "files: src/one.py src/two.py" in opened
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_review_open_falls_back_for_blank_metadata_fields(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
     """Review open should show explicit fallbacks for blank metadata."""
     env = dict(os.environ)
@@ -8978,12 +8980,12 @@ def test_review_open_falls_back_for_blank_metadata_fields(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Review open fallback baseline",
+            f"Review open fallback baseline ({command_name})",
             "--decisions",
             "Mutate review row metadata to blanks",
             "--next-step",
@@ -9039,7 +9041,12 @@ def test_review_open_falls_back_for_blank_metadata_fields(
     assert "files: (none)" in opened
 
 
-def test_review_open_handles_scalar_files_payload(git_repo: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_handles_scalar_files_payload(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
     """Review open should coerce scalar files payload to a single file string."""
     env = dict(os.environ)
     dock_home = tmp_path / ".dockyard_data"
@@ -9047,12 +9054,12 @@ def test_review_open_handles_scalar_files_payload(git_repo: Path, tmp_path: Path
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Scalar files payload baseline",
+            f"Scalar files payload baseline ({command_name})",
             "--decisions",
             "Mutate review files to scalar string",
             "--next-step",
