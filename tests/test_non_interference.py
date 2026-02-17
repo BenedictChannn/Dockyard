@@ -209,7 +209,19 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(
         ("baseline", "--tag", "baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json"),
     ),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER)),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--json")),
+    SearchReadVariantMeta(
+        (
+            "baseline",
+            "--tag",
+            "baseline",
+            "--repo",
+            SEARCH_REPO_PLACEHOLDER,
+            "--branch",
+            SEARCH_BRANCH_PLACEHOLDER,
+        ),
+    ),
     SearchReadVariantMeta(
         (
             "baseline",
@@ -222,6 +234,7 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
             "--json",
         ),
     ),
+    SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER)),
     SearchReadVariantMeta(("baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json")),
 )
 SEARCH_ALIAS_EXTRA_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
