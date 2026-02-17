@@ -13702,3 +13702,38 @@ def test_save_with_non_git_root_is_actionable(tmp_path: Path) -> None:
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "git repository" in output
     assert "Traceback" not in output
+
+
+@pytest.mark.parametrize(
+    ("command", "args"),
+    [
+        ("link", ["https://example.com/non-git-root"]),
+        ("links", []),
+    ],
+    ids=["link", "links"],
+)
+def test_link_commands_reject_non_git_root_override(
+    tmp_path: Path,
+    command: str,
+    args: list[str],
+) -> None:
+    """Link/links commands should fail clearly for non-git root overrides."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    non_git_root = tmp_path / "not_a_repo_for_links"
+    non_git_root.mkdir()
+
+    failed = _run_dock(
+        [
+            command,
+            *args,
+            "--root",
+            str(non_git_root),
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "git repository" in output
+    assert "Traceback" not in output
