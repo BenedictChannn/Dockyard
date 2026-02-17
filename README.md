@@ -299,6 +299,7 @@ dataset sizes, active limits/targets/query), a `schema_version` field, and
 thresholds are missed.
 Use `--output-file` to write either text or JSON output to disk (parent
 directories are created automatically). The output path must be a writable
-file path (directory paths are rejected).
+file path (directory paths are rejected, and parent path components must be
+directories).
 When `--enforce-targets` is used in text mode and thresholds are missed, output
 includes a `failed targets:` summary line.
