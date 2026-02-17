@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -65,3 +66,25 @@ def test_repo_id_falls_back_to_path_hash_without_remote(git_repo: Path) -> None:
     second = inspect_repository(root_override=str(git_repo))
     assert first.remote_url is None
     assert first.repo_id == second.repo_id
+
+
+def test_repo_id_uses_non_origin_remote_when_available(git_repo: Path) -> None:
+    """Repo id should use an available non-origin remote URL when present."""
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    upstream_url = "https://example.com/team/upstream.git"
+    subprocess.run(
+        ["git", "remote", "add", "upstream", upstream_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    snapshot = inspect_repository(root_override=str(git_repo))
+
+    assert snapshot.remote_url == upstream_url
+    assert snapshot.repo_id == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]

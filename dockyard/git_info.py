@@ -73,6 +73,32 @@ def _repo_id(remote_url: str | None, root_path: Path) -> str:
     return digest[:16]
 
 
+def _remote_url(repo_root: Path) -> str | None:
+    """Return preferred remote URL for repo identity, if available."""
+    try:
+        url = _run_git(["config", "--get", "remote.origin.url"], cwd=repo_root)
+        if url:
+            return url
+    except subprocess.CalledProcessError:
+        pass
+
+    try:
+        remotes = _run_git(["remote"], cwd=repo_root).splitlines()
+    except subprocess.CalledProcessError:
+        return None
+    for remote in remotes:
+        name = remote.strip()
+        if not name:
+            continue
+        try:
+            url = _run_git(["config", "--get", f"remote.{name}.url"], cwd=repo_root)
+        except subprocess.CalledProcessError:
+            continue
+        if url:
+            return url
+    return None
+
+
 def _parse_numstat(numstat_text: str) -> tuple[int, int, int]:
     """Parse `git diff --numstat` output into aggregate counts."""
     files_changed = 0
@@ -103,11 +129,7 @@ def inspect_repository(root_override: str | None = None, recent_commit_count: in
     """
     repo_root = detect_repo_root(root_override)
     branch = _current_branch(repo_root)
-    remote_url = None
-    try:
-        remote_url = _run_git(["config", "--get", "remote.origin.url"], cwd=repo_root)
-    except subprocess.CalledProcessError:
-        remote_url = None
+    remote_url = _remote_url(repo_root)
 
     head_info = _run_git(["log", "-1", "--pretty=%H%n%s"], cwd=repo_root).splitlines()
     head_sha = head_info[0] if head_info else ""
