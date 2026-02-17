@@ -150,6 +150,8 @@ Parser normalization notes:
   `####`, etc.), not only level-2 headings.
 - Parser also accepts singular heading aliases for known sections
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
+- Risks heading aliases also accept hyphen-separated forms
+  (`Risks - Review Needed`, `Risk - Review Needed`).
 - Known heading labels may be wrapped with simple markdown emphasis markers
   (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
 - Nested combinations of these wrappers are also normalized (for example,
