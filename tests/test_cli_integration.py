@@ -4338,6 +4338,12 @@ def test_no_subcommand_supports_combined_tag_stale_limit_filters(
         "Default callback combined filter limit alpha feature",
     }
     assert "alpha" in rows[0]["tags"]
+    table_output = _run_dock(["--tag", "alpha", "--limit", "1"], cwd=tmp_path, env=env).stdout
+    shows_base_branch = base_branch in table_output
+    shows_feature_branch = "feature/no-subcommand-combined-filter-limit" in table_output
+    assert shows_base_branch ^ shows_feature_branch
+    assert "No checkpoints yet." not in table_output
+    assert "Traceback" not in table_output
 
 
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
