@@ -13,6 +13,7 @@ LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
 CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
 SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|[-–—]|:|\+)\s*")
 STRUCTURAL_SEPARATOR_PATTERN = re.compile(r"^(?:[-*_]{3,}|`{3,}|~{3,})$")
+CODE_FENCE_PATTERN = re.compile(r"^(?:`{3,}|~{3,}).*$")
 SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
     ("**", "**"),
     ("__", "__"),
@@ -259,7 +260,7 @@ def _strip_checklist_prefix(item: str) -> str:
 
 def _extract_list_item_text(stripped_line: str) -> str:
     """Extract list-item payload text from a stripped markdown line."""
-    if STRUCTURAL_SEPARATOR_PATTERN.fullmatch(stripped_line):
+    if _is_structural_separator_line(stripped_line):
         return stripped_line
     match = LIST_ITEM_PATTERN.match(stripped_line)
     return (match.group(1) if match else stripped_line).strip()
@@ -267,4 +268,8 @@ def _extract_list_item_text(stripped_line: str) -> str:
 
 def _is_structural_separator_line(value: str) -> bool:
     """Return whether text is a markdown structural separator/fence line."""
-    return bool(STRUCTURAL_SEPARATOR_PATTERN.fullmatch(value.strip()))
+    normalized = value.strip()
+    return bool(
+        STRUCTURAL_SEPARATOR_PATTERN.fullmatch(normalized)
+        or CODE_FENCE_PATTERN.fullmatch(normalized)
+    )

@@ -613,17 +613,17 @@ Decision text
 ## Next Steps
 ------
 Refine parser edge-case coverage
-````
+```bash
 Document normalization behavior
-~~~~
+~~~~shell
 ## Risks/Review Needed
 None
 ## Resume Commands
 ------
 echo valid-plain
-````
+```zsh
 `echo valid-quoted`
-~~~~
+~~~~fish
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
 `head`: abc (subject)
