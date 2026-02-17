@@ -111,6 +111,8 @@ Useful flags:
   Objective, Next Steps, Open Reviews, Verification) is preserved across
   `resume`, `r`, and `undock`, including explicit BERTH and BERTH + `--branch`
   lookups outside repos, plus in-repo `--branch` flows with trimmed values.
+- Trimmed BERTH/`--branch` inputs render canonical `Project/Branch` header
+  values (`<berth> / <branch>`).
 - Handoff bullets and `--run` command labels are compacted to single-line
   previews for readability.
 - BERTH + `--branch` scoped resume lookups support both `--handoff` and

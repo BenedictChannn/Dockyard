@@ -94,6 +94,8 @@ Notes:
   `resume`, `r`, and `undock`, including explicit BERTH lookups and
   BERTH + `--branch` invocations outside repos, as well as in-repo
   `--branch` flows with trimmed branch values.
+- Trimmed BERTH/`--branch` inputs are normalized in output, so
+  `Project/Branch:` headers remain canonical (`<berth> / <branch>`).
 - If a checkpoint has no next steps, resume summary shows `(none recorded)`.
 - `--handoff` output compacts multiline objective/next-step/risk/command
   fields into one-line bullet previews.
