@@ -609,6 +609,7 @@ def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["enforce_targets"] is True
     assert payload["targets_met"] is False
+    assert "dock ls query:" not in completed.stdout
 
 
 def test_perf_smoke_script_json_enforce_targets_success_exit(tmp_path) -> None:
@@ -640,3 +641,4 @@ def test_perf_smoke_script_json_enforce_targets_success_exit(tmp_path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["enforce_targets"] is True
     assert payload["targets_met"] is True
+    assert "dock ls query:" not in completed.stdout
