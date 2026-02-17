@@ -2108,6 +2108,57 @@ def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
 
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
+def test_trimmed_explicit_berth_branch_resume_read_modes_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    output_flag: str,
+) -> None:
+    """Trimmed explicit-berth+branch resume read modes should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    branch = _current_branch(git_repo)
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "trimmed explicit berth+branch non-interference",
+            "--decisions",
+            "validate trimmed explicit berth+branch read modes",
+            "--next-step",
+            "run trimmed explicit berth+branch resume read path",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+
+    args = [command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  "]
+    if output_flag:
+        args.append(output_flag)
+
+    _assert_repo_clean(git_repo)
+    _run(_dockyard_command(*args), cwd=tmp_path, env=env)
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 def test_run_with_missing_berth_root_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,
