@@ -14127,6 +14127,25 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
     )
     assert len(rows) == 1
     assert rows[0]["objective"] == "pf-target security/path"
+    tagged_rows = json.loads(
+        _run_dock(
+            [
+                "search",
+                "security/path",
+                "--json",
+                "--tag",
+                "parser-fallback",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                base_branch,
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["objective"] == "pf-target security/path"
     table_output = _run_dock(
         [
             "search",
@@ -14142,6 +14161,23 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
     assert "pf-target" in table_output
     assert "pf-sibling" not in table_output
     assert "Traceback" not in table_output
+    tagged_table_output = _run_dock(
+        [
+            "search",
+            "security/path",
+            "--tag",
+            "parser-fallback",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            base_branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "pf-target" in tagged_table_output
+    assert "pf-sibling" not in tagged_table_output
+    assert "Traceback" not in tagged_table_output
 
 
 def test_search_alias_parser_error_query_honors_repo_branch_filters(
@@ -14240,6 +14276,25 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
     )
     assert len(rows) == 1
     assert rows[0]["objective"] == "apf-target security/path"
+    tagged_rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "security/path",
+                "--json",
+                "--tag",
+                "parser-fallback-alias",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                base_branch,
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["objective"] == "apf-target security/path"
     table_output = _run_dock(
         [
             "f",
@@ -14255,6 +14310,23 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
     assert "apf-target" in table_output
     assert "apf-sibling" not in table_output
     assert "Traceback" not in table_output
+    tagged_table_output = _run_dock(
+        [
+            "f",
+            "security/path",
+            "--tag",
+            "parser-fallback-alias",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            base_branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "apf-target" in tagged_table_output
+    assert "apf-sibling" not in tagged_table_output
+    assert "Traceback" not in tagged_table_output
 
 
 def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: Path) -> None:
