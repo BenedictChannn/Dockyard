@@ -2744,6 +2744,38 @@ def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
 
 
 @pytest.mark.parametrize(
+    "args",
+    [
+        (),
+        ("--json",),
+        ("--json", "--limit", "1"),
+        ("--tag", "missing-tag", "--limit", "1"),
+        ("--tag", "missing-tag", "--limit", "1", "--json"),
+    ],
+    ids=[
+        "default",
+        "json",
+        "json_limit",
+        "missing_tag_limit",
+        "missing_tag_limit_json",
+    ],
+)
+def test_bare_dock_command_outside_repo_empty_store_read_variants_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+) -> None:
+    """Bare dock read variants should stay non-mutating with empty data store."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command(*args), cwd=tmp_path, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     ("args", "expected_fragment"),
     [
         (("--stale", "-1"), "--stale must be >= 0."),
