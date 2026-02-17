@@ -4777,6 +4777,74 @@ def test_dashboard_tag_filter_no_match_is_informative(
     assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
 
 
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_tag_filter_no_match_with_limit_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard commands should stay informative for tag misses with limit."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Dashboard {label} tag limit no-match objective",
+            "--decisions",
+            "dashboard tag+limit no-match baseline",
+            "--next-step",
+            "run dashboard tag+limit no-match",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(
+        [*command_prefix, "--tag", "missing-tag", "--limit", "1"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Dockyard Harbor" in table_output.stdout
+    assert f"Dashboard {label} tag limit no-match objective" not in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_output = _run_dock(
+        [*command_prefix, "--tag", "missing-tag", "--limit", "1", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(json_output.stdout) == []
+    assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
+
+
 def test_no_subcommand_defaults_to_harbor_inside_repo(
     git_repo: Path,
     tmp_path: Path,
