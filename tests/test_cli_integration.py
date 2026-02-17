@@ -14358,6 +14358,200 @@ def test_search_tag_repo_branch_filter_semantics_across_multi_branch_matches(
     assert "Traceback" not in table_output
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_repo_branch_limit_semantics_across_multi_branch_matches(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Combined filters should apply --limit after tag/repo/branch narrowing."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+    target_branch = "feature/matrix-target-limit"
+
+    subprocess.run(
+        ["git", "checkout", "-b", target_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbltoken one-{command_name}",
+            "--decisions",
+            "target feature checkpoint one for combined limit matrix",
+            "--next-step",
+            "run combined filter matrix with limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo one",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbltoken two-{command_name}",
+            "--decisions",
+            "target feature checkpoint two for combined limit matrix",
+            "--next-step",
+            "run combined filter matrix with limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo two",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    other_repo = tmp_path / f"multi-tag-repo-branch-limit-{command_name}"
+    other_repo.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "dockyard@example.com"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Dockyard Test"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", f"git@github.com:org/{command_name}-multi-tag-branch-limit.git"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    (other_repo / "README.md").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "checkout", "-b", target_branch],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(other_repo),
+            "--no-prompt",
+            "--objective",
+            f"mtrbltoken other-{command_name}",
+            "--decisions",
+            "other repo feature checkpoint for combined limit matrix",
+            "--next-step",
+            "run combined filter matrix with limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo other",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=other_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                command_name,
+                "mtrbltoken",
+                "--tag",
+                "alpha",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                target_branch,
+                "--limit",
+                "1",
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["berth_name"] == git_repo.name
+    assert rows[0]["branch"] == target_branch
+    assert rows[0]["objective"] in {f"mtrbltoken one-{command_name}", f"mtrbltoken two-{command_name}"}
+
+    table_output = _run_dock(
+        [
+            command_name,
+            "mtrbltoken",
+            "--tag",
+            "alpha",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            target_branch,
+            "--limit",
+            "1",
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert f"other-{command_name}" not in table_output
+    assert "No checkpoint matches found." not in table_output
+    assert "Traceback" not in table_output
+
+
 def test_search_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
     """Search should honor branch filters in non-JSON table output."""
     env = dict(os.environ)
