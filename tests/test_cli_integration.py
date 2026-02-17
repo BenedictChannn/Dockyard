@@ -12712,7 +12712,7 @@ def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> No
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Tagged alpha checkpoint",
+            "ls-tag-limit-alpha-one",
             "--decisions",
             "alpha branch context",
             "--next-step",
@@ -12750,7 +12750,7 @@ def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> No
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Tagged alpha checkpoint two",
+            "ls-tag-limit-alpha-two",
             "--decisions",
             "alpha second branch context",
             "--next-step",
@@ -12786,6 +12786,12 @@ def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> No
     )
     assert len(rows) == 1
     assert "alpha" in rows[0]["tags"]
+    table_output = _run_dock(["ls", "--tag", "alpha", "--limit", "1"], cwd=tmp_path, env=env).stdout
+    shows_base_branch = base_branch in table_output
+    shows_feature_branch = "feature/alpha-two" in table_output
+    assert shows_base_branch ^ shows_feature_branch
+    assert "No checkpoints yet." not in table_output
+    assert "Traceback" not in table_output
 
 
 def test_search_rejects_blank_query(tmp_path: Path) -> None:
