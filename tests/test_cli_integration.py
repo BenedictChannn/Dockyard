@@ -3896,6 +3896,48 @@ def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
     assert "--tag must be a non-empty string." in output
 
 
+def test_no_subcommand_trims_tag_filter(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock invocation should trim tag filter values before lookup."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback trimmed tag parity",
+            "--decisions",
+            "Trim tag value in bare callback path",
+            "--next-step",
+            "run bare dock with trimmed tag",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock(["--json", "--tag", "  alpha  "], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "Default callback trimmed tag parity"
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)
