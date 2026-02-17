@@ -221,8 +221,7 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
         stripped = line.strip()
         if not stripped:
             continue
-        match = LIST_ITEM_PATTERN.match(stripped)
-        item = _strip_checklist_prefix((match.group(1) if match else stripped).strip())
+        item = _strip_checklist_prefix(_extract_list_item_text(stripped))
         if item:
             results.append(item)
     return results
@@ -233,8 +232,9 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
-        match = LIST_ITEM_PATTERN.match(stripped)
-        command = (match.group(1) if match else stripped).strip()
+        if not stripped:
+            continue
+        command = _extract_list_item_text(stripped)
         if command.startswith("`"):
             if len(command) < 2 or not command.endswith("`"):
                 continue
@@ -248,3 +248,9 @@ def _normalize_commands(lines: list[str]) -> list[str]:
 def _strip_checklist_prefix(item: str) -> str:
     """Strip markdown checklist prefixes from list item text."""
     return CHECKLIST_PREFIX_PATTERN.sub("", item)
+
+
+def _extract_list_item_text(stripped_line: str) -> str:
+    """Extract list-item payload text from a stripped markdown line."""
+    match = LIST_ITEM_PATTERN.match(stripped_line)
+    return (match.group(1) if match else stripped_line).strip()
