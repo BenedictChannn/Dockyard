@@ -11,8 +11,10 @@ import pytest
 
 from dockyard.storage.sqlite_store import SQLiteStore
 from scripts.perf_smoke import (
+    _non_negative_float_arg,
     _non_negative_int_arg,
     _positive_int_arg,
+    _targets_met,
     seed_data,
 )
 
@@ -42,6 +44,40 @@ def test_non_negative_int_arg_rejects_negative_values() -> None:
     """Non-negative parser should reject negative values."""
     with pytest.raises(argparse.ArgumentTypeError):
         _non_negative_int_arg("-2")
+
+
+def test_non_negative_float_arg_accepts_zero_and_positive() -> None:
+    """Non-negative float parser should accept zero and positive values."""
+    assert _non_negative_float_arg("0") == 0.0
+    assert _non_negative_float_arg("2.5") == 2.5
+
+
+def test_non_negative_float_arg_rejects_negative_values() -> None:
+    """Non-negative float parser should reject negative values."""
+    with pytest.raises(argparse.ArgumentTypeError):
+        _non_negative_float_arg("-0.1")
+
+
+def test_targets_met_uses_strict_less_than_thresholds() -> None:
+    """Target helper should enforce strict less-than semantics."""
+    assert _targets_met(
+        elapsed_ls_ms=99.9,
+        elapsed_search_ms=199.9,
+        ls_target_ms=100.0,
+        search_target_ms=200.0,
+    )
+    assert not _targets_met(
+        elapsed_ls_ms=100.0,
+        elapsed_search_ms=150.0,
+        ls_target_ms=100.0,
+        search_target_ms=200.0,
+    )
+    assert not _targets_met(
+        elapsed_ls_ms=50.0,
+        elapsed_search_ms=200.0,
+        ls_target_ms=100.0,
+        search_target_ms=200.0,
+    )
 
 
 def test_seed_data_rejects_non_positive_berth_count(tmp_path) -> None:
@@ -107,3 +143,31 @@ def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
 
     assert completed.returncode != 0
     assert "value must be greater than zero" in completed.stderr
+
+
+def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) -> None:
+    """CLI should return non-zero when enforced targets are set to zero."""
+    db_path = tmp_path / "perf_smoke_cli_strict.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--enforce-targets",
+            "--ls-target-ms",
+            "0",
+            "--search-target-ms",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "target < 0.00 ms" in completed.stdout

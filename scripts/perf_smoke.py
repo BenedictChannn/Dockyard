@@ -35,6 +35,14 @@ def _non_negative_int_arg(value: str) -> int:
     return parsed
 
 
+def _non_negative_float_arg(value: str) -> float:
+    """Parse argparse float input requiring value >= 0."""
+    parsed = float(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be non-negative")
+    return parsed
+
+
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for smoke performance run."""
     parser = argparse.ArgumentParser(description="Dockyard performance smoke test")
@@ -60,6 +68,18 @@ def parse_args() -> argparse.Namespace:
         "--enforce-targets",
         action="store_true",
         help="Fail with non-zero exit if measured timings exceed PRD targets.",
+    )
+    parser.add_argument(
+        "--ls-target-ms",
+        type=_non_negative_float_arg,
+        default=200.0,
+        help="Target threshold (ms) for dock ls query path.",
+    )
+    parser.add_argument(
+        "--search-target-ms",
+        type=_non_negative_float_arg,
+        default=500.0,
+        help="Target threshold (ms) for dock search query path.",
     )
     return parser.parse_args()
 
@@ -148,6 +168,17 @@ def seed_data(store: SQLiteStore, berth_count: int, checkpoint_count: int) -> No
         )
 
 
+def _targets_met(
+    *,
+    elapsed_ls_ms: float,
+    elapsed_search_ms: float,
+    ls_target_ms: float,
+    search_target_ms: float,
+) -> bool:
+    """Return whether measured latencies satisfy configured thresholds."""
+    return elapsed_ls_ms < ls_target_ms and elapsed_search_ms < search_target_ms
+
+
 def main() -> int:
     """Execute perf smoke scenario and optionally enforce PRD targets."""
     args = parse_args()
@@ -169,18 +200,23 @@ def main() -> int:
     print(
         "dock ls query: "
         f"{elapsed_ls_ms:.2f} ms (rows={len(harbor_rows)}) | "
-        "target < 200 ms"
+        f"target < {args.ls_target_ms:.2f} ms"
     )
     print(
         "dock search query: "
         f"{elapsed_search_ms:.2f} ms (rows={len(search_rows)}) | "
-        "target < 500 ms"
+        f"target < {args.search_target_ms:.2f} ms"
     )
 
     if not args.enforce_targets:
         return 0
 
-    if elapsed_ls_ms >= 200 or elapsed_search_ms >= 500:
+    if not _targets_met(
+        elapsed_ls_ms=elapsed_ls_ms,
+        elapsed_search_ms=elapsed_search_ms,
+        ls_target_ms=args.ls_target_ms,
+        search_target_ms=args.search_target_ms,
+    ):
         return 1
     return 0
 
