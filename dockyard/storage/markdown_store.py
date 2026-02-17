@@ -136,7 +136,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
     current_title: str | None = None
     bucket: dict[str, list[str]] = {target: [] for target in SECTION_FIELD_MAP.values()}
     for raw_line in markdown_text.splitlines():
-        section_match = re.match(r"^##\s*(.+?)\s*$", raw_line.strip())
+        section_match = re.match(r"^#{2,}\s*(.+?)\s*$", raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
             mapped_title = SECTION_FIELD_MAP.get(_normalize_section_heading(title).lower())
