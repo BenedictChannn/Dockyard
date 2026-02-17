@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sqlite3
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -1797,6 +1798,66 @@ def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
     )
     assert completed.returncode != 0
     assert expected_fragment in f"{completed.stdout}\n{completed.stderr}"
+    _assert_repo_clean(git_repo)
+
+
+def test_resume_run_with_missing_berth_root_keeps_repo_clean(git_repo: Path, tmp_path: Path) -> None:
+    """Resume --run with stale berth root should fail without repo mutation."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "missing berth root non-interference",
+            "--decisions",
+            "validate stale run root error path",
+            "--next-step",
+            "run resume with stale berth root",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    payload = json.loads(_run(_dockyard_command("resume", "--json"), cwd=git_repo, env=env))
+    repo_id = payload["repo_id"]
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE berths SET root_path = ? WHERE repo_id = ?",
+        (str(tmp_path / "missing-run-root"), repo_id),
+    )
+    conn.commit()
+    conn.close()
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command("resume", git_repo.name, "--run"),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode == 2
+    assert "Repository root for --run does not exist:" in f"{completed.stdout}\n{completed.stderr}"
     _assert_repo_clean(git_repo)
 
 
