@@ -772,6 +772,42 @@ Risk text
     assert parsed["resume_commands"] == ["pytest -q"]
 
 
+def test_markdown_parser_accepts_space_separated_decisions_heading_aliases() -> None:
+    """Parser should accept space-separated decisions/findings heading aliases."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decision Finding
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+Risk text
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["objective"] == "Objective text"
+    assert parsed["decisions"] == "Decision text"
+    assert parsed["next_steps"] == ["Keep moving"]
+    assert parsed["risks_review"] == "Risk text"
+    assert parsed["resume_commands"] == ["pytest -q"]
+
+
 def test_markdown_parser_accepts_hyphenated_risks_heading_alias() -> None:
     """Parser should accept `Risks - Review Needed` heading alias."""
     markdown = """# Checkpoint
