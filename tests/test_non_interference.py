@@ -2773,14 +2773,18 @@ def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
     "args",
     [
         (),
+        ("--stale", "0"),
         ("--json",),
+        ("--json", "--stale", "0", "--limit", "1"),
         ("--json", "--limit", "1"),
         ("--tag", "missing-tag", "--limit", "1"),
         ("--tag", "missing-tag", "--limit", "1", "--json"),
     ],
     ids=[
         "default",
+        "stale_zero",
         "json",
+        "json_stale_limit",
         "json_limit",
         "missing_tag_limit",
         "missing_tag_limit_json",
