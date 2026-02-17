@@ -3886,6 +3886,16 @@ def test_no_subcommand_rejects_invalid_limit_flag(tmp_path: Path) -> None:
     assert "--limit must be >= 1." in output
 
 
+def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
+    """Bare dock invocation should reject blank tag filter values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["--tag", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--tag must be a non-empty string." in output
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)
