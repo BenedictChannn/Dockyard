@@ -113,6 +113,8 @@ Useful flags:
   lookups outside repos.
 - Handoff bullets and `--run` command labels are compacted to single-line
   previews for readability.
+- BERTH + `--branch` scoped resume lookups support both `--handoff` and
+  `--json` when run outside repo directories.
 - Handoff shows `(none recorded)` placeholders when no next steps or commands
   are recorded.
 - Handoff renders blank objective/risks values as `(none)`, and `--run`

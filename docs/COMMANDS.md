@@ -96,6 +96,9 @@ Notes:
 - If a checkpoint has no next steps, resume summary shows `(none recorded)`.
 - `--handoff` output compacts multiline objective/next-step/risk/command
   fields into one-line bullet previews.
+- BERTH + `--branch` scoped resume lookups support `--handoff` and `--json`
+  from outside repo directories (for example:
+  `python3 -m dockyard resume my-berth --branch main --handoff`).
 - When handoff next steps or commands are empty, Dockyard prints
   `(none recorded)` placeholders.
 - Blank objective/risks values in handoff render as `(none)` for explicitness.
