@@ -260,6 +260,31 @@ def test_perf_smoke_script_rejects_non_positive_ls_limit(tmp_path) -> None:
     assert "value must be greater than zero" in completed.stderr
 
 
+def test_perf_smoke_script_rejects_non_numeric_ls_limit(tmp_path) -> None:
+    """Perf smoke script should reject non-numeric ls-limit values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_ls_limit_type.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--ls-limit",
+            "abc",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be an integer" in completed.stderr
+
+
 def test_perf_smoke_script_rejects_non_positive_search_limit(tmp_path) -> None:
     """Perf smoke script should reject non-positive search-limit values."""
     db_path = tmp_path / "perf_smoke_cli_invalid_search_limit.sqlite"
@@ -283,6 +308,31 @@ def test_perf_smoke_script_rejects_non_positive_search_limit(tmp_path) -> None:
 
     assert completed.returncode != 0
     assert "value must be greater than zero" in completed.stderr
+
+
+def test_perf_smoke_script_rejects_non_numeric_search_limit(tmp_path) -> None:
+    """Perf smoke script should reject non-numeric search-limit values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_search_limit_type.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-limit",
+            "abc",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be an integer" in completed.stderr
 
 
 def test_perf_smoke_script_rejects_negative_checkpoints(tmp_path) -> None:
@@ -333,6 +383,31 @@ def test_perf_smoke_script_rejects_negative_latency_target(tmp_path) -> None:
     assert "value must be non-negative" in completed.stderr
 
 
+def test_perf_smoke_script_rejects_non_numeric_ls_target(tmp_path) -> None:
+    """Perf smoke script should reject non-numeric ls-target values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_ls_target_type.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--ls-target-ms",
+            "abc",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be a number" in completed.stderr
+
+
 def test_perf_smoke_script_rejects_negative_search_target(tmp_path) -> None:
     """Perf smoke script should reject negative search latency thresholds."""
     db_path = tmp_path / "perf_smoke_cli_invalid_search_target.sqlite"
@@ -356,6 +431,31 @@ def test_perf_smoke_script_rejects_negative_search_target(tmp_path) -> None:
 
     assert completed.returncode != 0
     assert "value must be non-negative" in completed.stderr
+
+
+def test_perf_smoke_script_rejects_non_numeric_search_target(tmp_path) -> None:
+    """Perf smoke script should reject non-numeric search-target values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_search_target_type.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-target-ms",
+            "abc",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be a number" in completed.stderr
 
 
 def test_perf_smoke_script_rejects_blank_search_query(tmp_path) -> None:
