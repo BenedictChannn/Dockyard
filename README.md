@@ -269,6 +269,7 @@ python3 scripts/perf_smoke.py --search-query "objective keyword"
 python3 scripts/perf_smoke.py --ls-limit 25 --search-limit 10
 ```
 
-The perf smoke output includes the active search workload query for easier run
-to run comparison. The `--search-query` value must be non-empty after
-trimming. Query row limits must be greater than zero.
+The perf smoke output includes the active search workload query and effective
+harbor/search query limits for easier run-to-run comparison. The
+`--search-query` value must be non-empty after trimming. Query row limits must
+be greater than zero.
