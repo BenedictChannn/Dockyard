@@ -7007,6 +7007,67 @@ def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
     assert payload["repo_id"] == hashlib.sha1(str(git_repo).encode("utf-8")).hexdigest()[:16]
 
 
+def test_save_repo_id_fallback_remote_ordering_is_case_insensitive(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save/resume should choose fallback remotes using case-insensitive sort."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    alpha_url = "https://example.com/team/alpha.git"
+    subprocess.run(
+        ["git", "remote", "add", "Zeta", "https://example.com/team/zeta.git"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "alpha", alpha_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Repo id case-insensitive fallback objective",
+            "--decisions",
+            "Prefer alpha before Zeta in fallback ordering",
+            "--next-step",
+            "assert case-insensitive fallback ordering",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["repo_id"] == hashlib.sha1(alpha_url.encode("utf-8")).hexdigest()[:16]
+
+
 def test_review_add_accepts_trimmed_repo_and_branch_override(
     git_repo: Path,
     tmp_path: Path,
