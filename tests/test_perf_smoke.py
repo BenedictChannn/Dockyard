@@ -746,6 +746,7 @@ def test_perf_smoke_script_rejects_directory_output_file_in_text_mode(tmp_path) 
 
     assert completed.returncode == 1
     assert "error writing output file:" in completed.stderr
+    assert "Traceback" not in f"{completed.stdout}\n{completed.stderr}"
 
 
 def test_perf_smoke_script_text_enforce_failure_writes_output_file(tmp_path) -> None:
@@ -908,6 +909,7 @@ def test_perf_smoke_script_rejects_directory_output_file_in_json_mode(tmp_path) 
 
     assert completed.returncode == 1
     assert "error writing output file:" in completed.stderr
+    assert "Traceback" not in f"{completed.stdout}\n{completed.stderr}"
 
 
 def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:
