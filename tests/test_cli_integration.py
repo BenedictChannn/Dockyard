@@ -11289,6 +11289,104 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
     assert rows[0]["objective"] == "Parser fallback security/path target"
 
 
+def test_search_alias_parser_error_query_honors_repo_branch_filters(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Search alias parser fallback should keep repo/branch filters intact."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias parser fallback security/path target",
+            "--decisions",
+            "Keep alias fallback query filters stable",
+            "--next-step",
+            "Validate alias parser fallback filter semantics",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tag",
+            "parser-fallback-alias",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/parser-fallback-alias-other"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias parser fallback security/path sibling",
+            "--decisions",
+            "Other branch alias record should be filtered out",
+            "--next-step",
+            "Ensure alias branch filter is honored",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tag",
+            "parser-fallback-alias",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                "f",
+                "security/path",
+                "--json",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                base_branch,
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "Alias parser fallback security/path target"
+
+
 def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: Path) -> None:
     """Search snippets should surface matches from next-step text."""
     env = dict(os.environ)
