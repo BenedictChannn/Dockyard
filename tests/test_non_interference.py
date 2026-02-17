@@ -1987,6 +1987,80 @@ def test_save_aliases_with_non_origin_remote_fallback_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_after_save_alias_with_linked_checkpoint_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save-alias + linked review-open flow should not mutate repo state."""
+    env = _dockyard_env(tmp_path)
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} auto-review non-interference",
+            "--decisions",
+            "create checkpoint and inspect review open behavior",
+            "--next-step",
+            "open linked review",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    db_path = Path(env["DOCKYARD_HOME"]) / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    row = conn.execute("SELECT id FROM checkpoints ORDER BY created_at DESC LIMIT 1").fetchone()
+    conn.close()
+    assert row is not None
+    checkpoint_id = row[0]
+    branch = _current_branch(git_repo)
+    created = _run(
+        _dockyard_command(
+            "review",
+            "add",
+            "--reason",
+            "non_interference_alias_review_open",
+            "--severity",
+            "med",
+            "--checkpoint-id",
+            checkpoint_id,
+            "--repo",
+            git_repo.name,
+            "--branch",
+            branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
