@@ -280,3 +280,5 @@ JSON output includes benchmark metrics plus run context (`db_path`, seed
 dataset sizes, active limits/targets/query), a `schema_version` field, and
 `measured_at` UTC timestamp metadata plus `failed_targets` details when
 thresholds are missed.
+When `--enforce-targets` is used in text mode and thresholds are missed, output
+includes a `failed targets:` summary line.
