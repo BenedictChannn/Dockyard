@@ -13507,6 +13507,72 @@ def test_harbor_alias_maps_short_status_token(git_repo: Path, tmp_path: Path) ->
     assert json_rows[0]["status"] == " y "
 
 
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_paths_map_short_status_token(
+    git_repo: Path,
+    tmp_path: Path,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard command paths should map known short status tokens."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Dashboard {label} short status token baseline",
+            "--decisions",
+            "Map short status token across dashboard paths",
+            "--next-step",
+            "run dashboard paths",
+            "--risks",
+            "none",
+            "--command",
+            "echo dashboard",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ? WHERE branch = ?",
+        (" y ", branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(command_prefix, cwd=tmp_path, env=env).stdout
+    assert " Y " in f" {output} "
+    json_rows = json.loads(_run_dock([*command_prefix, "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(json_rows) == 1
+    assert json_rows[0]["status"] == " y "
+
+
 def test_harbor_alias_compacts_multiline_branch_text(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should compact multiline branch values in table output."""
     env = dict(os.environ)
