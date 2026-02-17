@@ -3826,6 +3826,56 @@ def test_no_subcommand_supports_ls_flags(git_repo: Path, tmp_path: Path) -> None
     assert "callback-flags" in payload[0]["tags"]
 
 
+def test_no_subcommand_supports_stale_flag(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock invocation should accept stale filter flag like ls."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback stale flag parity",
+            "--decisions",
+            "Support bare command stale flag",
+            "--next-step",
+            "run bare dock stale filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["--json", "--stale", "0"], cwd=tmp_path, env=env).stdout)
+    assert len(payload) == 1
+    assert payload[0]["objective"] == "Default callback stale flag parity"
+
+
+def test_no_subcommand_rejects_invalid_stale_flag(tmp_path: Path) -> None:
+    """Bare dock invocation should validate stale option bounds."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(["--stale", "-1"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "--stale must be >= 0." in output
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)
