@@ -4419,6 +4419,56 @@ def test_no_subcommand_tag_filter_no_match_is_informative(git_repo: Path, tmp_pa
     assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
 
 
+def test_no_subcommand_tag_filter_no_match_is_informative_in_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare callback should handle missing tag filters in repository cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback missing tag baseline in repo",
+            "--decisions",
+            "ensure in-repo callback no-match semantics stay stable",
+            "--next-step",
+            "run bare dock with missing tag filter in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-base",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(["--tag", "missing-tag"], cwd=git_repo, env=env)
+    assert "Dockyard Harbor" in table_output.stdout
+    assert "Default callback missing tag baseline in repo" not in table_output.stdout
+    assert "Traceback" not in f"{table_output.stdout}\n{table_output.stderr}"
+
+    json_output = _run_dock(["--tag", "missing-tag", "--json"], cwd=git_repo, env=env)
+    assert json.loads(json_output.stdout) == []
+    assert "Traceback" not in f"{json_output.stdout}\n{json_output.stderr}"
+
+
 def test_no_subcommand_tag_filter_no_match_with_limit_is_informative_in_repo(
     git_repo: Path,
     tmp_path: Path,

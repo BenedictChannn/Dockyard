@@ -2663,6 +2663,8 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
         ("--limit", "1"),
         ("--stale", "0"),
         ("--json", "--stale", "0", "--limit", "1"),
+        ("--tag", "missing-tag"),
+        ("--tag", "missing-tag", "--json"),
         ("--tag", "missing-tag", "--limit", "1"),
         ("--tag", "missing-tag", "--limit", "1", "--json"),
     ],
@@ -2672,6 +2674,8 @@ def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) 
         "limit",
         "stale_zero",
         "json_stale_limit",
+        "missing_tag",
+        "missing_tag_json",
         "missing_tag_limit",
         "missing_tag_limit_json",
     ],
@@ -2737,6 +2741,8 @@ def test_bare_dock_command_in_repo_with_missing_tag_limit_does_not_modify_repo(
 
     _assert_repo_clean(git_repo)
 
+    _run(_dockyard_command("--tag", "missing-tag"), cwd=git_repo, env=env)
+    _run(_dockyard_command("--tag", "missing-tag", "--json"), cwd=git_repo, env=env)
     _run(_dockyard_command("--tag", "missing-tag", "--limit", "1"), cwd=git_repo, env=env)
     _run(_dockyard_command("--tag", "missing-tag", "--limit", "1", "--json"), cwd=git_repo, env=env)
 
@@ -2763,6 +2769,8 @@ def test_bare_dock_command_outside_repo_with_missing_tag_limit_does_not_modify_r
 
     _assert_repo_clean(git_repo)
 
+    _run(_dockyard_command("--tag", "missing-tag"), cwd=tmp_path, env=env)
+    _run(_dockyard_command("--tag", "missing-tag", "--json"), cwd=tmp_path, env=env)
     _run(_dockyard_command("--tag", "missing-tag", "--limit", "1"), cwd=tmp_path, env=env)
     _run(_dockyard_command("--tag", "missing-tag", "--limit", "1", "--json"), cwd=tmp_path, env=env)
 
@@ -2813,6 +2821,8 @@ def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
         ("--json",),
         ("--json", "--stale", "0", "--limit", "1"),
         ("--json", "--limit", "1"),
+        ("--tag", "missing-tag"),
+        ("--tag", "missing-tag", "--json"),
         ("--tag", "missing-tag", "--limit", "1"),
         ("--tag", "missing-tag", "--limit", "1", "--json"),
     ],
@@ -2822,6 +2832,8 @@ def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
         "json",
         "json_stale_limit",
         "json_limit",
+        "missing_tag",
+        "missing_tag_json",
         "missing_tag_limit",
         "missing_tag_limit_json",
     ],
