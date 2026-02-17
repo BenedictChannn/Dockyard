@@ -755,6 +755,40 @@ def test_perf_smoke_script_text_enforce_failure_writes_output_file(tmp_path) -> 
     assert "failed targets: ls, search" in output_text
 
 
+def test_perf_smoke_script_text_enforce_success_writes_output_file(tmp_path) -> None:
+    """Text enforce-target success should write output-file without failures."""
+    db_path = tmp_path / "perf_smoke_cli_text_file_relaxed.sqlite"
+    output_path = tmp_path / "outputs" / "perf-relaxed.txt"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--enforce-targets",
+            "--ls-target-ms",
+            "10000",
+            "--search-target-ms",
+            "10000",
+            "--output-file",
+            str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+    output_text = output_path.read_text(encoding="utf-8")
+    assert "target < 10000.00 ms" in output_text
+    assert "failed targets:" not in output_text
+
+
 def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
     """Perf smoke script should emit machine-readable metrics with --json."""
     db_path = tmp_path / "perf_smoke_cli_json.sqlite"
@@ -920,3 +954,38 @@ def test_perf_smoke_script_json_enforce_targets_success_exit(tmp_path) -> None:
     assert payload["targets_met"] is True
     assert payload["failed_targets"] == []
     assert "dock ls query:" not in completed.stdout
+
+
+def test_perf_smoke_script_json_enforce_success_writes_output_file(tmp_path) -> None:
+    """JSON enforce-target success should write output-file payload."""
+    db_path = tmp_path / "perf_smoke_cli_json_file_relaxed.sqlite"
+    output_path = tmp_path / "outputs" / "perf-relaxed.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--json",
+            "--enforce-targets",
+            "--ls-target-ms",
+            "10000",
+            "--search-target-ms",
+            "10000",
+            "--output-file",
+            str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["targets_met"] is True
+    assert payload["failed_targets"] == []
