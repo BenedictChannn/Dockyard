@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from dockyard.models import Berth, Checkpoint, VerificationState
-from dockyard.storage.sqlite_store import SQLiteStore
+from dockyard.storage.sqlite_store import SQLiteStore, _is_fts_query_parser_error
 
 
 def _checkpoint(checkpoint_id: str, repo_id: str, branch: str, objective: str, tags: list[str]) -> Checkpoint:
@@ -112,6 +112,25 @@ def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     hits = store.search_checkpoints("security/path")
     assert len(hits) == 1
     assert hits[0]["id"] == "cp_special"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "fts5: syntax error near '/'",
+        "malformed match expression: foo",
+        "unterminated string",
+        "no such column: token",
+    ],
+)
+def test_is_fts_query_parser_error_recognizes_known_messages(message: str) -> None:
+    """Parser-error classifier should identify known MATCH parse failures."""
+    assert _is_fts_query_parser_error(sqlite3.OperationalError(message))
+
+
+def test_is_fts_query_parser_error_rejects_unrelated_messages() -> None:
+    """Parser-error classifier should ignore unrelated operational failures."""
+    assert not _is_fts_query_parser_error(sqlite3.OperationalError("database disk image is malformed"))
 
 
 def test_search_falls_back_for_fts_parser_operational_error(
