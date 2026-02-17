@@ -107,6 +107,9 @@ Useful flags:
 - `--json` structured output
 - Resume summary lines compact multiline objective/next-step text into single
   line previews for faster scanning.
+- Resume top-lines summary contract (Project/Branch, Last Checkpoint,
+  Objective, Next Steps, Open Reviews, Verification) is preserved across
+  `resume`, `r`, and `undock`, including explicit BERTH lookups outside repos.
 - Handoff bullets and `--run` command labels are compacted to single-line
   previews for readability.
 - Handoff shows `(none recorded)` placeholders when no next steps or commands
