@@ -252,6 +252,9 @@ available), including creation timestamp, checkpoint id, and any attached file
 paths.
 This includes review items created from checkpoints captured via `save`, `s`,
 or `dock`.
+When the linked checkpoint id is missing from the index, `review open` shows a
+`status: missing from index` notice for review items created through any save
+alias flow.
 Blank metadata fields are rendered with explicit fallback text where
 applicable (`(unknown)` / `(none)`), and multiline values are compacted to
 single-line text (including `checkpoint_id`, `notes`, and `files` fields).

@@ -202,6 +202,8 @@ explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
 (including checkpoint id, notes, and file fields in `review open`).
 Associated checkpoint details in `review open` include reviews sourced from
 checkpoints captured via `save`, `s`, and `dock`.
+If a linked checkpoint id is missing from the index, `review open` shows
+`status: missing from index` consistently across those save-alias flows.
 `review add` ignores blank `--file` entries and de-duplicates exact repeats.
 Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
 treated as missing.
