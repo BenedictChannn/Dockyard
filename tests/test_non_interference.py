@@ -1830,6 +1830,107 @@ def test_save_with_non_origin_remote_fallback_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_with_blank_origin_remote_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save aliases should remain read-only when origin remote URL is blank."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "config", "remote.origin.url", ""],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} blank origin non-interference",
+            "--decisions",
+            "verify alias save remains read-only",
+            "--next-step",
+            "run alias save with blank origin",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_with_non_origin_remote_fallback_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save aliases should remain read-only with non-origin remote fallback."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "remote", "remove", "origin"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "upstream", "https://example.com/team/upstream.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} non-origin fallback non-interference",
+            "--decisions",
+            "verify alias save remains read-only with fallback remote",
+            "--next-step",
+            "run alias save with non-origin fallback remote",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
