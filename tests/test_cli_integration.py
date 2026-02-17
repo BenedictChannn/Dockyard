@@ -13283,6 +13283,91 @@ def test_search_branch_filter_no_match_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+def test_search_tag_repo_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search should honor combined tag+repo filters in table mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "primary-tag-repo-alpha-token",
+            "--decisions",
+            "alpha-tag checkpoint for primary tag+repo filtering",
+            "--next-step",
+            "run primary tag+repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "primary-tag-repo-beta-token",
+            "--decisions",
+            "beta-tag checkpoint for primary tag+repo filtering",
+            "--next-step",
+            "run primary tag+repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo beta",
+            "--tag",
+            "beta",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    filtered = _run_dock(
+        [
+            "search",
+            "primary-tag-repo",
+            "--tag",
+            "beta",
+            "--repo",
+            git_repo.name,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "primary-tag-repo-beta-token" in filtered
+    assert "primary-tag-repo-alpha-token" not in filtered
+    assert "Traceback" not in filtered
+
+
 def test_search_tag_repo_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
