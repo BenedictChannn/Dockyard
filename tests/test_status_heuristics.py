@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dockyard.config import ReviewHeuristicsConfig
 from dockyard.models import Checkpoint, VerificationState
-from dockyard.services.reviews import review_triggers
+from dockyard.services.reviews import build_review_item, review_triggers, severity_from_triggers
 from dockyard.services.status import compute_slip_status
 
 
@@ -155,9 +155,28 @@ def test_review_triggers_include_missing_tests_for_non_trivial_diff() -> None:
     assert "missing_tests_non_trivial_diff" in triggers
 
 
+def test_review_triggers_skip_missing_tests_trigger_for_trivial_diff() -> None:
+    """Missing-tests trigger should not fire for trivial diffs."""
+    cp = _checkpoint(
+        diff_files_changed=1,
+        diff_insertions=1,
+        diff_deletions=0,
+        verification=VerificationState(tests_run=False, build_ok=False, lint_ok=False, smoke_ok=False),
+    )
+    triggers = review_triggers(cp)
+    assert "missing_tests_non_trivial_diff" not in triggers
+
+
 def test_review_triggers_include_release_hotfix_branch_default() -> None:
     """Release/hotfix branch naming should trigger review suggestion."""
     cp = _checkpoint(branch="release/2026.02", verification=VerificationState())
+    triggers = review_triggers(cp)
+    assert "release_or_hotfix_branch" in triggers
+
+
+def test_review_triggers_branch_prefix_match_is_case_insensitive() -> None:
+    """Branch-prefix trigger should match regardless of branch text case."""
+    cp = _checkpoint(branch="HOTFIX/security-fix", verification=VerificationState())
     triggers = review_triggers(cp)
     assert "release_or_hotfix_branch" in triggers
 
@@ -184,3 +203,23 @@ def test_review_triggers_honor_custom_config_thresholds() -> None:
     assert "many_files_changed" in triggers
     assert "large_diff_churn" in triggers
     assert "release_or_hotfix_branch" in triggers
+
+
+def test_severity_from_triggers_maps_high_med_low() -> None:
+    """Trigger severity mapping should return high/med/low buckets."""
+    assert severity_from_triggers(["large_diff_churn"]) == "high"
+    assert severity_from_triggers(["many_files_changed"]) == "med"
+    assert severity_from_triggers([]) == "low"
+
+
+def test_build_review_item_limits_files_and_uses_manual_reason() -> None:
+    """Review item should cap file list and use manual reason when needed."""
+    cp = _checkpoint(
+        touched_files=[f"src/file_{index}.py" for index in range(25)],
+        verification=VerificationState(),
+    )
+    item = build_review_item(checkpoint=cp, triggers=[])
+    assert item.reason == "manual"
+    assert item.severity == "low"
+    assert item.status == "open"
+    assert len(item.files) == 20
