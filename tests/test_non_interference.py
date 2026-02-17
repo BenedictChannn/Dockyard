@@ -2192,6 +2192,61 @@ def test_run_with_branch_and_missing_berth_root_keeps_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_unknown_explicit_berth_branch_resume_errors_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Unknown berth+branch resume failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "unknown explicit berth branch non-interference",
+            "--decisions",
+            "validate explicit berth+branch missing context error path",
+            "--next-step",
+            "run resume with unknown explicit berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode == 2
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "No checkpoint found for the requested context." in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
