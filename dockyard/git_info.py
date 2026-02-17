@@ -86,7 +86,7 @@ def _remote_url(repo_root: Path) -> str | None:
         remotes = _run_git(["remote"], cwd=repo_root).splitlines()
     except subprocess.CalledProcessError:
         return None
-    for remote in remotes:
+    for remote in sorted(remotes):
         name = remote.strip()
         if not name:
             continue

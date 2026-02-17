@@ -90,6 +90,35 @@ def test_repo_id_uses_non_origin_remote_when_available(git_repo: Path) -> None:
     assert snapshot.repo_id == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]
 
 
+def test_repo_id_non_origin_remote_selection_is_deterministic(git_repo: Path) -> None:
+    """Repo id fallback should select remotes deterministically."""
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    alpha_url = "https://example.com/team/alpha.git"
+    zeta_url = "https://example.com/team/zeta.git"
+    subprocess.run(
+        ["git", "remote", "add", "zeta", zeta_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "alpha", alpha_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    snapshot = inspect_repository(root_override=str(git_repo))
+
+    assert snapshot.remote_url == alpha_url
+    assert snapshot.repo_id == hashlib.sha1(alpha_url.encode("utf-8")).hexdigest()[:16]
+
+
 def test_repo_id_prefers_origin_remote_when_multiple_remotes_exist(git_repo: Path) -> None:
     """Repo id should continue preferring origin when multiple remotes exist."""
     origin_url = subprocess.run(
