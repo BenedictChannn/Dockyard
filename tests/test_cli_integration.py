@@ -3611,6 +3611,70 @@ def test_resume_alias_run_with_berth_missing_root_path_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_run_with_branch_and_missing_root_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Run-enabled resume commands should fail cleanly with branch + stale root."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Missing branch-scoped run root path objective",
+            "--decisions",
+            "Ensure branch-scoped run path validation is actionable",
+            "--next-step",
+            "Attempt branch-scoped --run with stale berth root",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    repo_id = payload["repo_id"]
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE berths SET root_path = ? WHERE repo_id = ?",
+        (str(tmp_path / f"missing-run-root-branch-{command_name}"), repo_id),
+    )
+    conn.commit()
+    conn.close()
+
+    failed = _run_dock(
+        [command_name, git_repo.name, "--branch", branch, "--run"],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Repository root for --run does not exist:" in output
+    assert "Traceback" not in output
+
+
 def test_save_truncates_next_steps_and_commands_to_mvp_limits(
     git_repo: Path,
     tmp_path: Path,
