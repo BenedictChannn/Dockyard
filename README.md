@@ -161,6 +161,8 @@ Bare callback validation mirrors `ls` constraints (`--stale >= 0`,
 `--limit >= 1`, non-empty `--tag`).
 In `--json` mode, both `ls` and the bare callback path return `[]` when no
 slips are indexed.
+This JSON no-match contract also holds for filtered dashboard queries
+(`--tag`, `--stale`, `--limit`, and combined filter variants).
 
 ### 4) Search objectives, decisions, next steps, and risks
 

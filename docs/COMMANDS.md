@@ -154,6 +154,8 @@ Validation:
 
 `ls --json`, `harbor --json`, and root callback `--json` all return `[]` when
 no slips are indexed.
+The same JSON no-match contract applies to filtered dashboard paths as well
+(`--tag`, `--stale`, `--limit`, and combined filter variants).
 
 ## `search` (`f`)
 
