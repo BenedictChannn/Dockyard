@@ -141,6 +141,8 @@ def test_perf_smoke_script_runs_with_small_dataset(tmp_path) -> None:
     assert completed.returncode == 0
     assert "dock ls query:" in completed.stdout
     assert "dock search query:" in completed.stdout
+    assert "harbor query limit: 50" in completed.stdout
+    assert "search query limit: 20" in completed.stdout
     assert "search workload query: search pipeline" in completed.stdout
 
 
@@ -446,6 +448,7 @@ def test_perf_smoke_script_applies_custom_ls_limit(tmp_path) -> None:
 
     assert completed.returncode == 0
     assert "dock ls query:" in completed.stdout
+    assert "harbor query limit: 1" in completed.stdout
     assert "(rows=1)" in completed.stdout
 
 
@@ -472,4 +475,5 @@ def test_perf_smoke_script_applies_custom_search_limit(tmp_path) -> None:
 
     assert completed.returncode == 0
     assert "dock search query:" in completed.stdout
+    assert "search query limit: 1" in completed.stdout
     assert "(rows=1)" in completed.stdout
