@@ -232,6 +232,37 @@ def test_search_like_fallback_honors_repo_and_branch_filters(
     assert other_repo_hits[0]["id"] == "cp_like_b_main"
 
 
+def test_search_like_fallback_applies_tag_filter_before_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """LIKE fallback path should apply tag filtering before limit truncation."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_like_tag_limit", name="LikeTagLimit", root_path="/tmp/ltl", remote_url=None))
+
+    tagged = _checkpoint("cp_like_tagged", "repo_like_tag_limit", "main", "fallback-tag-limit tagged", ["alpha"])
+    tagged.created_at = "2026-01-01T00:00:00+00:00"
+    newest_non_tagged = _checkpoint("cp_like_latest", "repo_like_tag_limit", "main", "fallback-tag-limit latest", [])
+    newest_non_tagged.created_at = "2026-01-01T00:00:02+00:00"
+    store.add_checkpoint(tagged)
+    store.add_checkpoint(newest_non_tagged)
+
+    def _force_fts_enabled(_conn: sqlite3.Connection) -> bool:
+        return True
+
+    def _raise_parser_error(**_kwargs: object) -> list[sqlite3.Row]:
+        raise sqlite3.OperationalError("fts5: syntax error near '/'")
+
+    monkeypatch.setattr(store, "_has_fts", _force_fts_enabled)
+    monkeypatch.setattr(store, "_search_rows_fts", _raise_parser_error)
+
+    hits = store.search_checkpoints("fallback-tag-limit", tag="alpha", limit=1)
+    assert len(hits) == 1
+    assert hits[0]["id"] == "cp_like_tagged"
+
+
 def test_search_reraises_non_parser_fts_operational_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
