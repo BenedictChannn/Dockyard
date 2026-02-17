@@ -7296,19 +7296,24 @@ def test_review_open_displays_file_list(
     assert "files: src/a.py, src/b.py" in opened.stdout
 
 
-def test_review_open_displays_notes(git_repo: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_displays_notes(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
     """Review open output should include optional notes text."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Review notes baseline",
+            f"Review notes baseline ({command_name})",
             "--decisions",
             "Create review with notes",
             "--next-step",
