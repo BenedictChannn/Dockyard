@@ -3794,6 +3794,15 @@ def test_root_help_includes_no_subcommand_ls_flags(tmp_path: Path) -> None:
     assert "--json" in help_text
 
 
+def test_no_subcommand_json_empty_store_returns_array(tmp_path: Path) -> None:
+    """Bare dock JSON mode should return [] for an empty dataset."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    payload = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
+    assert payload == []
+
+
 def test_no_subcommand_supports_ls_flags(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock invocation should honor ls-style filter/output flags."""
     env = dict(os.environ)
