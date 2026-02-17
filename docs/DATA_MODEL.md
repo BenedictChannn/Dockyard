@@ -154,6 +154,8 @@ Parser normalization notes:
   (`Decisions-Findings`, `Decision-Finding`).
 - Decisions heading aliases also accept ampersand-separated forms
   (`Decisions & Findings`, `Decision & Finding`).
+- Decisions heading aliases also accept space-separated forms
+  (`Decisions Findings`, `Decision Finding`).
 - Risks heading aliases also accept hyphen-separated forms
   (`Risks - Review Needed`, `Risk - Review Needed`).
 - Risks heading aliases also accept ampersand-separated forms
