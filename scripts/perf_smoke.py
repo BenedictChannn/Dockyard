@@ -212,6 +212,7 @@ def main() -> int:
         f"{elapsed_search_ms:.2f} ms (rows={len(search_rows)}) | "
         f"target < {args.search_target_ms:.2f} ms"
     )
+    print(f"search workload query: {args.search_query}")
 
     if not args.enforce_targets:
         return 0

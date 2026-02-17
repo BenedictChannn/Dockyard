@@ -120,6 +120,7 @@ def test_perf_smoke_script_runs_with_small_dataset(tmp_path) -> None:
     assert completed.returncode == 0
     assert "dock ls query:" in completed.stdout
     assert "dock search query:" in completed.stdout
+    assert "search workload query: search pipeline" in completed.stdout
 
 
 def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
@@ -297,4 +298,5 @@ def test_perf_smoke_script_allows_custom_search_query(tmp_path) -> None:
 
     assert completed.returncode == 0
     assert "dock search query:" in completed.stdout
+    assert "search workload query: nonexistent-query-token" in completed.stdout
     assert "rows=0" in completed.stdout
