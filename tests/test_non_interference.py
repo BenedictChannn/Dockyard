@@ -2130,6 +2130,80 @@ def test_review_open_after_save_alias_with_missing_checkpoint_keeps_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_after_save_alias_with_file_and_notes_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save-alias + file/notes review-open flow should not mutate repo."""
+    env = _dockyard_env(tmp_path)
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} file+notes review-open non-interference",
+            "--decisions",
+            "create checkpoint then open file/notes review metadata",
+            "--next-step",
+            "open file/notes review metadata",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    branch = _current_branch(git_repo)
+    created = _run(
+        _dockyard_command(
+            "review",
+            "add",
+            "--reason",
+            "non_interference_alias_file_notes",
+            "--severity",
+            "low",
+            "--file",
+            "src/a.py",
+            "--file",
+            "src/b.py",
+            "--notes",
+            "needs careful review",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "files: src/a.py, src/b.py" in opened
+    assert "notes: needs careful review" in opened
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
