@@ -11928,6 +11928,54 @@ def test_template_type_validation_for_verification_fields(
     assert "Traceback" not in output
 
 
+def test_template_verification_section_must_be_object_or_table(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Template should reject non-object verification section payloads."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_verification_shape.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": "bad verification shape",
+                "decisions": "verification section is not object-like",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Template field 'verification' must be a table/object" in output
+    assert "Traceback" not in output
+
+
 def test_no_prompt_requires_risks_field(git_repo: Path, tmp_path: Path) -> None:
     """No-prompt save should require non-empty risks/review notes."""
     env = dict(os.environ)
