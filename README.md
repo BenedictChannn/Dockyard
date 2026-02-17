@@ -213,6 +213,7 @@ treated as missing.
 `--repo` / `--branch` must be non-empty when provided.
 `--severity` must be non-empty and one of `low|med|high`.
 `review open` / `review done` IDs are trimmed; blank IDs are rejected.
+Both `review` and `review list` print `No review items.` when the ledger is empty.
 `review --all` and `review list --all` return the same ordered set of open and
 resolved items.
 
