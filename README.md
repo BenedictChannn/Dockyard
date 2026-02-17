@@ -267,10 +267,12 @@ python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-targ
 python3 scripts/perf_smoke.py --search-query "objective keyword"
 # custom row limits for harbor/search query paths
 python3 scripts/perf_smoke.py --ls-limit 25 --search-limit 10
+# machine-readable benchmark payload
+python3 scripts/perf_smoke.py --json
 ```
 
 The perf smoke output includes the active search workload query and effective
 harbor/search query limits for easier run-to-run comparison. The
 `--search-query` value must be non-empty after trimming. Query row limits must
 be greater than zero. Parent directories for `--db-path` are created
-automatically.
+automatically. Use `--json` for machine-readable benchmark output.
