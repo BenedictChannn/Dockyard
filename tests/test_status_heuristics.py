@@ -67,6 +67,60 @@ def test_status_red_for_large_diff_without_review() -> None:
     assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "red"
 
 
+def test_status_red_for_risky_paths_without_tests_even_with_open_reviews() -> None:
+    """Risky paths without tests should stay red regardless of review count."""
+    cp = _checkpoint(
+        touched_files=["security/token.py"],
+        verification=VerificationState(tests_run=False, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=2, has_high_open_review=False) == "red"
+
+
+def test_status_yellow_for_large_diff_when_open_review_exists() -> None:
+    """Large diffs with open non-high reviews should remain yellow."""
+    cp = _checkpoint(
+        diff_files_changed=20,
+        diff_insertions=300,
+        diff_deletions=200,
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=1, has_high_open_review=False) == "yellow"
+
+
+def test_status_red_at_large_diff_file_threshold_boundary_without_review() -> None:
+    """File-count large-diff threshold should trigger red at 15 files."""
+    cp = _checkpoint(
+        diff_files_changed=15,
+        diff_insertions=10,
+        diff_deletions=5,
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "red"
+
+
+def test_status_red_at_large_diff_churn_threshold_boundary_without_review() -> None:
+    """Churn large-diff threshold should trigger red at 400 changes."""
+    cp = _checkpoint(
+        diff_files_changed=5,
+        diff_insertions=250,
+        diff_deletions=150,
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "red"
+
+
+def test_status_green_just_below_large_diff_thresholds_with_verification() -> None:
+    """Sub-threshold diffs with verification and no reviews should be green."""
+    cp = _checkpoint(
+        diff_files_changed=14,
+        diff_insertions=200,
+        diff_deletions=199,
+        touched_files=["src/app.py"],
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "green"
+
+
 def test_status_yellow_when_low_review_open_with_good_verification() -> None:
     """Open low/med review items should keep status yellow."""
     cp = _checkpoint(
