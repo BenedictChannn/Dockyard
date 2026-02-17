@@ -223,8 +223,9 @@ Layout:
 - `config.toml`
 
 `repo_id` is a stable hash derived from a configured git remote URL when
-available (preferring `origin`, then other remotes), with repository-path hash
-fallback for repos without remotes.
+available (preferring `origin`, then other remotes in deterministic
+case-insensitive name order), with repository-path hash fallback for repos
+without remotes.
 
 Override base path with:
 
