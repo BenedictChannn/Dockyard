@@ -16,6 +16,7 @@ from scripts.perf_smoke import (
     _non_negative_int_arg,
     _positive_int_arg,
     _targets_met,
+    build_checkpoint,
     seed_data,
 )
 
@@ -90,6 +91,14 @@ def test_targets_met_uses_strict_less_than_thresholds() -> None:
         ls_target_ms=100.0,
         search_target_ms=200.0,
     )
+
+
+def test_build_checkpoint_id_is_deterministic() -> None:
+    """Synthetic checkpoint IDs should be deterministic for seed repeatability."""
+    checkpoint_a = build_checkpoint(repo_id="repo_0001", branch="feature/a", index=7)
+    checkpoint_b = build_checkpoint(repo_id="repo_0001", branch="feature/a", index=7)
+
+    assert checkpoint_a.id == checkpoint_b.id == "cp_repo_0001_feature_a_00007"
 
 
 def test_seed_data_rejects_non_positive_berth_count(tmp_path) -> None:

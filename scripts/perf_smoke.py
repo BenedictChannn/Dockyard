@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import time
-import uuid
 from pathlib import Path
 
 from dockyard.models import Berth, Checkpoint, Slip, VerificationState
@@ -112,8 +111,9 @@ def parse_args() -> argparse.Namespace:
 
 def build_checkpoint(repo_id: str, branch: str, index: int) -> Checkpoint:
     """Create deterministic synthetic checkpoint payload."""
+    branch_key = branch.replace("/", "_")
     return Checkpoint(
-        id=f"cp_{repo_id}_{branch}_{index}_{uuid.uuid4().hex[:6]}",
+        id=f"cp_{repo_id}_{branch_key}_{index:05d}",
         repo_id=repo_id,
         branch=branch,
         created_at=f"2026-01-{(index % 28) + 1:02d}T12:00:00+00:00",
