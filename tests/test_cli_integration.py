@@ -12489,6 +12489,7 @@ def test_search_no_matches_is_informative(tmp_path: Path) -> None:
 
     result = _run_dock(["search", "nothing-will-match"], cwd=tmp_path, env=env)
     assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Path) -> None:
@@ -12534,6 +12535,7 @@ def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Pat
         env=env,
     )
     assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_output_falls_back_for_blank_timestamp(
