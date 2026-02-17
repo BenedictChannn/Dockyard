@@ -249,3 +249,29 @@ def test_perf_smoke_script_enforce_targets_succeeds_with_high_thresholds(tmp_pat
 
     assert completed.returncode == 0
     assert "target < 10000.00 ms" in completed.stdout
+
+
+def test_perf_smoke_script_allows_custom_search_query(tmp_path) -> None:
+    """CLI should honor custom search query input for benchmark search path."""
+    db_path = tmp_path / "perf_smoke_cli_query.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "1",
+            "--search-query",
+            "nonexistent-query-token",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "dock search query:" in completed.stdout
+    assert "rows=0" in completed.stdout

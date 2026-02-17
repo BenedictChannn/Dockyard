@@ -81,6 +81,11 @@ def parse_args() -> argparse.Namespace:
         default=500.0,
         help="Target threshold (ms) for dock search query path.",
     )
+    parser.add_argument(
+        "--search-query",
+        default="search pipeline",
+        help="Search query string used for benchmark lookup.",
+    )
     return parser.parse_args()
 
 
@@ -194,7 +199,7 @@ def main() -> int:
     elapsed_ls_ms = (time.perf_counter() - start_ls) * 1000
 
     start_search = time.perf_counter()
-    search_rows = store.search_checkpoints("search pipeline", limit=20)
+    search_rows = store.search_checkpoints(args.search_query, limit=20)
     elapsed_search_ms = (time.perf_counter() - start_search) * 1000
 
     print(
