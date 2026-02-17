@@ -146,6 +146,8 @@ Parser normalization notes:
   (for example, `Objective:`).
 - Known section heading lookups also tolerate compact ATX forms like
   `##Objective##` (no spacing after the marker, optional closing hashes).
+- Known section heading lookups work with deeper ATX levels (`##`, `###`,
+  `####`, etc.), not only level-2 headings.
 - Parser also accepts singular heading aliases for known sections
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
 - Known heading labels may be wrapped with simple markdown emphasis markers
