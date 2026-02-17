@@ -202,6 +202,8 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("security/path",)),
     SearchReadVariantMeta(("baseline", "--json")),
     SearchReadVariantMeta(("security/path", "--json")),
+    SearchReadVariantMeta(("security/path", "--tag", "baseline", "--limit", "1")),
+    SearchReadVariantMeta(("security/path", "--tag", "baseline", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline")),
     SearchReadVariantMeta(("baseline", "--tag", "missing-tag")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--limit", "1")),
