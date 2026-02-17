@@ -120,6 +120,8 @@ Useful flags:
   executed) for `resume`, `r`, and `undock`.
 - The same no-op behavior applies when persisted command entries normalize to
   blank/whitespace values.
+- If the persisted berth root path for `--run` is missing, Dockyard prints an
+  actionable error instead of a traceback.
 - BERTH argument values are trimmed; blank BERTH values are rejected.
 - `--branch` values are trimmed; blank values are rejected.
 

@@ -106,6 +106,8 @@ Notes:
   `resume`, `r`, and `undock` (no command execution rows are emitted).
 - The same no-op behavior applies when persisted command payloads contain only
   blank/whitespace entries after normalization.
+- If the persisted berth root path for `--run` no longer exists, Dockyard
+  fails with an actionable error instead of a traceback.
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 
