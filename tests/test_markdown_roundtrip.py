@@ -179,6 +179,44 @@ None
     ]
 
 
+def test_markdown_parser_accepts_plain_resume_command_lines() -> None:
+    """Parser should accept non-bulleted resume command lines."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+None
+## Resume Commands
+pytest -q
+python3 -m dockyard ls
+`echo quoted-command`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["resume_commands"] == [
+        "pytest -q",
+        "python3 -m dockyard ls",
+        "echo quoted-command",
+    ]
+
+
 def test_markdown_parser_ignores_malformed_backtick_command_bullets() -> None:
     """Parser should ignore malformed backtick command bullets."""
     markdown = """# Checkpoint
@@ -253,6 +291,42 @@ None
     assert parsed["next_steps"] == [
         "Add integration coverage",
         "Tighten parser behavior",
+    ]
+
+
+def test_markdown_parser_accepts_plain_next_step_lines() -> None:
+    """Parser should accept non-bulleted next-step lines."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+Refine parser edge-case coverage
+Document normalization behavior
+## Risks/Review Needed
+None
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["next_steps"] == [
+        "Refine parser edge-case coverage",
+        "Document normalization behavior",
     ]
 
 

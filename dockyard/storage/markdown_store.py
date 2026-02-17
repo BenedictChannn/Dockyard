@@ -222,10 +222,9 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
         if not stripped:
             continue
         match = LIST_ITEM_PATTERN.match(stripped)
-        if match:
-            item = _strip_checklist_prefix(match.group(1).strip())
-            if item:
-                results.append(item)
+        item = _strip_checklist_prefix((match.group(1) if match else stripped).strip())
+        if item:
+            results.append(item)
     return results
 
 
@@ -235,9 +234,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     for line in lines:
         stripped = line.strip()
         match = LIST_ITEM_PATTERN.match(stripped)
-        if not match:
-            continue
-        command = match.group(1).strip()
+        command = (match.group(1) if match else stripped).strip()
         if command.startswith("`"):
             if len(command) < 2 or not command.endswith("`"):
                 continue
