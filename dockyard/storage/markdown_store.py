@@ -8,6 +8,9 @@ from pathlib import Path
 from dockyard.config import DockyardPaths
 from dockyard.models import Checkpoint
 
+SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
+LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
+CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
 SECTION_FIELD_MAP: dict[str, str] = {
     "objective": "objective",
     "decisions/findings": "decisions",
@@ -136,7 +139,7 @@ def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
     current_title: str | None = None
     bucket: dict[str, list[str]] = {target: [] for target in SECTION_FIELD_MAP.values()}
     for raw_line in markdown_text.splitlines():
-        section_match = re.match(r"^#{2,}\s*(.+?)\s*$", raw_line.strip())
+        section_match = SECTION_HEADING_PATTERN.match(raw_line.strip())
         if section_match:
             title = section_match.group(1).strip()
             mapped_title = SECTION_FIELD_MAP.get(_normalize_section_heading(title).lower())
@@ -193,7 +196,7 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
         stripped = line.strip()
         if not stripped:
             continue
-        match = re.match(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$", stripped)
+        match = LIST_ITEM_PATTERN.match(stripped)
         if match:
             item = _strip_checklist_prefix(match.group(1).strip())
             if item:
@@ -206,7 +209,7 @@ def _normalize_commands(lines: list[str]) -> list[str]:
     results: list[str] = []
     for line in lines:
         stripped = line.strip()
-        match = re.match(r"^(?:[-*+]|\d+[.)]|\(\d+\))\s*(.*)$", stripped)
+        match = LIST_ITEM_PATTERN.match(stripped)
         if not match:
             continue
         command = match.group(1).strip()
@@ -222,4 +225,4 @@ def _normalize_commands(lines: list[str]) -> list[str]:
 
 def _strip_checklist_prefix(item: str) -> str:
     """Strip markdown checklist prefixes from list item text."""
-    return re.sub(r"^\[(?: |x|X)\]\s+", "", item)
+    return CHECKLIST_PREFIX_PATTERN.sub("", item)
