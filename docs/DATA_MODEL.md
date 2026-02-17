@@ -140,6 +140,8 @@ Parser normalization notes:
   (for example, both `- cmd` and `-cmd` parse correctly).
 - `resume commands` also accepts plain non-bulleted command lines in manually
   edited checkpoint files.
+- Malformed backtick command lines are ignored for both bulleted and plain-line
+  resume command entries.
 - Resume command parser strips checklist prefixes only when they include
   separator spacing (for example, `- [x] cmd` -> `cmd`; `- [x]cmd` remains
   literal).
