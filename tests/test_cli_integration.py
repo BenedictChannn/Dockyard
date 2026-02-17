@@ -13304,6 +13304,103 @@ def test_search_rejects_blank_repo_filter(git_repo: Path, tmp_path: Path) -> Non
     assert "Traceback" not in output
 
 
+def test_search_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search should honor branch filters in non-JSON table output."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "psbf-default",
+            "--decisions",
+            "default branch checkpoint for primary branch filtering",
+            "--next-step",
+            "run primary branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/primary-branch-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "psbf-feature",
+            "--decisions",
+            "feature branch checkpoint for primary branch filtering",
+            "--next-step",
+            "run primary branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            ["search", "psbf", "--branch", "feature/primary-branch-filter", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["branch"] == "feature/primary-branch-filter"
+
+    output = _run_dock(
+        ["search", "psbf", "--branch", "feature/primary-branch-filter"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "psbf-feature" in output
+    assert "psbf-default" not in output
+    assert "Traceback" not in output
+
+
 def test_search_branch_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
