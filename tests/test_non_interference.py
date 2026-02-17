@@ -2281,6 +2281,88 @@ def test_review_open_after_save_alias_with_scalar_files_payload_keeps_repo_clean
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_after_save_alias_with_blank_metadata_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save-alias + blank-metadata review-open flow should not mutate repo."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} blank-metadata review-open non-interference",
+            "--decisions",
+            "create checkpoint then open blank-metadata review",
+            "--next-step",
+            "open blank-metadata review metadata",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    branch = _current_branch(git_repo)
+    created = _run(
+        _dockyard_command(
+            "review",
+            "add",
+            "--reason",
+            "non_interference_alias_blank_metadata",
+            "--severity",
+            "med",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", created)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        (
+            "UPDATE review_items "
+            "SET repo_id = ?, branch = ?, created_at = ?, severity = ?, status = ?, reason = ? "
+            "WHERE id = ?"
+        ),
+        ("   ", "   ", "   ", "   ", "   ", "   ", review_id),
+    )
+    conn.commit()
+    conn.close()
+
+    opened = _run(_dockyard_command("review", "open", review_id), cwd=tmp_path, env=env)
+    assert "reason: (none)" in opened
+    assert "status: (unknown)" in opened
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_does_not_modify_repo(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock command (harbor view) should not alter repo state."""
     env = _dockyard_env(tmp_path)
