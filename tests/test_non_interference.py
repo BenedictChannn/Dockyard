@@ -198,6 +198,7 @@ DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
 )
 SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("baseline",)),
+    SearchReadVariantMeta(("definitely-no-match",)),
     SearchReadVariantMeta(("baseline", "--json")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline")),
     SearchReadVariantMeta(("baseline", "--tag", "missing-tag")),
