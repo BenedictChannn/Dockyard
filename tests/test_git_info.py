@@ -88,3 +88,25 @@ def test_repo_id_uses_non_origin_remote_when_available(git_repo: Path) -> None:
 
     assert snapshot.remote_url == upstream_url
     assert snapshot.repo_id == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]
+
+
+def test_repo_id_prefers_origin_remote_when_multiple_remotes_exist(git_repo: Path) -> None:
+    """Repo id should continue preferring origin when multiple remotes exist."""
+    origin_url = subprocess.run(
+        ["git", "config", "--get", "remote.origin.url"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    subprocess.run(
+        ["git", "remote", "add", "upstream", "https://example.com/team/upstream.git"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    snapshot = inspect_repository(root_override=str(git_repo))
+
+    assert snapshot.remote_url == origin_url
+    assert snapshot.repo_id == hashlib.sha1(origin_url.encode("utf-8")).hexdigest()[:16]
