@@ -163,6 +163,11 @@ python3 -m dockyard search "<query>" --json
 python3 -m dockyard search "<query>" --repo my_repo --tag backend --json
 python3 -m dockyard search "<query>" --tag backend --branch feature/workstream --json
 python3 -m dockyard search "<query>" --tag backend --repo my_repo --branch feature/workstream --json
+python3 -m dockyard f "<query>" --branch feature/workstream
+python3 -m dockyard f "<query>" --repo my_repo --branch feature/workstream
+python3 -m dockyard f "<query>" --tag backend
+python3 -m dockyard f "<query>" --tag backend --branch feature/workstream
+python3 -m dockyard f "<query>" --tag backend --repo my_repo
 python3 -m dockyard f "<query>" --branch feature/workstream --json
 python3 -m dockyard f "<query>" --repo my_repo --branch feature/workstream --json
 python3 -m dockyard f "<query>" --tag backend --json
