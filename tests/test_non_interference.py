@@ -1598,6 +1598,31 @@ def test_read_only_commands_do_not_modify_repo(git_repo: Path, tmp_path: Path) -
 
 
 @pytest.mark.parametrize(
+    ("review_args", "case_id"),
+    [
+        (("review",), "review_default"),
+        (("review", "list"), "review_list"),
+        (("review", "--all"), "review_all"),
+        (("review", "list", "--all"), "review_list_all"),
+    ],
+    ids=["review_default", "review_list", "review_all", "review_list_all"],
+)
+def test_empty_review_listing_commands_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    review_args: tuple[str, ...],
+    case_id: str,
+) -> None:
+    """Empty review listing commands should stay read-only for project repos."""
+    env = _dockyard_env(tmp_path)
+    _assert_repo_clean(git_repo)
+
+    output = _run(_dockyard_command(*review_args), cwd=tmp_path, env=env)
+    assert "No review items." in output, case_id
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
     ids=RESUME_READ_PATH_IDS,
