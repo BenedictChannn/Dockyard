@@ -72,6 +72,21 @@ def test_run_commands_accepts_string_cwd(tmp_path: Path) -> None:
     assert marker.read_text(encoding="utf-8").strip() == str(tmp_path)
 
 
+def test_run_commands_accepts_cwd_with_spaces(tmp_path: Path) -> None:
+    """Runner should execute commands when cwd contains spaces."""
+    spaced_dir = tmp_path / "space dir"
+    spaced_dir.mkdir(parents=True, exist_ok=True)
+    command = "pwd > cwd_space_marker.txt"
+
+    success, results = run_commands([command], cwd=spaced_dir)
+
+    assert success is True
+    assert results == [(command, 0)]
+    marker = spaced_dir / "cwd_space_marker.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(spaced_dir)
+
+
 def test_run_commands_ignores_blank_commands(tmp_path: Path) -> None:
     """Runner should skip blank command entries while executing meaningful ones."""
     marker = tmp_path / "blank_skip_marker.txt"
