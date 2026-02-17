@@ -4318,6 +4318,97 @@ def test_no_subcommand_supports_combined_tag_stale_filters(git_repo: Path, tmp_p
     assert "Traceback" not in table_output
 
 
+def test_no_subcommand_supports_combined_tag_stale_filters_in_repo_context(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare callback should honor tag+stale filters when run in repo cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filters alpha in repo",
+            "--decisions",
+            "Validate combined tag/stale filters in repo context",
+            "--next-step",
+            "run bare dock combined filters alpha in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/no-subcommand-combined-filter-in-repo"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filters beta in repo",
+            "--decisions",
+            "Ensure other tag is filtered out in repo context",
+            "--next-step",
+            "run bare dock combined filters beta in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo beta",
+            "--tag",
+            "beta",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(["git", "checkout", base_branch], cwd=str(git_repo), check=True, capture_output=True)
+
+    rows = json.loads(_run_dock(["--json", "--tag", "alpha", "--stale", "0"], cwd=git_repo, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "Default callback combined filters alpha in repo"
+    assert "alpha" in rows[0]["tags"]
+    table_output = _run_dock(["--tag", "alpha", "--stale", "0"], cwd=git_repo, env=env).stdout
+    assert "Dockyard Harbor" in table_output
+    assert base_branch in table_output
+    assert "feature/no-subcommand-combined-filter-in-repo" not in table_output
+    assert "No checkpoints yet." not in table_output
+    assert "Traceback" not in table_output
+
+
 def test_no_subcommand_supports_combined_tag_stale_limit_filters(
     git_repo: Path,
     tmp_path: Path,
@@ -4413,6 +4504,106 @@ def test_no_subcommand_supports_combined_tag_stale_limit_filters(
     table_output = _run_dock(["--tag", "alpha", "--limit", "1"], cwd=tmp_path, env=env).stdout
     shows_base_branch = base_branch in table_output
     shows_feature_branch = "feature/no-subcommand-combined-filter-limit" in table_output
+    assert shows_base_branch ^ shows_feature_branch
+    assert "No checkpoints yet." not in table_output
+    assert "Traceback" not in table_output
+
+
+def test_no_subcommand_supports_combined_tag_stale_limit_filters_in_repo_context(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare callback should honor tag+stale+limit in repo cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filter limit alpha base in repo",
+            "--decisions",
+            "Validate combined tag/stale/limit filters in repo (base branch)",
+            "--next-step",
+            "run bare dock combined filters with limit in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-base",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/no-subcommand-combined-filter-limit-in-repo"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filter limit alpha feature in repo",
+            "--decisions",
+            "Second alpha entry should be pruned by limit in repo context",
+            "--next-step",
+            "validate combined filters with limit in repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-feature",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(["git", "checkout", base_branch], cwd=str(git_repo), check=True, capture_output=True)
+
+    rows = json.loads(
+        _run_dock(
+            ["--json", "--tag", "alpha", "--stale", "0", "--limit", "1"],
+            cwd=git_repo,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] in {
+        "Default callback combined filter limit alpha base in repo",
+        "Default callback combined filter limit alpha feature in repo",
+    }
+    assert "alpha" in rows[0]["tags"]
+    table_output = _run_dock(["--tag", "alpha", "--stale", "0", "--limit", "1"], cwd=git_repo, env=env).stdout
+    shows_base_branch = base_branch in table_output
+    shows_feature_branch = "feature/no-subcommand-combined-filter-limit-in-repo" in table_output
     assert shows_base_branch ^ shows_feature_branch
     assert "No checkpoints yet." not in table_output
     assert "Traceback" not in table_output
