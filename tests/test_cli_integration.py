@@ -7355,7 +7355,7 @@ def test_review_open_displays_notes(
 
     opened = _run_dock(["review", "open", review_id], cwd=tmp_path, env=env)
     assert "created_at:" in opened.stdout
-    assert "checkpoint_id:" in opened.stdout
+    assert "checkpoint_id: (none)" in opened.stdout
     assert "notes: needs careful review" in opened.stdout
 
 
