@@ -10315,6 +10315,57 @@ def test_unknown_config_sections_do_not_block_save(
     assert "Saved checkpoint" in result.stdout
 
 
+def test_empty_review_heuristics_section_uses_default_save_behavior(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Empty review_heuristics section should preserve default trigger behavior."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text("[review_heuristics]\n", encoding="utf-8")
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    save_result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Empty review section defaults",
+            "--decisions",
+            "Default risky-path trigger should still apply",
+            "--next-step",
+            "Confirm auto review is still generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Created review item" in save_result.stdout
+    assert "Review triggers:" in save_result.stdout
+    assert "Traceback" not in f"{save_result.stdout}\n{save_result.stderr}"
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "No review items." not in review_list
+
+
 def test_missing_template_path_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,
@@ -13423,6 +13474,120 @@ def test_search_repo_filter_semantics_non_json_across_multiple_berths(
     )
     assert len(rows) == 1
     assert rows[0]["objective"] == "psrf-target"
+    assert rows[0]["berth_name"] == git_repo.name
+
+
+def test_search_alias_repo_filter_semantics_non_json_across_multiple_berths(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Alias search should keep repo-filtered output scoped to one berth."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "asrf-target",
+            "--decisions",
+            "target berth checkpoint for alias repo filter semantics",
+            "--next-step",
+            "run alias repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo target",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    other_repo = tmp_path / "other-repo-alias"
+    other_repo.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "dockyard@example.com"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Dockyard Test"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:org/other-alias.git"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    (other_repo / "README.md").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=str(other_repo), check=True, capture_output=True)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(other_repo),
+            "--no-prompt",
+            "--objective",
+            "asrf-other",
+            "--decisions",
+            "other berth checkpoint for alias repo filter semantics",
+            "--next-step",
+            "run alias repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo other",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=other_repo,
+        env=env,
+    )
+
+    table_output = _run_dock(
+        ["f", "asrf", "--repo", git_repo.name],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "asrf-target" in table_output
+    assert "asrf-other" not in table_output
+    assert "Traceback" not in table_output
+
+    rows = json.loads(
+        _run_dock(
+            ["f", "asrf", "--repo", git_repo.name, "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "asrf-target"
     assert rows[0]["berth_name"] == git_repo.name
 
 
