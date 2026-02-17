@@ -5514,6 +5514,55 @@ def test_resume_by_berth_from_outside_repo_with_handoff(
     assert payload["project_name"] == git_repo.name
 
 
+def test_resume_supports_handoff_and_json_for_trimmed_explicit_berth(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume should support handoff/json output with trimmed explicit berth."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Resume trimmed berth handoff/json objective",
+            "--decisions",
+            "Validate resume parity for handoff/json output with trimmed berth",
+            "--next-step",
+            "Run resume outside repo with trimmed berth",
+            "--risks",
+            "none",
+            "--command",
+            "echo resume-trimmed",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    handoff = _run_dock(["resume", f"  {git_repo.name}  ", "--handoff"], cwd=tmp_path, env=env).stdout
+    assert "Resume trimmed berth handoff/json objective" in handoff
+    assert "### Dockyard Handoff" in handoff
+
+    payload = json.loads(
+        _run_dock(["resume", f"  {git_repo.name}  ", "--json"], cwd=tmp_path, env=env).stdout
+    )
+    assert payload["project_name"] == git_repo.name
+    assert payload["objective"] == "Resume trimmed berth handoff/json objective"
+
+
 def test_resume_by_berth_accepts_trimmed_lookup_value(
     git_repo: Path,
     tmp_path: Path,
