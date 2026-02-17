@@ -30,6 +30,8 @@ SECTION_FIELD_MAP: dict[str, str] = {
     "risk/review needed": "risks_review",
     "risks - review needed": "risks_review",
     "risk - review needed": "risks_review",
+    "risks & review needed": "risks_review",
+    "risk & review needed": "risks_review",
     "resume commands": "resume_commands",
     "resume command": "resume_commands",
 }
