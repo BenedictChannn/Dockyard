@@ -6796,6 +6796,55 @@ def test_save_repo_id_uses_non_origin_remote_when_origin_missing(
     assert payload["repo_id"] == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]
 
 
+def test_save_repo_id_falls_back_to_path_hash_when_origin_is_blank(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save/resume flow should path-hash repo id when remotes are unusable."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    subprocess.run(
+        ["git", "config", "remote.origin.url", ""],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Repo id path fallback objective",
+            "--decisions",
+            "Derive repo id from repo path hash",
+            "--next-step",
+            "assert deterministic path fallback repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["repo_id"] == hashlib.sha1(str(git_repo).encode("utf-8")).hexdigest()[:16]
+
+
 def test_review_add_accepts_trimmed_repo_and_branch_override(
     git_repo: Path,
     tmp_path: Path,
