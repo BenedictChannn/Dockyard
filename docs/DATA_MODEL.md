@@ -150,6 +150,8 @@ Parser normalization notes:
   `####`, etc.), not only level-2 headings.
 - Parser also accepts singular heading aliases for known sections
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
+- Decisions heading aliases also accept hyphen-separated forms
+  (`Decisions-Findings`, `Decision-Finding`).
 - Risks heading aliases also accept hyphen-separated forms
   (`Risks - Review Needed`, `Risk - Review Needed`).
 - Risks heading aliases also accept ampersand-separated forms
