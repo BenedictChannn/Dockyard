@@ -6957,6 +6957,56 @@ def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
     assert payload["repo_id"] == hashlib.sha1(upstream_url.encode("utf-8")).hexdigest()[:16]
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save command aliases should path-hash repo id when origin URL is blank."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    subprocess.run(
+        ["git", "config", "remote.origin.url", ""],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} alias path-hash repo-id objective",
+            "--decisions",
+            "Use path-hash fallback when origin URL is blank",
+            "--next-step",
+            "assert alias path-hash repo id fallback",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["repo_id"] == hashlib.sha1(str(git_repo).encode("utf-8")).hexdigest()[:16]
+
+
 def test_review_add_accepts_trimmed_repo_and_branch_override(
     git_repo: Path,
     tmp_path: Path,
