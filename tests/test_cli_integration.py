@@ -4660,6 +4660,57 @@ def test_resume_by_berth_from_outside_repo_preserves_top_lines_contract(
     _assert_resume_top_lines_contract(result.stdout)
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_by_berth_branch_from_outside_repo_preserves_top_lines_contract(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Branch-scoped explicit-berth resume paths should keep top-lines contract."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} outside-repo berth+branch top-lines objective",
+            "--decisions",
+            "Validate explicit berth+branch top-lines contract outside repo context",
+            "--next-step",
+            "Resume by berth+branch from outside repo",
+            "--next-step",
+            "Continue work",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, git_repo.name, "--branch", branch],
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_resume_top_lines_contract(result.stdout)
+
+
 def test_resume_output_handles_empty_next_steps_payload(
     git_repo: Path,
     tmp_path: Path,
