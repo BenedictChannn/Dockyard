@@ -4,8 +4,13 @@ This script seeds synthetic data and measures the query latency of:
 - `dock ls` equivalent (`SQLiteStore.list_harbor`)
 - `dock search` equivalent (`SQLiteStore.search_checkpoints`)
 
-By default it reports timings only. Use `--enforce-targets` to fail when
-measured timings exceed PRD targets.
+By default it reports text timings and context lines. It also supports:
+- configurable workload sizing/limits (`--berths`, `--checkpoints`,
+  `--ls-limit`, `--search-limit`)
+- configurable latency thresholds (`--ls-target-ms`, `--search-target-ms`)
+- configurable search workload query (`--search-query`)
+- machine-readable output (`--json`)
+- threshold-enforced exit behavior (`--enforce-targets`)
 """
 
 from __future__ import annotations
