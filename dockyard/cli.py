@@ -6,7 +6,7 @@ import json
 import tomllib
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import click
 import typer
@@ -40,6 +40,22 @@ review_app = typer.Typer(help="Review queue commands.", invoke_without_command=T
 app.add_typer(review_app, name="review")
 console = Console()
 VALID_REVIEW_SEVERITIES = {"low", "med", "high"}
+LsStaleOption = Annotated[
+    int | None,
+    typer.Option("--stale", help="Only show slips stale for N days."),
+]
+LsTagOption = Annotated[
+    str | None,
+    typer.Option("--tag", help="Filter by tag."),
+]
+LsLimitOption = Annotated[
+    int | None,
+    typer.Option("--limit", help="Max rows."),
+]
+LsJsonOption = Annotated[
+    bool,
+    typer.Option("--json", help="Output JSON."),
+]
 
 
 def _store() -> tuple[SQLiteStore, Path]:
@@ -405,26 +421,10 @@ def _resolve_repo_context(
 @app.callback()
 def root_callback(
     ctx: typer.Context,
-    stale: int | None = typer.Option(
-        None,
-        "--stale",
-        help="Only show slips stale for N days (bare dock default listing).",
-    ),
-    tag: str | None = typer.Option(
-        None,
-        "--tag",
-        help="Filter bare dock default listing by tag.",
-    ),
-    limit: int | None = typer.Option(
-        None,
-        "--limit",
-        help="Max rows for bare dock default listing.",
-    ),
-    as_json: bool = typer.Option(
-        False,
-        "--json",
-        help="Output bare dock default listing as JSON.",
-    ),
+    stale: LsStaleOption = None,
+    tag: LsTagOption = None,
+    limit: LsLimitOption = None,
+    as_json: LsJsonOption = False,
 ) -> None:
     """Default to `dock ls` when no explicit subcommand is provided."""
     if ctx.invoked_subcommand is None:
@@ -682,10 +682,10 @@ def resume_command(
 
 @app.command("ls")
 def ls_command(
-    stale: int | None = typer.Option(None, "--stale", help="Only show slips stale for N days."),
-    tag: str | None = typer.Option(None, "--tag", help="Filter by tag."),
-    limit: int | None = typer.Option(None, "--limit", help="Max rows."),
-    as_json: bool = typer.Option(False, "--json", help="Output JSON."),
+    stale: LsStaleOption = None,
+    tag: LsTagOption = None,
+    limit: LsLimitOption = None,
+    as_json: LsJsonOption = False,
 ) -> None:
     """List harbor dashboard across berths and slips."""
     store, _ = _store()
