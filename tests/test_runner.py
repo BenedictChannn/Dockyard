@@ -120,3 +120,11 @@ def test_run_commands_missing_cwd_raises_actionable_error(tmp_path: Path) -> Non
 
     with pytest.raises(FileNotFoundError, match="Command runner cwd does not exist:"):
         run_commands(["echo noop"], cwd=missing_cwd)
+
+
+def test_run_commands_missing_string_cwd_raises_actionable_error(tmp_path: Path) -> None:
+    """Runner should raise clear error when string cwd path is missing."""
+    missing_cwd = tmp_path / "missing-dir-string"
+
+    with pytest.raises(FileNotFoundError, match="Command runner cwd does not exist:"):
+        run_commands(["echo noop"], cwd=str(missing_cwd))
