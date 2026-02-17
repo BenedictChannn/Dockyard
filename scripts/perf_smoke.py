@@ -127,6 +127,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Emit benchmark results as JSON payload.",
     )
+    parser.add_argument(
+        "--output-file",
+        type=Path,
+        help="Write output to file instead of stdout.",
+    )
     return parser.parse_args()
 
 
@@ -242,6 +247,15 @@ def _failed_targets(
     return failed
 
 
+def _emit_output(content: str, output_file: Path | None) -> None:
+    """Write command output to file or stdout."""
+    if output_file is None:
+        print(content)
+        return
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(f"{content}\n", encoding="utf-8")
+
+
 def main() -> int:
     """Execute perf smoke scenario and optionally enforce PRD targets."""
     args = parse_args()
@@ -300,24 +314,26 @@ def main() -> int:
     }
 
     if args.json:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        _emit_output(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            output_file=args.output_file,
+        )
         return 0 if (not args.enforce_targets or targets_met) else 1
 
-    print(
+    lines = [
         "dock ls query: "
         f"{elapsed_ls_ms:.2f} ms (rows={len(harbor_rows)}) | "
-        f"target < {args.ls_target_ms:.2f} ms"
-    )
-    print(
+        f"target < {args.ls_target_ms:.2f} ms",
         "dock search query: "
         f"{elapsed_search_ms:.2f} ms (rows={len(search_rows)}) | "
-        f"target < {args.search_target_ms:.2f} ms"
-    )
-    print(f"harbor query limit: {args.ls_limit}")
-    print(f"search query limit: {args.search_limit}")
-    print(f"search workload query: {args.search_query}")
+        f"target < {args.search_target_ms:.2f} ms",
+        f"harbor query limit: {args.ls_limit}",
+        f"search query limit: {args.search_limit}",
+        f"search workload query: {args.search_query}",
+    ]
     if args.enforce_targets and failed_targets:
-        print(f"failed targets: {', '.join(failed_targets)}")
+        lines.append(f"failed targets: {', '.join(failed_targets)}")
+    _emit_output("\n".join(lines), output_file=args.output_file)
 
     if not args.enforce_targets:
         return 0
