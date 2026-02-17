@@ -427,6 +427,28 @@ def _git_current_branch(repo: Path) -> str:
     return result.stdout.strip()
 
 
+def _assert_resume_top_lines_contract(output: str) -> None:
+    """Assert resume top-lines include required summary markers in order."""
+    lines = [line for line in output.splitlines() if line.strip()]
+    top = lines[:15]
+    required_markers = [
+        "Project/Branch:",
+        "Last Checkpoint:",
+        "Objective:",
+        "Next Steps:",
+        "  1. ",
+        "Open Reviews:",
+        "Verification:",
+    ]
+    positions: list[int] = []
+    for marker in required_markers:
+        index = next((i for i, line in enumerate(top) if marker in line), -1)
+        assert index >= 0, f"Missing marker in top lines: {marker}\nTop lines: {top}"
+        positions.append(index)
+
+    assert positions == sorted(positions)
+
+
 def _build_run_args(
     command_name: RunCommandName,
     *,
@@ -4589,26 +4611,53 @@ def test_resume_output_includes_required_summary_fields(
     )
 
     result = _run_dock(["resume"], cwd=git_repo, env=env)
-    lines = [line for line in result.stdout.splitlines() if line.strip()]
-    top = lines[:15]
+    _assert_resume_top_lines_contract(result.stdout)
 
-    required_markers = [
-        "Project/Branch:",
-        "Last Checkpoint:",
-        "Objective:",
-        "Next Steps:",
-        "  1. ",
-        "Open Reviews:",
-        "Verification:",
-    ]
-    positions: list[int] = []
-    for marker in required_markers:
-        index = next((i for i, line in enumerate(top) if marker in line), -1)
-        assert index >= 0, f"Missing marker in top lines: {marker}\nTop lines: {top}"
-        positions.append(index)
 
-    # Ensure ordering remains scannable and consistent for quick resume.
-    assert positions == sorted(positions)
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_by_berth_from_outside_repo_preserves_top_lines_contract(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Explicit-berth resume paths should keep top-lines contract outside repos."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} outside-repo top-lines objective",
+            "--decisions",
+            "Validate explicit berth top-lines contract outside repo context",
+            "--next-step",
+            "Resume by berth from outside repo",
+            "--next-step",
+            "Continue work",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock([command_name, git_repo.name], cwd=tmp_path, env=env)
+    _assert_resume_top_lines_contract(result.stdout)
 
 
 def test_resume_output_handles_empty_next_steps_payload(
