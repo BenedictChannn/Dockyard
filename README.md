@@ -168,6 +168,7 @@ python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --ta
 python3 -m dockyard search "auth" --json
 python3 -m dockyard search "auth" --tag backend --branch feature/workstream --json
 python3 -m dockyard search "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard search "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --limit 5 --json
 python3 -m dockyard f "auth" --branch feature/workstream
 python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream
 python3 -m dockyard f "auth" --tag backend
@@ -181,6 +182,7 @@ python3 -m dockyard f "auth" --tag backend --branch feature/workstream --json
 python3 -m dockyard f "auth" --tag backend --limit 5 --json
 python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --json
 python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --limit 5 --json
 # --repo also accepts berth name
 # query must be non-empty, --limit must be >= 1
 # --tag must be non-empty when provided
