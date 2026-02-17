@@ -157,6 +157,9 @@ With `--json`, no-match output is `[]`.
 Snippets are normalized to compact single-line text for scanability.
 This no-match behavior is consistent even when `--tag`, `--repo`, or
 `--branch` filters are provided.
+Queries that contain FTS parser-sensitive syntax (for example `security/path`)
+automatically fall back to parser-safe matching while preserving the same
+filter semantics.
 
 ### Options
 
