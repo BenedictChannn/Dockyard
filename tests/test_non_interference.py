@@ -2923,6 +2923,7 @@ def test_bare_dock_command_outside_repo_empty_store_read_variants_do_not_modify_
         (("--tag", "   "), "--tag must be a non-empty string."),
         (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
         (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
+        (("--tag", "   ", "--stale", "0", "--limit", "1"), "--tag must be a non-empty string."),
     ],
 )
 def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
@@ -2958,6 +2959,7 @@ def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
         (("--tag", "   "), "--tag must be a non-empty string."),
         (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
         (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
+        (("--tag", "   ", "--stale", "0", "--limit", "1"), "--tag must be a non-empty string."),
     ],
 )
 def test_bare_dock_invalid_flag_validation_outside_repo_does_not_modify_repo(

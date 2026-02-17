@@ -4169,6 +4169,7 @@ def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
     [
         (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
         (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
+        (("--tag", "   ", "--stale", "0", "--limit", "1"), "--tag must be a non-empty string."),
     ],
 )
 def test_no_subcommand_rejects_invalid_combined_filters(
@@ -4194,6 +4195,7 @@ def test_no_subcommand_rejects_invalid_combined_filters(
         (("--tag", "   "), "--tag must be a non-empty string."),
         (("--tag", "alpha", "--stale", "-1", "--limit", "1"), "--stale must be >= 0."),
         (("--tag", "alpha", "--stale", "0", "--limit", "0"), "--limit must be >= 1."),
+        (("--tag", "   ", "--stale", "0", "--limit", "1"), "--tag must be a non-empty string."),
     ],
 )
 def test_no_subcommand_rejects_invalid_filters_in_repo_context(
