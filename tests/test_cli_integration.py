@@ -3497,6 +3497,62 @@ def test_undock_alias_run_with_berth_executes_in_repo_root(
     assert marker.read_text(encoding="utf-8").strip() == str(git_repo)
 
 
+def test_resume_run_with_berth_missing_root_path_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Resume --run should fail cleanly when persisted berth root is missing."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Missing run root path objective",
+            "--decisions",
+            "Ensure run path validation is actionable",
+            "--next-step",
+            "Attempt resume --run with stale berth root",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    repo_id = payload["repo_id"]
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE berths SET root_path = ? WHERE repo_id = ?",
+        (str(tmp_path / "missing-run-root"), repo_id),
+    )
+    conn.commit()
+    conn.close()
+
+    failed = _run_dock(["resume", git_repo.name, "--run"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Repository root for --run does not exist:" in output
+    assert "Traceback" not in output
+
+
 def test_save_truncates_next_steps_and_commands_to_mvp_limits(
     git_repo: Path,
     tmp_path: Path,

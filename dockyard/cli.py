@@ -672,8 +672,13 @@ def resume_command(
             berth_record = store.resolve_berth(checkpoint.repo_id)
         if not berth_record:
             raise DockyardError("Cannot resolve repository root for --run execution.")
+        run_cwd = Path(berth_record.root_path).expanduser()
+        if not run_cwd.is_dir():
+            raise DockyardError(
+                f"Repository root for --run does not exist: {berth_record.root_path}"
+            )
         run_labels = _coerce_text_items(checkpoint.resume_commands)
-        success, results = run_commands(run_labels, cwd=berth_record.root_path)
+        success, results = run_commands(run_labels, cwd=run_cwd)
         for cmd, code in results:
             console.print(f"$ {_safe_preview(cmd, 240, fallback='(empty)')} -> exit {code}")
         if not success:
