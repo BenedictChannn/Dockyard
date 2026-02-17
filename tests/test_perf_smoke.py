@@ -566,6 +566,7 @@ def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
 
     assert completed.returncode == 0
     payload = json.loads(completed.stdout)
+    assert payload["schema_version"] == 1
     assert payload["db_path"] == str(db_path)
     assert payload["seed"] == {"berths": 1, "checkpoints": 0}
     assert payload["ls"]["limit"] == 50

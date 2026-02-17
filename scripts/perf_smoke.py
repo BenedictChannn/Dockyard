@@ -251,6 +251,7 @@ def main() -> int:
     )
 
     payload = {
+        "schema_version": 1,
         "db_path": str(args.db_path),
         "seed": {
             "berths": args.berths,
