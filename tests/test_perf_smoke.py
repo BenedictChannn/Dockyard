@@ -13,6 +13,7 @@ import pytest
 
 from dockyard.storage.sqlite_store import SQLiteStore
 from scripts.perf_smoke import (
+    _emit_output,
     _failed_targets,
     _non_empty_query_arg,
     _non_negative_float_arg,
@@ -112,6 +113,20 @@ def test_targets_met_uses_strict_less_than_thresholds() -> None:
         ls_target_ms=100.0,
         search_target_ms=200.0,
     )
+
+
+def test_emit_output_writes_stdout_when_no_file(capsys) -> None:
+    """Emit helper should write to stdout when no output-file is provided."""
+    _emit_output("hello output", output_file=None)
+    captured = capsys.readouterr()
+    assert captured.out == "hello output\n"
+
+
+def test_emit_output_writes_file_and_creates_parent_dirs(tmp_path) -> None:
+    """Emit helper should create parent dirs and write newline-terminated file."""
+    output_path = tmp_path / "nested" / "perf" / "output.txt"
+    _emit_output("hello file", output_file=output_path)
+    assert output_path.read_text(encoding="utf-8") == "hello file\n"
 
 
 def test_failed_targets_reports_expected_target_keys() -> None:
