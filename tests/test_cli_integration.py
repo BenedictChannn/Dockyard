@@ -8234,6 +8234,71 @@ def test_review_list_subcommand_matches_default_listing(git_repo: Path, tmp_path
     assert "list_parity_item" in list_listing
 
 
+def test_review_list_all_subcommand_matches_default_all_listing(git_repo: Path, tmp_path: Path) -> None:
+    """`review list --all` should mirror default `review --all` ordering/content."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review list --all parity objective",
+            "--decisions",
+            "Validate review --all and review list --all parity",
+            "--next-step",
+            "compare all-review outputs",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    created_open = _run_dock(
+        ["review", "add", "--reason", "all_parity_open", "--severity", "high"],
+        cwd=git_repo,
+        env=env,
+    )
+    open_match = re.search(r"rev_[a-f0-9]+", created_open.stdout)
+    assert open_match is not None
+    open_id = open_match.group(0)
+
+    created_done = _run_dock(
+        ["review", "add", "--reason", "all_parity_done", "--severity", "low"],
+        cwd=git_repo,
+        env=env,
+    )
+    done_match = re.search(r"rev_[a-f0-9]+", created_done.stdout)
+    assert done_match is not None
+    done_id = done_match.group(0)
+
+    _run_dock(["review", "done", done_id], cwd=tmp_path, env=env)
+
+    default_all = _run_dock(["review", "--all"], cwd=tmp_path, env=env).stdout
+    list_all = _run_dock(["review", "list", "--all"], cwd=tmp_path, env=env).stdout
+
+    assert open_id in default_all and done_id in default_all
+    assert open_id in list_all and done_id in list_all
+    assert "all_parity_open" in default_all and "all_parity_done" in default_all
+    assert "all_parity_open" in list_all and "all_parity_done" in list_all
+    assert re.findall(r"rev_[a-f0-9]+", default_all) == re.findall(r"rev_[a-f0-9]+", list_all)
+
+
 def test_review_done_unknown_id_is_actionable(tmp_path: Path) -> None:
     """Unknown review id resolution should fail without traceback noise."""
     env = dict(os.environ)
