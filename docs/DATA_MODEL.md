@@ -129,7 +129,7 @@ Parser normalization notes:
   edited checkpoint files.
 - Structural markdown separator/fence lines (`---`, `***`, `___`, ``````,
   `~~~`, and language-tagged fences like `````bash`) are ignored within
-  `next steps` (including longer 4+ marker variants).
+  `next steps` (including longer 4+ marker variants and indented/padded forms).
 - Next-step parser strips checklist prefixes from markdown list entries
   (for example, `- [ ] step` and `1. [x] step` normalize to `step`).
 - Checklist prefix stripping for next steps requires separator spacing
@@ -147,7 +147,8 @@ Parser normalization notes:
   resume command entries.
 - Structural markdown separator/fence lines (`---`, `***`, `___`, ``````,
   `~~~`, and language-tagged fences like `````bash`) are ignored within
-  `resume commands` (including longer 4+ marker variants).
+  `resume commands` (including longer 4+ marker variants and
+  indented/padded forms).
 - Resume command parser strips checklist prefixes only when they include
   separator spacing (for example, `- [x] cmd` -> `cmd`; `- [x]cmd` remains
   literal).
