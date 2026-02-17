@@ -99,6 +99,19 @@ def test_resolve_berth_prefers_repo_id_over_name_collision(tmp_path: Path) -> No
     assert resolved.name == "A"
 
 
+def test_resolve_berth_falls_back_to_name_lookup(tmp_path: Path) -> None:
+    """Berth lookup should still resolve by name when repo-id does not match."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_named", name="FriendlyBerth", root_path="/tmp/n", remote_url=None))
+
+    resolved = store.resolve_berth("FriendlyBerth")
+    assert resolved is not None
+    assert resolved.repo_id == "repo_named"
+    assert resolved.name == "FriendlyBerth"
+
+
 def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     """Search should succeed when query contains FTS-special syntax."""
     db_path = tmp_path / "dock.sqlite"
