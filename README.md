@@ -266,3 +266,6 @@ python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-targ
 # custom search workload query
 python3 scripts/perf_smoke.py --search-query "objective keyword"
 ```
+
+The perf smoke output includes the active search workload query for easier run
+to run comparison.
