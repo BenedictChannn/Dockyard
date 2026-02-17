@@ -139,3 +139,38 @@ def test_repo_id_prefers_origin_remote_when_multiple_remotes_exist(git_repo: Pat
 
     assert snapshot.remote_url == origin_url
     assert snapshot.repo_id == hashlib.sha1(origin_url.encode("utf-8")).hexdigest()[:16]
+
+
+def test_repo_id_ignores_empty_non_origin_remote_urls(git_repo: Path) -> None:
+    """Repo id fallback should skip remotes with empty configured URLs."""
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "alpha", "https://example.com/team/alpha.git"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    # Simulate malformed config where remote URL exists but is blank.
+    subprocess.run(
+        ["git", "config", "remote.alpha.url", ""],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    beta_url = "https://example.com/team/beta.git"
+    subprocess.run(
+        ["git", "remote", "add", "beta", beta_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    snapshot = inspect_repository(root_override=str(git_repo))
+
+    assert snapshot.remote_url == beta_url
+    assert snapshot.repo_id == hashlib.sha1(beta_url.encode("utf-8")).hexdigest()[:16]
