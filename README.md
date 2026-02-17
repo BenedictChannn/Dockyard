@@ -170,6 +170,7 @@ python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workst
 python3 -m dockyard f "auth" --tag backend
 python3 -m dockyard f "auth" --tag backend --branch feature/workstream
 python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name>
+python3 -m dockyard f "auth" --tag backend --limit 5
 python3 -m dockyard f "auth" --branch feature/workstream --json
 python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream --json
 python3 -m dockyard f "auth" --tag backend --json
