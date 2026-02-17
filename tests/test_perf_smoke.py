@@ -129,6 +129,16 @@ def test_emit_output_writes_file_and_creates_parent_dirs(tmp_path) -> None:
     assert output_path.read_text(encoding="utf-8") == "hello file\n"
 
 
+def test_emit_output_raises_when_parent_path_is_file(tmp_path) -> None:
+    """Emit helper should raise when output-file parent is a file."""
+    parent_file = tmp_path / "occupied"
+    parent_file.write_text("occupied", encoding="utf-8")
+    output_path = parent_file / "output.txt"
+
+    with pytest.raises(OSError):
+        _emit_output("hello file", output_file=output_path)
+
+
 def test_failed_targets_reports_expected_target_keys() -> None:
     """Failed-target helper should report threshold misses by key."""
     assert _failed_targets(
