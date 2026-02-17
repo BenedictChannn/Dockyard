@@ -1995,7 +1995,9 @@ def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
         env=env,
     )
     assert completed.returncode != 0
-    assert expected_fragment in f"{completed.stdout}\n{completed.stderr}"
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
     _assert_repo_clean(git_repo)
 
 
@@ -2060,7 +2062,9 @@ def test_run_with_missing_berth_root_keeps_repo_clean(
         env=env,
     )
     assert completed.returncode == 2
-    assert "Repository root for --run does not exist:" in f"{completed.stdout}\n{completed.stderr}"
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "Repository root for --run does not exist:" in output
+    assert "Traceback" not in output
     _assert_repo_clean(git_repo)
 
 
