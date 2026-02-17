@@ -721,6 +721,33 @@ def test_perf_smoke_script_writes_text_output_file(tmp_path) -> None:
     assert "search workload query: search pipeline" in output_text
 
 
+def test_perf_smoke_script_rejects_directory_output_file_in_text_mode(tmp_path) -> None:
+    """Perf smoke text mode should fail when output-file points to directory."""
+    db_path = tmp_path / "perf_smoke_cli_text_dir_sink.sqlite"
+    output_dir = tmp_path / "outputs-dir"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--output-file",
+            str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "error writing output file:" in completed.stderr
+
+
 def test_perf_smoke_script_text_enforce_failure_writes_output_file(tmp_path) -> None:
     """Text enforce-target failures should still write output-file diagnostics."""
     db_path = tmp_path / "perf_smoke_cli_text_file_strict.sqlite"
@@ -853,6 +880,34 @@ def test_perf_smoke_script_writes_json_output_file(tmp_path) -> None:
     payload = json.loads(output_path.read_text(encoding="utf-8"))
     assert payload["schema_version"] == 1
     assert payload["db_path"] == str(db_path)
+
+
+def test_perf_smoke_script_rejects_directory_output_file_in_json_mode(tmp_path) -> None:
+    """Perf smoke JSON mode should fail when output-file points to directory."""
+    db_path = tmp_path / "perf_smoke_cli_json_dir_sink.sqlite"
+    output_dir = tmp_path / "outputs-dir-json"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--json",
+            "--output-file",
+            str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "error writing output file:" in completed.stderr
 
 
 def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:

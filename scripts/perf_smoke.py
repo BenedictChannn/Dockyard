@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -314,10 +315,14 @@ def main() -> int:
     }
 
     if args.json:
-        _emit_output(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            output_file=args.output_file,
-        )
+        try:
+            _emit_output(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                output_file=args.output_file,
+            )
+        except OSError as exc:
+            print(f"error writing output file: {exc}", file=sys.stderr)
+            return 1
         return 0 if (not args.enforce_targets or targets_met) else 1
 
     lines = [
@@ -333,7 +338,11 @@ def main() -> int:
     ]
     if args.enforce_targets and failed_targets:
         lines.append(f"failed targets: {', '.join(failed_targets)}")
-    _emit_output("\n".join(lines), output_file=args.output_file)
+    try:
+        _emit_output("\n".join(lines), output_file=args.output_file)
+    except OSError as exc:
+        print(f"error writing output file: {exc}", file=sys.stderr)
+        return 1
 
     if not args.enforce_targets:
         return 0
