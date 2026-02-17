@@ -152,6 +152,8 @@ Parser normalization notes:
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
 - Risks heading aliases also accept hyphen-separated forms
   (`Risks - Review Needed`, `Risk - Review Needed`).
+- Risks heading aliases also accept ampersand-separated forms
+  (`Risks & Review Needed`, `Risk & Review Needed`).
 - Known heading labels may be wrapped with simple markdown emphasis markers
   (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
 - Nested combinations of these wrappers are also normalized (for example,
