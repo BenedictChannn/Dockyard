@@ -11,6 +11,7 @@ import pytest
 
 from dockyard.storage.sqlite_store import SQLiteStore
 from scripts.perf_smoke import (
+    _non_empty_query_arg,
     _non_negative_float_arg,
     _non_negative_int_arg,
     _positive_int_arg,
@@ -56,6 +57,17 @@ def test_non_negative_float_arg_rejects_negative_values() -> None:
     """Non-negative float parser should reject negative values."""
     with pytest.raises(argparse.ArgumentTypeError):
         _non_negative_float_arg("-0.1")
+
+
+def test_non_empty_query_arg_accepts_trimmed_values() -> None:
+    """Non-empty query parser should return trimmed query text."""
+    assert _non_empty_query_arg("  search text  ") == "search text"
+
+
+def test_non_empty_query_arg_rejects_blank_values() -> None:
+    """Non-empty query parser should reject blank query text."""
+    with pytest.raises(argparse.ArgumentTypeError):
+        _non_empty_query_arg("   ")
 
 
 def test_targets_met_uses_strict_less_than_thresholds() -> None:
@@ -217,6 +229,31 @@ def test_perf_smoke_script_rejects_negative_search_target(tmp_path) -> None:
 
     assert completed.returncode != 0
     assert "value must be non-negative" in completed.stderr
+
+
+def test_perf_smoke_script_rejects_blank_search_query(tmp_path) -> None:
+    """Perf smoke script should reject blank search-query values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_query.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-query",
+            "   ",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be a non-empty query" in completed.stderr
 
 
 def test_perf_smoke_script_enforce_targets_fails_with_zero_thresholds(tmp_path) -> None:

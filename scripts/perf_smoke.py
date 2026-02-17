@@ -43,6 +43,14 @@ def _non_negative_float_arg(value: str) -> float:
     return parsed
 
 
+def _non_empty_query_arg(value: str) -> str:
+    """Parse search query input requiring non-empty trimmed text."""
+    normalized = value.strip()
+    if not normalized:
+        raise argparse.ArgumentTypeError("value must be a non-empty query")
+    return normalized
+
+
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for smoke performance run."""
     parser = argparse.ArgumentParser(description="Dockyard performance smoke test")
@@ -83,6 +91,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--search-query",
+        type=_non_empty_query_arg,
         default="search pipeline",
         help="Search query string used for benchmark lookup.",
     )
