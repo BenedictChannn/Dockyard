@@ -11191,6 +11191,104 @@ def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path)
     assert "risktoken" in rows[0]["snippet"].lower()
 
 
+def test_search_json_parser_error_query_honors_repo_branch_filters(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Parser-error fallback path should preserve repo/branch filter semantics."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Parser fallback security/path target",
+            "--decisions",
+            "Keep fallback query filters stable",
+            "--next-step",
+            "Validate parser fallback filter semantics",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tag",
+            "parser-fallback",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/parser-fallback-other"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Parser fallback security/path sibling",
+            "--decisions",
+            "Other branch record should be filtered out",
+            "--next-step",
+            "Ensure branch filter is honored",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tag",
+            "parser-fallback",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                "search",
+                "security/path",
+                "--json",
+                "--repo",
+                git_repo.name,
+                "--branch",
+                base_branch,
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "Parser fallback security/path target"
+
+
 def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: Path) -> None:
     """Search snippets should surface matches from next-step text."""
     env = dict(os.environ)
