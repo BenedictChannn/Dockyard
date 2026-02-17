@@ -11,6 +11,7 @@ from dockyard.models import Checkpoint
 SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
 LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
 CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
+SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|-)\s*")
 SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
     ("**", "**"),
     ("__", "__"),
@@ -24,28 +25,16 @@ SECTION_FIELD_MAP: dict[str, str] = {
     "decision/findings": "decisions",
     "decisions findings": "decisions",
     "decision findings": "decisions",
-    "decisions & findings": "decisions",
-    "decision & findings": "decisions",
-    "decisions-findings": "decisions",
-    "decision-findings": "decisions",
     "decisions/finding": "decisions",
     "decision/finding": "decisions",
     "decisions finding": "decisions",
     "decision finding": "decisions",
-    "decisions & finding": "decisions",
-    "decision & finding": "decisions",
-    "decisions-finding": "decisions",
-    "decision-finding": "decisions",
     "next steps": "next_steps",
     "next step": "next_steps",
     "risks/review needed": "risks_review",
     "risk/review needed": "risks_review",
     "risks review needed": "risks_review",
     "risk review needed": "risks_review",
-    "risks - review needed": "risks_review",
-    "risk - review needed": "risks_review",
-    "risks & review needed": "risks_review",
-    "risk & review needed": "risks_review",
     "resume commands": "resume_commands",
     "resume command": "resume_commands",
 }
@@ -205,7 +194,7 @@ def _normalize_section_heading(title: str) -> str:
                 break
         if not changed:
             break
-    return re.sub(r"\s*/\s*", "/", collapsed)
+    return SECTION_DELIMITER_PATTERN.sub("/", collapsed)
 
 
 def _normalize_block(lines: list[str]) -> str:
