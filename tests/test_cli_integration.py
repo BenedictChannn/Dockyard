@@ -12009,6 +12009,88 @@ def test_search_alias_limit_applies_after_tag_filter(git_repo: Path, tmp_path: P
     assert len(rows) == 1
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_filter_applies_before_limit_json(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search JSON should apply tag filtering before truncating to --limit."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"tbf-tagged-{command_name}",
+            "--decisions",
+            "tagged baseline for filter-before-limit semantics",
+            "--next-step",
+            "run search tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo tagged",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"tbf-untagged-{command_name}",
+            "--decisions",
+            "newer untagged record should be filtered before limit",
+            "--next-step",
+            "run search tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo untagged",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [command_name, "tbf-", "--tag", "alpha", "--limit", "1", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] == f"tbf-tagged-{command_name}"
+
+
 def test_search_alias_limit_applies_after_tag_filter_non_json(git_repo: Path, tmp_path: Path) -> None:
     """Alias search table output should honor --tag + --limit together."""
     env = dict(os.environ)

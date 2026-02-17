@@ -285,6 +285,26 @@ def test_search_respects_limit(tmp_path: Path) -> None:
     assert len(hits) == 2
 
 
+def test_search_tag_filter_applies_before_limit(tmp_path: Path) -> None:
+    """Search should evaluate tag filters before applying result limit."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_tag_limit", name="TagLimit", root_path="/tmp/tl", remote_url=None))
+
+    tagged = _checkpoint("cp_tagged", "repo_tag_limit", "main", "tag-limit-query tagged", ["alpha"])
+    tagged.created_at = "2026-01-01T00:00:00+00:00"
+    newest_non_tagged = _checkpoint("cp_latest", "repo_tag_limit", "main", "tag-limit-query latest", [])
+    newest_non_tagged.created_at = "2026-01-01T00:00:02+00:00"
+
+    store.add_checkpoint(tagged)
+    store.add_checkpoint(newest_non_tagged)
+
+    hits = store.search_checkpoints("tag-limit-query", tag="alpha", limit=1)
+    assert len(hits) == 1
+    assert hits[0]["id"] == "cp_tagged"
+
+
 def test_search_snippet_prefers_matching_next_steps_and_risks(tmp_path: Path) -> None:
     """Snippet should reflect matching fields beyond objective/decisions."""
     db_path = tmp_path / "dock.sqlite"

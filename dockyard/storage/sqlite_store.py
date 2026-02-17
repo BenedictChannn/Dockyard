@@ -666,6 +666,7 @@ class SQLiteStore:
         contains FTS syntax that causes parser errors, the method falls back to a
         `LIKE` query instead of failing.
         """
+        query_limit = -1 if tag else limit
         with self.connect() as conn:
             if self._has_fts(conn):
                 try:
@@ -674,7 +675,7 @@ class SQLiteStore:
                         query=query,
                         repo_id=repo_id,
                         branch=branch,
-                        limit=limit,
+                        limit=query_limit,
                     )
                 except sqlite3.OperationalError as error:
                     if not _is_fts_query_parser_error(error):
@@ -684,7 +685,7 @@ class SQLiteStore:
                         query=query,
                         repo_id=repo_id,
                         branch=branch,
-                        limit=limit,
+                        limit=query_limit,
                     )
             else:
                 rows = self._search_rows_like(
@@ -692,7 +693,7 @@ class SQLiteStore:
                     query=query,
                     repo_id=repo_id,
                     branch=branch,
-                    limit=limit,
+                    limit=query_limit,
                 )
 
         items: list[dict[str, Any]] = []
