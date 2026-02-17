@@ -4124,6 +4124,30 @@ def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("--stale", "-1"), "--stale must be >= 0."),
+        (("--limit", "0"), "--limit must be >= 1."),
+        (("--tag", "   "), "--tag must be a non-empty string."),
+    ],
+)
+def test_no_subcommand_rejects_invalid_filters_in_repo_context(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Bare dock invalid-filter validation should match in-repo behavior."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    failed = _run_dock(list(args), cwd=git_repo, env=env, expect_code=2)
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_trims_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock invocation should trim tag filter values before lookup."""
     env = dict(os.environ)
