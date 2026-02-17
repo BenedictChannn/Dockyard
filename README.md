@@ -277,4 +277,5 @@ harbor/search query limits for easier run-to-run comparison. The
 be greater than zero. Parent directories for `--db-path` are created
 automatically. Use `--json` for machine-readable benchmark output.
 JSON output includes benchmark metrics plus run context (`db_path`, seed
-dataset sizes, active limits/targets/query) and a `schema_version` field.
+dataset sizes, active limits/targets/query), a `schema_version` field, and
+`measured_at` UTC timestamp metadata.
