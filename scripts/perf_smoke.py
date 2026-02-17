@@ -19,6 +19,22 @@ from dockyard.models import Berth, Checkpoint, Slip, VerificationState
 from dockyard.storage.sqlite_store import SQLiteStore
 
 
+def _positive_int_arg(value: str) -> int:
+    """Parse argparse integer input requiring value > 0."""
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than zero")
+    return parsed
+
+
+def _non_negative_int_arg(value: str) -> int:
+    """Parse argparse integer input requiring value >= 0."""
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be non-negative")
+    return parsed
+
+
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for smoke performance run."""
     parser = argparse.ArgumentParser(description="Dockyard performance smoke test")
@@ -30,13 +46,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--berths",
-        type=int,
+        type=_positive_int_arg,
         default=200,
         help="Number of berths to seed.",
     )
     parser.add_argument(
         "--checkpoints",
-        type=int,
+        type=_non_negative_int_arg,
         default=5000,
         help="Total number of checkpoints to seed.",
     )
@@ -89,6 +105,11 @@ def build_checkpoint(repo_id: str, branch: str, index: int) -> Checkpoint:
 
 def seed_data(store: SQLiteStore, berth_count: int, checkpoint_count: int) -> None:
     """Seed synthetic dataset for performance smoke checks."""
+    if berth_count <= 0:
+        raise ValueError("berth_count must be greater than zero")
+    if checkpoint_count < 0:
+        raise ValueError("checkpoint_count must be non-negative")
+
     branches = ["main", "feature/a", "feature/b"]
     for berth_index in range(berth_count):
         repo_id = f"repo_{berth_index:04d}"
