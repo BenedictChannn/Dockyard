@@ -1830,6 +1830,62 @@ def test_save_with_non_origin_remote_fallback_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def test_save_with_case_collision_remote_fallback_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save should remain read-only with case-colliding fallback remotes."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "remote", "remove", "origin"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "alpha", "https://example.com/team/alpha-lower.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "Alpha", "https://example.com/team/alpha-upper.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "case-collision fallback non-interference",
+            "--decisions",
+            "verify save remains read-only with case-colliding remotes",
+            "--next-step",
+            "run save with case-collision fallback remotes",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_save_aliases_with_blank_origin_remote_do_not_modify_repo(
     git_repo: Path,
