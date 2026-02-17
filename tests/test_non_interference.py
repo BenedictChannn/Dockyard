@@ -1694,14 +1694,29 @@ def test_review_listing_commands_with_items_keep_repo_clean(
     [
         ("search", ("definitely-no-match", "--json")),
         ("search", ("baseline", "--tag", "missing-tag", "--json")),
+        ("search", ("baseline", "--repo", "missing-berth", "--json")),
+        ("search", ("baseline", "--branch", "missing/branch", "--json")),
+        (
+            "search",
+            ("baseline", "--tag", "baseline", "--repo", "missing-berth", "--branch", "missing/branch", "--json"),
+        ),
         ("f", ("definitely-no-match", "--json")),
         ("f", ("baseline", "--tag", "missing-tag", "--json")),
+        ("f", ("baseline", "--repo", "missing-berth", "--json")),
+        ("f", ("baseline", "--branch", "missing/branch", "--json")),
+        ("f", ("baseline", "--tag", "baseline", "--repo", "missing-berth", "--branch", "missing/branch", "--json")),
     ],
     ids=[
         "search_query_no_match_json",
         "search_tag_no_match_json",
+        "search_repo_no_match_json",
+        "search_branch_no_match_json",
+        "search_tag_repo_branch_no_match_json",
         "f_query_no_match_json",
         "f_tag_no_match_json",
+        "f_repo_no_match_json",
+        "f_branch_no_match_json",
+        "f_tag_repo_branch_no_match_json",
     ],
 )
 def test_search_json_no_match_read_paths_keep_repo_clean(
