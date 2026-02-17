@@ -12244,6 +12244,7 @@ def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
 
     result = _run_dock(["search", "nothing-will-match", "--json"], cwd=tmp_path, env=env)
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_filtered_no_matches_json_returns_empty_array(git_repo: Path, tmp_path: Path) -> None:
@@ -12289,6 +12290,7 @@ def test_search_filtered_no_matches_json_returns_empty_array(git_repo: Path, tmp
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_repo_filter_no_match_is_informative(git_repo: Path, tmp_path: Path) -> None:
@@ -12376,6 +12378,7 @@ def test_search_repo_filter_no_match_json_returns_empty_array(git_repo: Path, tm
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_repo_filter_accepts_trimmed_berth_name(git_repo: Path, tmp_path: Path) -> None:
@@ -12514,6 +12517,7 @@ def test_search_branch_filter_no_match_json_returns_empty_array(
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_branch_filter_no_match_is_informative(
@@ -12609,6 +12613,7 @@ def test_search_tag_repo_filter_no_match_json_returns_empty_array(
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_tag_repo_filter_no_match_is_informative(
@@ -12706,6 +12711,7 @@ def test_search_tag_branch_filter_no_match_json_returns_empty_array(
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_tag_branch_filter_no_match_is_informative(
@@ -12813,6 +12819,7 @@ def test_search_tag_repo_branch_filter_no_match_json_returns_empty_array(
         env=env,
     )
     assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_tag_repo_branch_filter_no_match_is_informative(
