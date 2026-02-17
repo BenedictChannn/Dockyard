@@ -117,7 +117,8 @@ Notes:
   fails with an actionable error instead of a traceback (including BERTH +
   `--branch` scoped invocations).
 - If BERTH/`--branch` context has no checkpoint, Dockyard reports
-  `No checkpoint found for the requested context.` without traceback noise.
+  `No checkpoint found for the requested context.` without traceback noise
+  across default, `--json`, and `--handoff` output modes.
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 
