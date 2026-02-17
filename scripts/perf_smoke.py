@@ -226,6 +226,22 @@ def _targets_met(
     return elapsed_ls_ms < ls_target_ms and elapsed_search_ms < search_target_ms
 
 
+def _failed_targets(
+    *,
+    elapsed_ls_ms: float,
+    elapsed_search_ms: float,
+    ls_target_ms: float,
+    search_target_ms: float,
+) -> list[str]:
+    """Return target keys that failed configured latency thresholds."""
+    failed: list[str] = []
+    if elapsed_ls_ms >= ls_target_ms:
+        failed.append("ls")
+    if elapsed_search_ms >= search_target_ms:
+        failed.append("search")
+    return failed
+
+
 def main() -> int:
     """Execute perf smoke scenario and optionally enforce PRD targets."""
     args = parse_args()
@@ -245,6 +261,12 @@ def main() -> int:
     search_rows = store.search_checkpoints(args.search_query, limit=args.search_limit)
     elapsed_search_ms = (time.perf_counter() - start_search) * 1000
     targets_met = _targets_met(
+        elapsed_ls_ms=elapsed_ls_ms,
+        elapsed_search_ms=elapsed_search_ms,
+        ls_target_ms=args.ls_target_ms,
+        search_target_ms=args.search_target_ms,
+    )
+    failed_targets = _failed_targets(
         elapsed_ls_ms=elapsed_ls_ms,
         elapsed_search_ms=elapsed_search_ms,
         ls_target_ms=args.ls_target_ms,
@@ -273,6 +295,7 @@ def main() -> int:
             "query": args.search_query,
         },
         "targets_met": targets_met,
+        "failed_targets": failed_targets,
         "enforce_targets": args.enforce_targets,
     }
 

@@ -13,6 +13,7 @@ import pytest
 
 from dockyard.storage.sqlite_store import SQLiteStore
 from scripts.perf_smoke import (
+    _failed_targets,
     _non_empty_query_arg,
     _non_negative_float_arg,
     _non_negative_int_arg,
@@ -111,6 +112,34 @@ def test_targets_met_uses_strict_less_than_thresholds() -> None:
         ls_target_ms=100.0,
         search_target_ms=200.0,
     )
+
+
+def test_failed_targets_reports_expected_target_keys() -> None:
+    """Failed-target helper should report threshold misses by key."""
+    assert _failed_targets(
+        elapsed_ls_ms=100.0,
+        elapsed_search_ms=200.0,
+        ls_target_ms=100.0,
+        search_target_ms=300.0,
+    ) == ["ls"]
+    assert _failed_targets(
+        elapsed_ls_ms=90.0,
+        elapsed_search_ms=300.0,
+        ls_target_ms=100.0,
+        search_target_ms=300.0,
+    ) == ["search"]
+    assert _failed_targets(
+        elapsed_ls_ms=120.0,
+        elapsed_search_ms=320.0,
+        ls_target_ms=100.0,
+        search_target_ms=300.0,
+    ) == ["ls", "search"]
+    assert _failed_targets(
+        elapsed_ls_ms=90.0,
+        elapsed_search_ms=250.0,
+        ls_target_ms=100.0,
+        search_target_ms=300.0,
+    ) == []
 
 
 def test_build_checkpoint_id_is_deterministic() -> None:
@@ -677,6 +706,7 @@ def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
     assert payload["search"]["limit"] == 20
     assert payload["search"]["query"] == "search pipeline"
     assert isinstance(payload["targets_met"], bool)
+    assert isinstance(payload["failed_targets"], list)
     assert "dock ls query:" not in completed.stdout
 
 
@@ -709,6 +739,7 @@ def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["enforce_targets"] is True
     assert payload["targets_met"] is False
+    assert payload["failed_targets"] == ["ls", "search"]
     assert "dock ls query:" not in completed.stdout
 
 
@@ -741,4 +772,5 @@ def test_perf_smoke_script_json_enforce_targets_success_exit(tmp_path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["enforce_targets"] is True
     assert payload["targets_met"] is True
+    assert payload["failed_targets"] == []
     assert "dock ls query:" not in completed.stdout
