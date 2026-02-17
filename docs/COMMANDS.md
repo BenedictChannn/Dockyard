@@ -118,6 +118,8 @@ the same harbor listing path and accepts the same `ls` flags at the root level
 (for example: `python3 -m dockyard --json --tag mvp --limit 20`).
 Root-level callback validation mirrors `ls` behavior (`--stale >= 0`,
 `--limit >= 1`, non-empty `--tag`).
+Combined filters are also supported via the callback path
+(`python3 -m dockyard --json --tag mvp --stale 3 --limit 20`).
 
 ### Options
 
