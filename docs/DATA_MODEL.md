@@ -166,6 +166,8 @@ Parser normalization notes:
   equivalently,
   including tight forms without surrounding spaces (for example,
   `Decision&Finding`, `Risks-Review Needed`, `Decision:Finding`).
+- Unicode dash separators (`–`, `—`) are also normalized in heading labels
+  (for example, `Next–Steps`, `Decision—Finding`).
 - This delimiter normalization also applies to list-section headings such as
   `Next-Steps` and `Resume&Commands`.
 - Known heading labels may be wrapped with simple markdown emphasis markers
