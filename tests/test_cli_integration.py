@@ -11416,6 +11416,100 @@ def test_search_repo_and_branch_filters_accept_trimmed_values(
     assert {row["branch"] for row in rows} == {branch}
 
 
+def test_search_repo_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search should honor combined repo+branch filters in table mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "prb-default",
+            "--decisions",
+            "default branch checkpoint for primary repo+branch filtering",
+            "--next-step",
+            "run primary repo+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/primary-repo-branch-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "prb-feature",
+            "--decisions",
+            "feature branch checkpoint for primary repo+branch filtering",
+            "--next-step",
+            "run primary repo+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    filtered = _run_dock(
+        [
+            "search",
+            "prb",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            "feature/primary-repo-branch-filter",
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "prb-feature" in filtered
+    assert "prb-default" not in filtered
+    assert "Traceback" not in filtered
+
+
 def test_search_alias_validates_limit_argument(tmp_path: Path) -> None:
     """Search alias should enforce the same limit validation as search."""
     env = dict(os.environ)
