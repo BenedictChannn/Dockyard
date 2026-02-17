@@ -125,6 +125,8 @@ Parser normalization notes:
   parser fallback for manually edited checkpoint files.
 - Next-step bullet markers accept optional spacing after delimiter
   (for example, both `- step` and `-step` are accepted).
+- `next steps` also accepts plain non-bulleted lines as list items in manually
+  edited checkpoint files.
 - Next-step parser strips checklist prefixes from markdown list entries
   (for example, `- [ ] step` and `1. [x] step` normalize to `step`).
 - Checklist prefix stripping for next steps requires separator spacing
@@ -136,6 +138,8 @@ Parser normalization notes:
   plain text when manually edited.
 - Resume command bullets accept optional spacing after bullet delimiters
   (for example, both `- cmd` and `-cmd` parse correctly).
+- `resume commands` also accepts plain non-bulleted command lines in manually
+  edited checkpoint files.
 - Resume command parser strips checklist prefixes only when they include
   separator spacing (for example, `- [x] cmd` -> `cmd`; `- [x]cmd` remains
   literal).
