@@ -6417,13 +6417,13 @@ def test_search_alias_repo_filter_no_match_returns_empty_json(git_repo: Path, tm
         env=env,
     )
 
-    assert json.loads(
-        _run_dock(
-            ["f", "Alias repo filter no-match objective", "--repo", "missing-berth", "--json"],
-            cwd=tmp_path,
-            env=env,
-        ).stdout
-    ) == []
+    result = _run_dock(
+        ["f", "Alias repo filter no-match objective", "--repo", "missing-berth", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
@@ -6535,16 +6535,13 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_repo_rows) == 1
     assert beta_repo_rows[0]["branch"] == "feature/alias-tag-filter"
-    assert (
-        json.loads(
-            _run_dock(
-                ["f", "Alias tag filter objective", "--tag", "beta", "--repo", "missing-berth", "--json"],
-                cwd=tmp_path,
-                env=env,
-            ).stdout
-        )
-        == []
+    missing_repo_result = _run_dock(
+        ["f", "Alias tag filter objective", "--tag", "beta", "--repo", "missing-berth", "--json"],
+        cwd=tmp_path,
+        env=env,
     )
+    assert json.loads(missing_repo_result.stdout) == []
+    assert "Traceback" not in f"{missing_repo_result.stdout}\n{missing_repo_result.stderr}"
     beta_feature_rows = json.loads(
         _run_dock(
             [
@@ -6581,24 +6578,21 @@ def test_search_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     )
     assert len(beta_repo_branch_rows) == 1
     assert beta_repo_branch_rows[0]["branch"] == "feature/alias-tag-filter"
-    assert (
-        json.loads(
-            _run_dock(
-                [
-                    "f",
-                    "Alias tag filter objective",
-                    "--tag",
-                    "beta",
-                    "--branch",
-                    default_branch,
-                    "--json",
-                ],
-                cwd=tmp_path,
-                env=env,
-            ).stdout
-        )
-        == []
+    wrong_branch_result = _run_dock(
+        [
+            "f",
+            "Alias tag filter objective",
+            "--tag",
+            "beta",
+            "--branch",
+            default_branch,
+            "--json",
+        ],
+        cwd=tmp_path,
+        env=env,
     )
+    assert json.loads(wrong_branch_result.stdout) == []
+    assert "Traceback" not in f"{wrong_branch_result.stdout}\n{wrong_branch_result.stderr}"
 
 
 def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> None:
@@ -6696,16 +6690,13 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     )
     assert len(default_rows) == 1
     assert default_rows[0]["branch"] == default_branch
-    assert (
-        json.loads(
-            _run_dock(
-                ["f", "Alias branch filter objective", "--branch", "missing/branch", "--json"],
-                cwd=tmp_path,
-                env=env,
-            ).stdout
-        )
-        == []
+    missing_branch_result = _run_dock(
+        ["f", "Alias branch filter objective", "--branch", "missing/branch", "--json"],
+        cwd=tmp_path,
+        env=env,
     )
+    assert json.loads(missing_branch_result.stdout) == []
+    assert "Traceback" not in f"{missing_branch_result.stdout}\n{missing_branch_result.stderr}"
     combo_rows = json.loads(
         _run_dock(
             [
@@ -7051,24 +7042,23 @@ def test_search_alias_tag_repo_branch_filter_no_match_json(git_repo: Path, tmp_p
         env=env,
     )
 
-    rows = json.loads(
-        _run_dock(
-            [
-                "f",
-                "Alias tag repo branch json objective",
-                "--tag",
-                "alpha",
-                "--repo",
-                "missing-berth",
-                "--branch",
-                "missing/branch",
-                "--json",
-            ],
-            cwd=tmp_path,
-            env=env,
-        ).stdout
+    result = _run_dock(
+        [
+            "f",
+            "Alias tag repo branch json objective",
+            "--tag",
+            "alpha",
+            "--repo",
+            "missing-berth",
+            "--branch",
+            "missing/branch",
+            "--json",
+        ],
+        cwd=tmp_path,
+        env=env,
     )
-    assert rows == []
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
 def test_search_alias_tag_repo_branch_filter_no_match_message(
