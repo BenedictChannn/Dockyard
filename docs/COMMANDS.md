@@ -113,6 +113,10 @@ Notes:
 
 Harbor dashboard listing slips across berths.
 
+When invoked with no subcommand (`python3 -m dockyard`), Dockyard defaults to
+the same harbor listing path and accepts the same `ls` flags at the root level
+(for example: `python3 -m dockyard --json --tag mvp --limit 20`).
+
 ### Options
 
 - `--stale <days>`

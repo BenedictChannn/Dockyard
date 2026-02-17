@@ -127,12 +127,16 @@ Useful flags:
 
 ```bash
 python3 -m dockyard ls
+# default callback path (no subcommand):
+python3 -m dockyard
 ```
 
 Filters:
 
 ```bash
 python3 -m dockyard ls --stale 3 --tag mvp --limit 20
+# same filters via bare default callback:
+python3 -m dockyard --json --tag mvp --limit 20
 ```
 
 `--tag` values are trimmed; blank values are rejected.
