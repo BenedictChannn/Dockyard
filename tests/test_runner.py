@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from dockyard.runner import run_commands
 
 
@@ -110,3 +112,11 @@ def test_run_commands_normalizes_command_whitespace_in_results(tmp_path: Path) -
     assert success is True
     assert results == [(normalized_command, 0)]
     assert marker.exists()
+
+
+def test_run_commands_missing_cwd_raises_actionable_error(tmp_path: Path) -> None:
+    """Runner should raise clear error when cwd does not exist."""
+    missing_cwd = tmp_path / "missing-dir"
+
+    with pytest.raises(FileNotFoundError, match="Command runner cwd does not exist:"):
+        run_commands(["echo noop"], cwd=missing_cwd)

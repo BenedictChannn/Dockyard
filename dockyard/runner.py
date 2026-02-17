@@ -20,6 +20,8 @@ def run_commands(commands: list[str], cwd: str | Path) -> tuple[bool, list[tuple
     """
     results: list[tuple[str, int]] = []
     working_dir = Path(cwd)
+    if not working_dir.is_dir():
+        raise FileNotFoundError(f"Command runner cwd does not exist: {working_dir}")
     for command in commands:
         normalized = command.strip()
         if not normalized:
