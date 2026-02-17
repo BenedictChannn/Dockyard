@@ -173,6 +173,65 @@ def test_search_falls_back_for_fts_parser_operational_error(
     assert hits[0]["id"] == "cp_parser_error"
 
 
+def test_search_like_fallback_honors_repo_and_branch_filters(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """LIKE fallback should preserve repo/branch filter precedence."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_like_a", name="LikeA", root_path="/tmp/la", remote_url=None))
+    store.upsert_berth(Berth(repo_id="repo_like_b", name="LikeB", root_path="/tmp/lb", remote_url=None))
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_like_a_main",
+            "repo_like_a",
+            "main",
+            "Fallback security/path main",
+            ["mvp"],
+        )
+    )
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_like_a_feature",
+            "repo_like_a",
+            "feature/x",
+            "Fallback security/path feature",
+            ["mvp"],
+        )
+    )
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_like_b_main",
+            "repo_like_b",
+            "main",
+            "Fallback security/path other repo",
+            ["mvp"],
+        )
+    )
+
+    def _force_fts_enabled(_conn: sqlite3.Connection) -> bool:
+        return True
+
+    def _raise_parser_error(**_kwargs: object) -> list[sqlite3.Row]:
+        raise sqlite3.OperationalError("fts5: syntax error near '/'")
+
+    monkeypatch.setattr(store, "_has_fts", _force_fts_enabled)
+    monkeypatch.setattr(store, "_search_rows_fts", _raise_parser_error)
+
+    repo_hits = store.search_checkpoints("security/path", repo_id="repo_like_a")
+    assert {hit["id"] for hit in repo_hits} == {"cp_like_a_main", "cp_like_a_feature"}
+
+    branch_hits = store.search_checkpoints("security/path", repo_id="repo_like_a", branch="main")
+    assert len(branch_hits) == 1
+    assert branch_hits[0]["id"] == "cp_like_a_main"
+
+    other_repo_hits = store.search_checkpoints("security/path", repo_id="repo_like_b", branch="main")
+    assert len(other_repo_hits) == 1
+    assert other_repo_hits[0]["id"] == "cp_like_b_main"
+
+
 def test_search_reraises_non_parser_fts_operational_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
