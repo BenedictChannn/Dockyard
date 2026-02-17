@@ -1623,6 +1623,73 @@ def test_empty_review_listing_commands_keep_repo_clean(
 
 
 @pytest.mark.parametrize(
+    ("review_args", "include_resolved"),
+    [
+        (("review",), False),
+        (("review", "list"), False),
+        (("review", "--all"), True),
+        (("review", "list", "--all"), True),
+    ],
+    ids=["review_default", "review_list", "review_all", "review_list_all"],
+)
+def test_review_listing_commands_with_items_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    review_args: tuple[str, ...],
+    include_resolved: bool,
+) -> None:
+    """Review listing commands with items should remain read-only."""
+    env = _dockyard_env(tmp_path)
+    base_branch = _current_branch(git_repo)
+    _assert_repo_clean(git_repo)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="Review listing non-interference baseline",
+        decisions="Create open/resolved review items for list coverage",
+        next_step="Run review listing commands",
+        risks="none",
+        command="echo noop",
+        extra_args=["--no-auto-review"],
+    )
+    _assert_repo_clean(git_repo)
+
+    open_created = _run(
+        _build_review_add_command(
+            reason="non_interference_review_open",
+            repo=git_repo.name,
+            branch=base_branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    open_match = re.search(r"rev_[a-f0-9]+", open_created)
+    assert open_match is not None
+    open_review_id = open_match.group(0)
+
+    resolved_created = _run(
+        _build_review_add_command(
+            reason="non_interference_review_resolved",
+            repo=git_repo.name,
+            branch=base_branch,
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    resolved_match = re.search(r"rev_[a-f0-9]+", resolved_created)
+    assert resolved_match is not None
+    resolved_review_id = resolved_match.group(0)
+
+    _run(_dockyard_command("review", "done", resolved_review_id), cwd=tmp_path, env=env)
+
+    output = _run(_dockyard_command(*review_args), cwd=tmp_path, env=env)
+    assert open_review_id in output
+    assert (resolved_review_id in output) is include_resolved
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
     ids=RESUME_READ_PATH_IDS,
