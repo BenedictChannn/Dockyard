@@ -5704,6 +5704,57 @@ def test_resume_unknown_branch_for_known_repo_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_commands_unknown_explicit_berth_branch_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Resume commands should fail cleanly for unknown branch + explicit berth."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} unknown explicit berth branch objective",
+            "--decisions",
+            "Validate unknown explicit berth+branch handling",
+            "--next-step",
+            "resume missing explicit berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo main",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    failed = _run_dock(
+        [command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "No checkpoint found for the requested context." in output
+    assert "Traceback" not in output
+
+
 def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
     """Hidden aliases should mirror primary command behavior."""
     env = dict(os.environ)
