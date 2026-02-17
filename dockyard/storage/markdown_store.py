@@ -31,12 +31,16 @@ SECTION_FIELD_MAP: dict[str, str] = {
     "decision finding": "decisions",
     "next steps": "next_steps",
     "next step": "next_steps",
+    "next/steps": "next_steps",
+    "next/step": "next_steps",
     "risks/review needed": "risks_review",
     "risk/review needed": "risks_review",
     "risks review needed": "risks_review",
     "risk review needed": "risks_review",
     "resume commands": "resume_commands",
     "resume command": "resume_commands",
+    "resume/commands": "resume_commands",
+    "resume/command": "resume_commands",
 }
 FREEFORM_SECTION_FIELDS: set[str] = {"objective", "decisions", "risks_review"}
 
