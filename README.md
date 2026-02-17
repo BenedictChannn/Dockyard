@@ -159,6 +159,8 @@ python3 -m dockyard --json --tag mvp --limit 20
 `--tag` values are trimmed; blank values are rejected.
 Bare callback validation mirrors `ls` constraints (`--stale >= 0`,
 `--limit >= 1`, non-empty `--tag`).
+In `--json` mode, both `ls` and the bare callback path return `[]` when no
+slips are indexed.
 
 ### 4) Search objectives, decisions, next steps, and risks
 

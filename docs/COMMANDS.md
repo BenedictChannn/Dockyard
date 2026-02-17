@@ -152,7 +152,8 @@ Validation:
 - `--limit` must be `>= 1`
 - `--tag` must be non-empty when provided
 
-`ls --json` returns `[]` when no slips are indexed.
+`ls --json`, `harbor --json`, and root callback `--json` all return `[]` when
+no slips are indexed.
 
 ## `search` (`f`)
 
