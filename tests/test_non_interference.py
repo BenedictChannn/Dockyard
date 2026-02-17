@@ -2726,14 +2726,18 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
     [
         ("--tag", "baseline", "--stale", "0"),
         ("--tag", "baseline", "--stale", "0", "--limit", "1"),
+        ("--tag", "missing-tag", "--stale", "0", "--limit", "1"),
         ("--json", "--tag", "baseline", "--stale", "0"),
         ("--json", "--tag", "baseline", "--stale", "0", "--limit", "1"),
+        ("--json", "--tag", "missing-tag", "--stale", "0", "--limit", "1"),
     ],
     ids=[
         "table_tag_stale",
         "table_tag_stale_limit",
+        "table_missing_tag_stale_limit",
         "json_tag_stale",
         "json_tag_stale_limit",
+        "json_missing_tag_stale_limit",
     ],
 )
 def test_bare_dock_command_in_repo_seeded_filter_variants_do_not_modify_repo(
@@ -2825,8 +2829,17 @@ def test_bare_dock_command_outside_repo_with_missing_tag_limit_does_not_modify_r
         ("--json",),
         ("--json", "--limit", "1"),
         ("--json", "--tag", "baseline", "--stale", "0", "--limit", "1"),
+        ("--tag", "missing-tag", "--stale", "0", "--limit", "1"),
+        ("--json", "--tag", "missing-tag", "--stale", "0", "--limit", "1"),
     ],
-    ids=["default", "json", "json_limit", "json_tag_stale_limit"],
+    ids=[
+        "default",
+        "json",
+        "json_limit",
+        "json_tag_stale_limit",
+        "table_missing_tag_stale_limit",
+        "json_missing_tag_stale_limit",
+    ],
 )
 def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
     git_repo: Path,
