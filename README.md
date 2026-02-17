@@ -110,7 +110,7 @@ Useful flags:
 - Resume top-lines summary contract (Project/Branch, Last Checkpoint,
   Objective, Next Steps, Open Reviews, Verification) is preserved across
   `resume`, `r`, and `undock`, including explicit BERTH and BERTH + `--branch`
-  lookups outside repos.
+  lookups outside repos, plus in-repo `--branch` flows with trimmed values.
 - Handoff bullets and `--run` command labels are compacted to single-line
   previews for readability.
 - BERTH + `--branch` scoped resume lookups support both `--handoff` and

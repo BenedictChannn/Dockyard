@@ -92,7 +92,8 @@ Notes:
 - Resume top-lines summary contract (Project/Branch, Last Checkpoint,
   Objective, Next Steps, Open Reviews, Verification) is consistent for
   `resume`, `r`, and `undock`, including explicit BERTH lookups and
-  BERTH + `--branch` invocations outside repos.
+  BERTH + `--branch` invocations outside repos, as well as in-repo
+  `--branch` flows with trimmed branch values.
 - If a checkpoint has no next steps, resume summary shows `(none recorded)`.
 - `--handoff` output compacts multiline objective/next-step/risk/command
   fields into one-line bullet previews.
