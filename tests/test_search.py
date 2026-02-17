@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
+
+import pytest
 
 from dockyard.models import Berth, Checkpoint, VerificationState
 from dockyard.storage.sqlite_store import SQLiteStore
@@ -109,6 +112,85 @@ def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     hits = store.search_checkpoints("security/path")
     assert len(hits) == 1
     assert hits[0]["id"] == "cp_special"
+
+
+def test_search_falls_back_for_fts_parser_operational_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Search should fallback when FTS path raises parser OperationalError."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(
+        Berth(
+            repo_id="repo_parser_error",
+            name="ParserError",
+            root_path="/tmp/parser-error",
+            remote_url=None,
+        )
+    )
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_parser_error",
+            "repo_parser_error",
+            "main",
+            "Fallback path for parser/error query",
+            ["mvp"],
+        )
+    )
+
+    def _force_fts_enabled(_conn: sqlite3.Connection) -> bool:
+        return True
+
+    def _raise_parser_error(**_kwargs: object) -> list[sqlite3.Row]:
+        raise sqlite3.OperationalError("fts5: syntax error near '/'")
+
+    monkeypatch.setattr(store, "_has_fts", _force_fts_enabled)
+    monkeypatch.setattr(store, "_search_rows_fts", _raise_parser_error)
+
+    hits = store.search_checkpoints("parser/error")
+    assert len(hits) == 1
+    assert hits[0]["id"] == "cp_parser_error"
+
+
+def test_search_reraises_non_parser_fts_operational_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Search should not swallow non-parser OperationalError from FTS path."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(
+        Berth(
+            repo_id="repo_non_parser_error",
+            name="NonParserError",
+            root_path="/tmp/non-parser-error",
+            remote_url=None,
+        )
+    )
+    store.add_checkpoint(
+        _checkpoint(
+            "cp_non_parser_error",
+            "repo_non_parser_error",
+            "main",
+            "No fallback for unrelated operational errors",
+            ["mvp"],
+        )
+    )
+
+    def _force_fts_enabled(_conn: sqlite3.Connection) -> bool:
+        return True
+
+    def _raise_unrelated_operational_error(**_kwargs: object) -> list[sqlite3.Row]:
+        raise sqlite3.OperationalError("database disk image is malformed")
+
+    monkeypatch.setattr(store, "_has_fts", _force_fts_enabled)
+    monkeypatch.setattr(store, "_search_rows_fts", _raise_unrelated_operational_error)
+
+    with pytest.raises(sqlite3.OperationalError, match="database disk image is malformed"):
+        store.search_checkpoints("non-parser-error")
 
 
 def test_search_respects_limit(tmp_path: Path) -> None:

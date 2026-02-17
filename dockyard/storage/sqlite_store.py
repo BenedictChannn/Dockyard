@@ -19,6 +19,12 @@ from dockyard.models import (
 )
 
 SCHEMA_VERSION = 1
+FTS_QUERY_ERROR_MARKERS: tuple[str, ...] = (
+    "fts5: syntax error",
+    "malformed match expression",
+    "unterminated string",
+    "no such column",
+)
 
 
 def _to_json(value: Any) -> str:
@@ -31,6 +37,12 @@ def _from_json(raw: str | None, default: Any) -> Any:
     if not raw:
         return default
     return json.loads(raw)
+
+
+def _is_fts_query_parser_error(error: sqlite3.OperationalError) -> bool:
+    """Return whether an FTS operational error came from query parsing."""
+    message = str(error).lower()
+    return any(marker in message for marker in FTS_QUERY_ERROR_MARKERS)
 
 
 class SQLiteStore:
@@ -664,7 +676,9 @@ class SQLiteStore:
                         branch=branch,
                         limit=limit,
                     )
-                except sqlite3.OperationalError:
+                except sqlite3.OperationalError as error:
+                    if not _is_fts_query_parser_error(error):
+                        raise
                     rows = self._search_rows_like(
                         conn=conn,
                         query=query,
