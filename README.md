@@ -284,6 +284,7 @@ dataset sizes, active limits/targets/query), a `schema_version` field, and
 `measured_at` UTC timestamp metadata plus `failed_targets` details when
 thresholds are missed.
 Use `--output-file` to write either text or JSON output to disk (parent
-directories are created automatically).
+directories are created automatically). The output path must be a writable
+file path (directory paths are rejected).
 When `--enforce-targets` is used in text mode and thresholds are missed, output
 includes a `failed targets:` summary line.
