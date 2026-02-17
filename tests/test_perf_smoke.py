@@ -145,6 +145,29 @@ def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
     assert "value must be greater than zero" in completed.stderr
 
 
+def test_perf_smoke_script_rejects_negative_checkpoints(tmp_path) -> None:
+    """Perf smoke script should reject negative checkpoint count at CLI level."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_checkpoints.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "-1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be non-negative" in completed.stderr
+
+
 def test_perf_smoke_script_rejects_negative_latency_target(tmp_path) -> None:
     """Perf smoke script should reject negative latency thresholds."""
     db_path = tmp_path / "perf_smoke_cli_invalid_target.sqlite"
