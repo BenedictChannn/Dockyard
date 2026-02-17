@@ -3960,6 +3960,88 @@ def test_no_subcommand_trims_tag_filter(git_repo: Path, tmp_path: Path) -> None:
     assert rows[0]["objective"] == "Default callback trimmed tag parity"
 
 
+def test_no_subcommand_supports_combined_tag_stale_filters(git_repo: Path, tmp_path: Path) -> None:
+    """Bare dock callback should honor combined tag and stale filters."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filters alpha",
+            "--decisions",
+            "Validate combined tag/stale filters",
+            "--next-step",
+            "run bare dock combined filters alpha",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/no-subcommand-combined-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filters beta",
+            "--decisions",
+            "Ensure other tag is filtered out",
+            "--next-step",
+            "run bare dock combined filters beta",
+            "--risks",
+            "none",
+            "--command",
+            "echo beta",
+            "--tag",
+            "beta",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(["git", "checkout", base_branch], cwd=str(git_repo), check=True, capture_output=True)
+
+    rows = json.loads(_run_dock(["--json", "--tag", "alpha", "--stale", "0"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "Default callback combined filters alpha"
+    assert "alpha" in rows[0]["tags"]
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)
