@@ -13944,7 +13944,7 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Parser fallback security/path target",
+            "pf-target security/path",
             "--decisions",
             "Keep fallback query filters stable",
             "--next-step",
@@ -13982,7 +13982,7 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Parser fallback security/path sibling",
+            "pf-sibling security/path",
             "--decisions",
             "Other branch record should be filtered out",
             "--next-step",
@@ -14023,7 +14023,22 @@ def test_search_json_parser_error_query_honors_repo_branch_filters(
         ).stdout
     )
     assert len(rows) == 1
-    assert rows[0]["objective"] == "Parser fallback security/path target"
+    assert rows[0]["objective"] == "pf-target security/path"
+    table_output = _run_dock(
+        [
+            "search",
+            "security/path",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            base_branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "pf-target" in table_output
+    assert "pf-sibling" not in table_output
+    assert "Traceback" not in table_output
 
 
 def test_search_alias_parser_error_query_honors_repo_branch_filters(
@@ -14042,7 +14057,7 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Alias parser fallback security/path target",
+            "apf-target security/path",
             "--decisions",
             "Keep alias fallback query filters stable",
             "--next-step",
@@ -14080,7 +14095,7 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Alias parser fallback security/path sibling",
+            "apf-sibling security/path",
             "--decisions",
             "Other branch alias record should be filtered out",
             "--next-step",
@@ -14121,7 +14136,22 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
         ).stdout
     )
     assert len(rows) == 1
-    assert rows[0]["objective"] == "Alias parser fallback security/path target"
+    assert rows[0]["objective"] == "apf-target security/path"
+    table_output = _run_dock(
+        [
+            "f",
+            "security/path",
+            "--repo",
+            git_repo.name,
+            "--branch",
+            base_branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "apf-target" in table_output
+    assert "apf-sibling" not in table_output
+    assert "Traceback" not in table_output
 
 
 def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: Path) -> None:
