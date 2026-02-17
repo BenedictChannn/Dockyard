@@ -6180,6 +6180,119 @@ def test_resume_commands_unknown_explicit_berth_branch_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_commands_prefer_repo_id_lookup_over_colliding_berth_name(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Resume commands should prioritize exact repo-id lookup over berth name collisions."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    other_repo = tmp_path / "resume-collision-other"
+    other_repo.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "dockyard@example.com"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Dockyard Test"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:org/resume-other.git"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    (other_repo / "README.md").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=str(other_repo), check=True, capture_output=True)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(other_repo),
+            "--no-prompt",
+            "--objective",
+            "resume-collision-other",
+            "--decisions",
+            "other repo checkpoint for resume lookup collision test",
+            "--next-step",
+            "query resume by repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo other",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=other_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "resume-collision-target",
+            "--decisions",
+            "target repo checkpoint for resume lookup collision test",
+            "--next-step",
+            "query resume by repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo target",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = tmp_path / ".dockyard_data" / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    target_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(git_repo),),
+    ).fetchone()[0]
+    other_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(other_repo),),
+    ).fetchone()[0]
+    conn.execute("UPDATE berths SET name = ? WHERE repo_id = ?", (target_repo_id, other_repo_id))
+    conn.commit()
+    conn.close()
+
+    payload = json.loads(_run_dock([command_name, target_repo_id, "--json"], cwd=tmp_path, env=env).stdout)
+    assert payload["repo_id"] == target_repo_id
+    assert payload["objective"] == "resume-collision-target"
+
+
 def test_alias_commands_harbor_search_and_resume(git_repo: Path, tmp_path: Path) -> None:
     """Hidden aliases should mirror primary command behavior."""
     env = dict(os.environ)
