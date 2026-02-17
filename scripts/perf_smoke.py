@@ -251,6 +251,11 @@ def main() -> int:
     )
 
     payload = {
+        "db_path": str(args.db_path),
+        "seed": {
+            "berths": args.berths,
+            "checkpoints": args.checkpoints,
+        },
         "ls": {
             "elapsed_ms": round(elapsed_ls_ms, 2),
             "rows": len(harbor_rows),
