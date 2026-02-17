@@ -2708,6 +2708,42 @@ def test_bare_dock_command_outside_repo_with_missing_tag_limit_does_not_modify_r
 
 
 @pytest.mark.parametrize(
+    "args",
+    [
+        (),
+        ("--json",),
+        ("--json", "--limit", "1"),
+        ("--json", "--tag", "baseline", "--stale", "0", "--limit", "1"),
+    ],
+    ids=["default", "json", "json_limit", "json_tag_stale_limit"],
+)
+def test_bare_dock_command_outside_repo_read_variants_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+) -> None:
+    """Bare dock read variants should stay non-mutating outside repos."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="bare dock outside repo read-variant baseline",
+        decisions="seed checkpoint for callback outside-repo read variants",
+        next_step="run bare dock from outside repo",
+        risks="none",
+        command="echo callback outside-repo",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command(*args), cwd=tmp_path, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
     ("args", "expected_fragment"),
     [
         (("--stale", "-1"), "--stale must be >= 0."),
