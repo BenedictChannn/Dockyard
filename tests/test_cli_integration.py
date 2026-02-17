@@ -4160,6 +4160,100 @@ def test_no_subcommand_supports_combined_tag_stale_filters(git_repo: Path, tmp_p
     assert "alpha" in rows[0]["tags"]
 
 
+def test_no_subcommand_supports_combined_tag_stale_limit_filters(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare callback should honor combined tag/stale/limit constraints."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filter limit alpha base",
+            "--decisions",
+            "Validate combined tag/stale/limit filters (base branch)",
+            "--next-step",
+            "run bare dock combined filters with limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-base",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/no-subcommand-combined-filter-limit"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Default callback combined filter limit alpha feature",
+            "--decisions",
+            "Second alpha entry should be pruned by limit",
+            "--next-step",
+            "validate combined filters with limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo alpha-feature",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(["git", "checkout", base_branch], cwd=str(git_repo), check=True, capture_output=True)
+
+    rows = json.loads(
+        _run_dock(
+            ["--json", "--tag", "alpha", "--stale", "0", "--limit", "1"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) == 1
+    assert rows[0]["objective"] in {
+        "Default callback combined filter limit alpha base",
+        "Default callback combined filter limit alpha feature",
+    }
+    assert "alpha" in rows[0]["tags"]
+
+
 def test_harbor_json_empty_store_returns_array(tmp_path: Path) -> None:
     """Harbor alias should support JSON mode for empty datasets."""
     env = dict(os.environ)
