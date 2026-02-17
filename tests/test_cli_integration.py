@@ -12997,6 +12997,55 @@ def test_search_limit_applies_after_tag_filter_non_json(git_repo: Path, tmp_path
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_table_long_snippet_render_is_truncated(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search table output should truncate long snippet text for readability."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    long_risk = "long-snippet-token " + ("x" * 220)
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"long-snippet-{command_name}",
+            "--decisions",
+            "long snippet table rendering baseline",
+            "--next-step",
+            "run search table",
+            "--risks",
+            long_risk,
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock([command_name, "long-snippet-token"], cwd=tmp_path, env=env).stdout
+    assert "Dockyard Search Results" in output
+    assert "long-snippet-token" in output
+    assert long_risk not in output
+    assert "x" * 140 not in output
+    assert "Traceback" not in output
+
+
 def test_harbor_alias_validates_limit_argument(tmp_path: Path) -> None:
     """Harbor alias should enforce the same limit validation as ls."""
     env = dict(os.environ)
