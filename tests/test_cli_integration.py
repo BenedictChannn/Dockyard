@@ -6320,6 +6320,68 @@ def test_search_alias_repo_filter_accepts_berth_name(git_repo: Path, tmp_path: P
     assert rows[0]["berth_name"] == git_repo.name
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_repo_filtered_rows_follow_expected_schema(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Repo-filtered JSON search rows should expose a stable schema."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Search json schema objective ({command_name})",
+            "--decisions",
+            "Validate JSON row schema for repo-filtered search results",
+            "--next-step",
+            "run json search with --repo filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(
+        _run_dock(
+            [
+                command_name,
+                f"Search json schema objective ({command_name})",
+                "--repo",
+                git_repo.name,
+                "--json",
+            ],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(rows) >= 1
+    assert {row["berth_name"] for row in rows} == {git_repo.name}
+
+    expected_keys = {"id", "repo_id", "berth_name", "branch", "created_at", "snippet", "objective"}
+    for row in rows:
+        assert set(row) == expected_keys
+        assert isinstance(row["snippet"], str)
+
+
 def test_search_alias_repo_filter_no_match_returns_empty_json(git_repo: Path, tmp_path: Path) -> None:
     """Search alias repo filter should return [] when berth does not match."""
     env = dict(os.environ)
