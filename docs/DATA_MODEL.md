@@ -148,3 +148,5 @@ Parser normalization notes:
   `##Objective##` (no spacing after the marker, optional closing hashes).
 - Parser also accepts singular heading aliases for known sections
   (for example, `Decision/Finding`, `Next Step`, and `Resume Command`).
+- Known heading labels may be wrapped with simple markdown emphasis markers
+  (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
