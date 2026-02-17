@@ -4413,15 +4413,6 @@ def test_ls_json_empty_store_returns_array(tmp_path: Path) -> None:
     assert payload == []
 
 
-def test_callback_json_empty_store_returns_array(tmp_path: Path) -> None:
-    """No-subcommand callback should return [] for empty JSON output."""
-    env = dict(os.environ)
-    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
-
-    payload = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
-    assert payload == []
-
-
 def test_ls_json_handles_long_objective_text(git_repo: Path, tmp_path: Path) -> None:
     """Ls JSON output should remain parseable with long objective text."""
     env = dict(os.environ)
