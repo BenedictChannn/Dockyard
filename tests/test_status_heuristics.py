@@ -224,6 +224,11 @@ def test_severity_from_triggers_prioritizes_high_when_mixed() -> None:
     assert severity_from_triggers(["many_files_changed", "risky_paths_touched"]) == "high"
 
 
+def test_severity_from_triggers_treats_release_hotfix_trigger_as_high() -> None:
+    """Release/hotfix trigger should map to high severity."""
+    assert severity_from_triggers(["release_or_hotfix_branch"]) == "high"
+
+
 def test_build_review_item_limits_files_and_uses_manual_reason() -> None:
     """Review item should cap file list and use manual reason when needed."""
     cp = _checkpoint(
@@ -242,3 +247,10 @@ def test_build_review_item_preserves_trigger_reason_order() -> None:
     cp = _checkpoint(verification=VerificationState())
     item = build_review_item(checkpoint=cp, triggers=["many_files_changed", "large_diff_churn"])
     assert item.reason == "many_files_changed, large_diff_churn"
+
+
+def test_build_review_item_uses_high_severity_for_high_trigger_set() -> None:
+    """Review item should map high-trigger sets to high severity."""
+    cp = _checkpoint(verification=VerificationState())
+    item = build_review_item(checkpoint=cp, triggers=["release_or_hotfix_branch"])
+    assert item.severity == "high"
