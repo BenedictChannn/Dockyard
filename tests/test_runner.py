@@ -60,6 +60,18 @@ def test_run_commands_executes_relative_commands_in_provided_cwd(tmp_path: Path)
     assert marker.read_text(encoding="utf-8").strip() == str(tmp_path)
 
 
+def test_run_commands_accepts_string_cwd(tmp_path: Path) -> None:
+    """Runner should accept cwd provided as string path."""
+    command = "pwd > cwd_string_marker.txt"
+    success, results = run_commands([command], cwd=str(tmp_path))
+
+    assert success is True
+    assert results == [(command, 0)]
+    marker = tmp_path / "cwd_string_marker.txt"
+    assert marker.exists()
+    assert marker.read_text(encoding="utf-8").strip() == str(tmp_path)
+
+
 def test_run_commands_ignores_blank_commands(tmp_path: Path) -> None:
     """Runner should skip blank command entries while executing meaningful ones."""
     marker = tmp_path / "blank_skip_marker.txt"
