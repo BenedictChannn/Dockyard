@@ -143,6 +143,13 @@ def test_review_triggers_detect_risky_paths_and_large_diff() -> None:
     assert "large_diff_churn" in triggers
 
 
+def test_review_triggers_match_risky_paths_case_insensitively() -> None:
+    """Risky-path matching should remain case-insensitive across file inputs."""
+    cp = _checkpoint(touched_files=["Security/token.py"], verification=VerificationState())
+    triggers = review_triggers(cp)
+    assert "risky_paths_touched" in triggers
+
+
 def test_review_triggers_include_missing_tests_for_non_trivial_diff() -> None:
     """Non-trivial diffs without tests should create missing-tests trigger."""
     cp = _checkpoint(
@@ -212,6 +219,11 @@ def test_severity_from_triggers_maps_high_med_low() -> None:
     assert severity_from_triggers([]) == "low"
 
 
+def test_severity_from_triggers_prioritizes_high_when_mixed() -> None:
+    """High severity should win when mixed with medium triggers."""
+    assert severity_from_triggers(["many_files_changed", "risky_paths_touched"]) == "high"
+
+
 def test_build_review_item_limits_files_and_uses_manual_reason() -> None:
     """Review item should cap file list and use manual reason when needed."""
     cp = _checkpoint(
@@ -223,3 +235,10 @@ def test_build_review_item_limits_files_and_uses_manual_reason() -> None:
     assert item.severity == "low"
     assert item.status == "open"
     assert len(item.files) == 20
+
+
+def test_build_review_item_preserves_trigger_reason_order() -> None:
+    """Review item reason should keep trigger order for readability."""
+    cp = _checkpoint(verification=VerificationState())
+    item = build_review_item(checkpoint=cp, triggers=["many_files_changed", "large_diff_churn"])
+    assert item.reason == "many_files_changed, large_diff_churn"
