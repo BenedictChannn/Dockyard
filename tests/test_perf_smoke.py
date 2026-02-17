@@ -158,6 +158,56 @@ def test_perf_smoke_script_rejects_non_positive_berths(tmp_path) -> None:
     assert "value must be greater than zero" in completed.stderr
 
 
+def test_perf_smoke_script_rejects_non_positive_ls_limit(tmp_path) -> None:
+    """Perf smoke script should reject non-positive ls-limit values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_ls_limit.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--ls-limit",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be greater than zero" in completed.stderr
+
+
+def test_perf_smoke_script_rejects_non_positive_search_limit(tmp_path) -> None:
+    """Perf smoke script should reject non-positive search-limit values."""
+    db_path = tmp_path / "perf_smoke_cli_invalid_search_limit.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--search-limit",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "value must be greater than zero" in completed.stderr
+
+
 def test_perf_smoke_script_rejects_negative_checkpoints(tmp_path) -> None:
     """Perf smoke script should reject negative checkpoint count at CLI level."""
     db_path = tmp_path / "perf_smoke_cli_invalid_checkpoints.sqlite"
@@ -362,3 +412,55 @@ def test_perf_smoke_script_allows_custom_search_query(tmp_path) -> None:
     assert "dock search query:" in completed.stdout
     assert "search workload query: nonexistent-query-token" in completed.stdout
     assert "rows=0" in completed.stdout
+
+
+def test_perf_smoke_script_applies_custom_ls_limit(tmp_path) -> None:
+    """CLI should honor custom ls-limit in benchmark output row count."""
+    db_path = tmp_path / "perf_smoke_cli_ls_limit.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "3",
+            "--checkpoints",
+            "0",
+            "--ls-limit",
+            "1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "dock ls query:" in completed.stdout
+    assert "(rows=1)" in completed.stdout
+
+
+def test_perf_smoke_script_applies_custom_search_limit(tmp_path) -> None:
+    """CLI should honor custom search-limit in benchmark output row count."""
+    db_path = tmp_path / "perf_smoke_cli_search_limit.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "5",
+            "--search-limit",
+            "1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "dock search query:" in completed.stdout
+    assert "(rows=1)" in completed.stdout

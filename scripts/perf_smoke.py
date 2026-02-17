@@ -95,6 +95,18 @@ def parse_args() -> argparse.Namespace:
         default="search pipeline",
         help="Search query string used for benchmark lookup.",
     )
+    parser.add_argument(
+        "--ls-limit",
+        type=_positive_int_arg,
+        default=50,
+        help="Result limit used for harbor query benchmark.",
+    )
+    parser.add_argument(
+        "--search-limit",
+        type=_positive_int_arg,
+        default=20,
+        help="Result limit used for search query benchmark.",
+    )
     return parser.parse_args()
 
 
@@ -204,11 +216,11 @@ def main() -> int:
     seed_data(store, berth_count=args.berths, checkpoint_count=args.checkpoints)
 
     start_ls = time.perf_counter()
-    harbor_rows = store.list_harbor(limit=50)
+    harbor_rows = store.list_harbor(limit=args.ls_limit)
     elapsed_ls_ms = (time.perf_counter() - start_ls) * 1000
 
     start_search = time.perf_counter()
-    search_rows = store.search_checkpoints(args.search_query, limit=20)
+    search_rows = store.search_checkpoints(args.search_query, limit=args.search_limit)
     elapsed_search_ms = (time.perf_counter() - start_search) * 1000
 
     print(
