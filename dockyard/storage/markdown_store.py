@@ -12,6 +12,7 @@ SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
 LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
 CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
 SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|[-–—]|:|\+)\s*")
+STRUCTURAL_SEPARATOR_PATTERN = re.compile(r"^(?:[-*_]{3,}|`{3,}|~{3,})$")
 SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
     ("**", "**"),
     ("__", "__"),
@@ -222,6 +223,8 @@ def _normalize_numbered(lines: list[str]) -> list[str]:
         if not stripped:
             continue
         item = _strip_checklist_prefix(_extract_list_item_text(stripped))
+        if _is_structural_separator_line(item):
+            continue
         if item:
             results.append(item)
     return results
@@ -239,7 +242,11 @@ def _normalize_commands(lines: list[str]) -> list[str]:
             if len(command) < 2 or not command.endswith("`"):
                 continue
             command = command[1:-1].strip()
+            if not command or set(command) == {"`"}:
+                continue
         command = _strip_checklist_prefix(command)
+        if _is_structural_separator_line(command):
+            continue
         if command:
             results.append(command)
     return results
@@ -252,5 +259,12 @@ def _strip_checklist_prefix(item: str) -> str:
 
 def _extract_list_item_text(stripped_line: str) -> str:
     """Extract list-item payload text from a stripped markdown line."""
+    if STRUCTURAL_SEPARATOR_PATTERN.fullmatch(stripped_line):
+        return stripped_line
     match = LIST_ITEM_PATTERN.match(stripped_line)
     return (match.group(1) if match else stripped_line).strip()
+
+
+def _is_structural_separator_line(value: str) -> bool:
+    """Return whether text is a markdown structural separator/fence line."""
+    return bool(STRUCTURAL_SEPARATOR_PATTERN.fullmatch(value.strip()))
