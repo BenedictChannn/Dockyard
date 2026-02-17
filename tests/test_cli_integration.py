@@ -3897,6 +3897,7 @@ def test_no_subcommand_rejects_invalid_stale_flag(tmp_path: Path) -> None:
     failed = _run_dock(["--stale", "-1"], cwd=tmp_path, env=env, expect_code=2)
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "--stale must be >= 0." in output
+    assert "Traceback" not in output
 
 
 def test_no_subcommand_rejects_invalid_limit_flag(tmp_path: Path) -> None:
@@ -3907,6 +3908,7 @@ def test_no_subcommand_rejects_invalid_limit_flag(tmp_path: Path) -> None:
     failed = _run_dock(["--limit", "0"], cwd=tmp_path, env=env, expect_code=2)
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "--limit must be >= 1." in output
+    assert "Traceback" not in output
 
 
 def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
@@ -3917,6 +3919,7 @@ def test_no_subcommand_rejects_blank_tag_filter(tmp_path: Path) -> None:
     failed = _run_dock(["--tag", "   "], cwd=tmp_path, env=env, expect_code=2)
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "--tag must be a non-empty string." in output
+    assert "Traceback" not in output
 
 
 def test_no_subcommand_trims_tag_filter(git_repo: Path, tmp_path: Path) -> None:
