@@ -4527,6 +4527,96 @@ def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> Non
     assert "harbor-tag" in rows[0]["tags"]
 
 
+def test_harbor_alias_tag_filter_applies_before_limit(git_repo: Path, tmp_path: Path) -> None:
+    """Harbor alias should apply tag filtering before --limit truncation."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    base_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "harbor-limit-tagged",
+            "--decisions",
+            "tagged harbor baseline",
+            "--next-step",
+            "run harbor tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo tagged",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/harbor-tag-limit"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "harbor-limit-untagged",
+            "--decisions",
+            "newer untagged harbor row should be filtered before limit",
+            "--next-step",
+            "run harbor tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo untagged",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", base_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    rows = json.loads(_run_dock(["harbor", "--tag", "alpha", "--limit", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["objective"] == "harbor-limit-tagged"
+
+    output = _run_dock(["harbor", "--tag", "alpha", "--limit", "1"], cwd=tmp_path, env=env).stdout
+    assert base_branch in output
+    assert "feature/harbor-tag-limit" not in output
+    assert "No checkpoints yet." not in output
+    assert "Traceback" not in output
+
+
 def test_no_subcommand_defaults_to_harbor_inside_repo(
     git_repo: Path,
     tmp_path: Path,
