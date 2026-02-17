@@ -11,7 +11,7 @@ Repository identity.
 
 | Field | Type | Notes |
 |---|---|---|
-| `repo_id` | text (pk) | stable hash (remote URL preferred, path fallback) |
+| `repo_id` | text (pk) | stable hash (any configured remote URL preferred, path fallback) |
 | `name` | text | inferred from repo root dir |
 | `root_path` | text | absolute path |
 | `remote_url` | text nullable | optional |
