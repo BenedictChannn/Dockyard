@@ -5756,10 +5756,12 @@ def test_resume_unknown_branch_for_known_repo_is_actionable(
 
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_resume_commands_unknown_explicit_berth_branch_is_actionable(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    output_flag: str,
 ) -> None:
     """Resume commands should fail cleanly for unknown branch + explicit berth."""
     env = dict(os.environ)
@@ -5795,12 +5797,11 @@ def test_resume_commands_unknown_explicit_berth_branch_is_actionable(
         env=env,
     )
 
-    failed = _run_dock(
-        [command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "],
-        cwd=tmp_path,
-        env=env,
-        expect_code=2,
-    )
+    args = [command_name, f"  {git_repo.name}  ", "--branch", "  missing/branch  "]
+    if output_flag:
+        args.append(output_flag)
+
+    failed = _run_dock(args, cwd=tmp_path, env=env, expect_code=2)
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "No checkpoint found for the requested context." in output
     assert "Traceback" not in output
