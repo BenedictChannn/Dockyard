@@ -2681,6 +2681,32 @@ def test_bare_dock_command_with_tag_stale_flags_does_not_modify_repo(git_repo: P
     _assert_repo_clean(git_repo)
 
 
+def test_bare_dock_command_in_repo_with_missing_tag_limit_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Bare dock miss-filter+limit paths should remain read-only in repo cwd."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="bare dock in-repo miss-filter baseline",
+        decisions="seed checkpoint for callback in-repo no-match tag+limit coverage",
+        next_step="run bare dock from repo",
+        risks="none",
+        command="echo callback in-repo non-interference",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command("--tag", "missing-tag", "--limit", "1"), cwd=git_repo, env=env)
+    _run(_dockyard_command("--tag", "missing-tag", "--limit", "1", "--json"), cwd=git_repo, env=env)
+
+    _assert_repo_clean(git_repo)
+
+
 def test_bare_dock_command_outside_repo_with_missing_tag_limit_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
