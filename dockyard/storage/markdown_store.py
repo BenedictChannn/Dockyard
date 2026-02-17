@@ -166,11 +166,17 @@ def _normalize_section_heading(title: str) -> str:
     collapsed = re.sub(r"\s*#+\s*$", "", collapsed).rstrip()
     if collapsed.endswith(":"):
         collapsed = collapsed[:-1].rstrip()
-    for prefix, suffix in (("**", "**"), ("__", "__"), ("`", "`"), ("*", "*"), ("_", "_")):
-        if collapsed.startswith(prefix) and collapsed.endswith(suffix):
-            inner = collapsed[len(prefix) : len(collapsed) - len(suffix)].strip()
-            if inner:
-                collapsed = inner
+    wrappers = (("**", "**"), ("__", "__"), ("`", "`"), ("*", "*"), ("_", "_"))
+    while True:
+        changed = False
+        for prefix, suffix in wrappers:
+            if collapsed.startswith(prefix) and collapsed.endswith(suffix):
+                inner = collapsed[len(prefix) : len(collapsed) - len(suffix)].strip()
+                if inner:
+                    collapsed = inner
+                    changed = True
+                break
+        if not changed:
             break
     return re.sub(r"\s*/\s*", "/", collapsed)
 
