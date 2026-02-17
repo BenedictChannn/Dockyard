@@ -265,8 +265,10 @@ python3 scripts/perf_smoke.py --berths 200 --checkpoints 5000
 python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-target-ms 450
 # custom search workload query
 python3 scripts/perf_smoke.py --search-query "objective keyword"
+# custom row limits for harbor/search query paths
+python3 scripts/perf_smoke.py --ls-limit 25 --search-limit 10
 ```
 
 The perf smoke output includes the active search workload query for easier run
 to run comparison. The `--search-query` value must be non-empty after
-trimming.
+trimming. Query row limits must be greater than zero.
