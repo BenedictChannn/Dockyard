@@ -1847,8 +1847,13 @@ def test_bare_dock_invalid_flag_validation_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
-def test_resume_run_with_missing_berth_root_keeps_repo_clean(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run with stale berth root should fail without repo mutation."""
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_run_with_missing_berth_root_keeps_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Run-enabled resume commands should fail cleanly on stale berth roots."""
     env = _dockyard_env(tmp_path)
     dock_home = Path(env["DOCKYARD_HOME"])
 
@@ -1895,7 +1900,7 @@ def test_resume_run_with_missing_berth_root_keeps_repo_clean(git_repo: Path, tmp
 
     _assert_repo_clean(git_repo)
     completed = subprocess.run(
-        _dockyard_command("resume", git_repo.name, "--run"),
+        _dockyard_command(command_name, git_repo.name, "--run"),
         cwd=str(tmp_path),
         check=False,
         capture_output=True,
