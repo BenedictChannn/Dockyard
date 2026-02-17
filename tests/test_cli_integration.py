@@ -12091,6 +12091,88 @@ def test_search_tag_filter_applies_before_limit_json(
     assert rows[0]["objective"] == f"tbf-tagged-{command_name}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_filter_applies_before_limit_non_json(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search table output should apply tag filters before --limit truncation."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"tbn-tagged-{command_name}",
+            "--decisions",
+            "tagged baseline for table filter-before-limit semantics",
+            "--next-step",
+            "run table search tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo tagged",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"tbn-untagged-{command_name}",
+            "--decisions",
+            "newer untagged record should be filtered before limit in table mode",
+            "--next-step",
+            "run table search tag+limit",
+            "--risks",
+            "none",
+            "--command",
+            "echo untagged",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    output = _run_dock(
+        [command_name, "tbn-", "--tag", "alpha", "--limit", "1"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert f"tbn-tagged-{command_name}" in output
+    assert f"tbn-untagged-{command_name}" not in output
+    assert "No checkpoint matches found." not in output
+    assert "Traceback" not in output
+
+
 def test_search_alias_limit_applies_after_tag_filter_non_json(git_repo: Path, tmp_path: Path) -> None:
     """Alias search table output should honor --tag + --limit together."""
     env = dict(os.environ)
