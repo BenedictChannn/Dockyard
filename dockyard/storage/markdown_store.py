@@ -19,30 +19,38 @@ SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
     ("*", "*"),
     ("_", "_"),
 )
-SECTION_FIELD_MAP: dict[str, str] = {
+BASE_SECTION_FIELD_MAP: dict[str, str] = {
     "objective": "objective",
     "decisions/findings": "decisions",
     "decision/findings": "decisions",
-    "decisions findings": "decisions",
-    "decision findings": "decisions",
     "decisions/finding": "decisions",
     "decision/finding": "decisions",
-    "decisions finding": "decisions",
-    "decision finding": "decisions",
     "next steps": "next_steps",
     "next step": "next_steps",
     "next/steps": "next_steps",
     "next/step": "next_steps",
     "risks/review needed": "risks_review",
     "risk/review needed": "risks_review",
-    "risks review needed": "risks_review",
-    "risk review needed": "risks_review",
     "resume commands": "resume_commands",
     "resume command": "resume_commands",
     "resume/commands": "resume_commands",
     "resume/command": "resume_commands",
 }
 FREEFORM_SECTION_FIELDS: set[str] = {"objective", "decisions", "risks_review"}
+
+
+def _build_section_field_map() -> dict[str, str]:
+    """Build lookup map including slash and space-separated heading variants."""
+    section_map: dict[str, str] = {}
+    for heading, field in BASE_SECTION_FIELD_MAP.items():
+        normalized_heading = heading.lower()
+        section_map[normalized_heading] = field
+        if "/" in normalized_heading:
+            section_map[normalized_heading.replace("/", " ")] = field
+    return section_map
+
+
+SECTION_FIELD_MAP = _build_section_field_map()
 
 
 def _safe_branch(branch: str) -> str:
