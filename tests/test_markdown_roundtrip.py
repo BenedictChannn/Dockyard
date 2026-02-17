@@ -295,6 +295,45 @@ echo valid-plain
     ]
 
 
+def test_markdown_parser_ignores_structural_separators_in_bulleted_resume_lines() -> None:
+    """Parser should ignore separator/fence markers in bulleted commands."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks/Review Needed
+None
+## Resume Commands
+- ---
+- echo valid-plain
+- ```
+- `echo valid-quoted`
+- ~~~
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["resume_commands"] == [
+        "echo valid-plain",
+        "echo valid-quoted",
+    ]
+
+
 def test_markdown_parser_ignores_malformed_backtick_command_bullets() -> None:
     """Parser should ignore malformed backtick command bullets."""
     markdown = """# Checkpoint
@@ -421,6 +460,45 @@ Refine parser edge-case coverage
 ```
 Document normalization behavior
 ~~~
+## Risks/Review Needed
+None
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["next_steps"] == [
+        "Refine parser edge-case coverage",
+        "Document normalization behavior",
+    ]
+
+
+def test_markdown_parser_ignores_structural_separators_in_bulleted_next_steps() -> None:
+    """Parser should ignore separator/fence markers in bulleted next steps."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+- ---
+- Refine parser edge-case coverage
+- ```
+- Document normalization behavior
+- ~~~
 ## Risks/Review Needed
 None
 ## Resume Commands
