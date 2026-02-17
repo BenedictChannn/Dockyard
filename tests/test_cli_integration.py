@@ -5405,6 +5405,68 @@ def test_resume_alias_supports_handoff_and_json_for_explicit_berth(
     assert payload["objective"] == "Resume alias handoff/json objective"
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_commands_support_handoff_and_json_for_explicit_berth_branch_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Resume commands should support berth+branch handoff/json outside repos."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+    objective = f"{command_name} berth+branch handoff/json objective"
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            objective,
+            "--decisions",
+            "Validate berth+branch handoff/json parity outside repo context",
+            "--next-step",
+            "run resume command from outside repo with berth+branch",
+            "--risks",
+            "none",
+            "--command",
+            "echo alias-resume-branch",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    handoff = _run_dock(
+        [command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--handoff"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert objective in handoff
+    assert "### Dockyard Handoff" in handoff
+
+    payload = json.loads(
+        _run_dock(
+            [command_name, f"  {git_repo.name}  ", "--branch", f"  {branch}  ", "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert payload["project_name"] == git_repo.name
+    assert payload["branch"] == branch
+    assert payload["objective"] == objective
+
+
 def test_resume_branch_flag_selects_requested_branch(
     git_repo: Path,
     tmp_path: Path,
