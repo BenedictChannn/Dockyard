@@ -162,10 +162,11 @@ Parser normalization notes:
   (`Risks & Review Needed`, `Risk & Review Needed`).
 - Risks heading aliases also accept space-separated forms
   (`Risks Review Needed`, `Risk Review Needed`).
-- Symbolic heading delimiters (`/`, `-`, `&`, `:`) are normalized
+- Symbolic heading delimiters (`/`, `-`, `&`, `:`, `+`) are normalized
   equivalently,
   including tight forms without surrounding spaces (for example,
-  `Decision&Finding`, `Risks-Review Needed`, `Decision:Finding`).
+  `Decision&Finding`, `Risks-Review Needed`, `Decision:Finding`,
+  `Decision+Finding`).
 - Unicode dash separators (`–`, `—`) are also normalized in heading labels
   (for example, `Next–Steps`, `Decision—Finding`).
 - This delimiter normalization also applies to list-section headings such as
