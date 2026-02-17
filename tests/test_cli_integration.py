@@ -4454,6 +4454,8 @@ def test_ls_json_handles_long_objective_text(git_repo: Path, tmp_path: Path) -> 
     assert long_objective in [row["objective"] for row in rows]
     harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
     assert long_objective in [row["objective"] for row in harbor_rows]
+    callback_rows = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
+    assert long_objective in [row["objective"] for row in callback_rows]
 
 
 def test_ls_json_preserves_unicode_objective(git_repo: Path, tmp_path: Path) -> None:
@@ -4496,6 +4498,8 @@ def test_ls_json_preserves_unicode_objective(git_repo: Path, tmp_path: Path) -> 
     assert unicode_objective in [row["objective"] for row in rows]
     harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
     assert unicode_objective in [row["objective"] for row in harbor_rows]
+    callback_rows = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
+    assert unicode_objective in [row["objective"] for row in callback_rows]
 
 
 def test_ls_json_preserves_multiline_objective(git_repo: Path, tmp_path: Path) -> None:
@@ -4538,6 +4542,8 @@ def test_ls_json_preserves_multiline_objective(git_repo: Path, tmp_path: Path) -
     assert multiline_objective in [row["objective"] for row in rows]
     harbor_rows = json.loads(_run_dock(["harbor", "--json"], cwd=tmp_path, env=env).stdout)
     assert multiline_objective in [row["objective"] for row in harbor_rows]
+    callback_rows = json.loads(_run_dock(["--json"], cwd=tmp_path, env=env).stdout)
+    assert multiline_objective in [row["objective"] for row in callback_rows]
 
 
 def test_harbor_alias_supports_tag_filter(git_repo: Path, tmp_path: Path) -> None:
