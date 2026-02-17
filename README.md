@@ -261,4 +261,6 @@ python3 scripts/perf_smoke.py
 python3 scripts/perf_smoke.py --enforce-targets
 # custom dataset sizing (`--berths` must be >0, `--checkpoints` >=0)
 python3 scripts/perf_smoke.py --berths 200 --checkpoints 5000
+# custom latency thresholds (milliseconds)
+python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-target-ms 450
 ```
