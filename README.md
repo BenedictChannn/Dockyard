@@ -129,6 +129,8 @@ Useful flags:
 - If the persisted berth root path for `--run` is missing, Dockyard prints an
   actionable error instead of a traceback (including BERTH + `--branch`
   variants).
+- If a BERTH/`--branch` selection has no checkpoint, Dockyard reports an
+  actionable context-not-found error (no traceback).
 - BERTH argument values are trimmed; blank BERTH values are rejected.
 - `--branch` values are trimmed; blank values are rejected.
 

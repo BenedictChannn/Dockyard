@@ -116,6 +116,8 @@ Notes:
 - If the persisted berth root path for `--run` no longer exists, Dockyard
   fails with an actionable error instead of a traceback (including BERTH +
   `--branch` scoped invocations).
+- If BERTH/`--branch` context has no checkpoint, Dockyard reports
+  `No checkpoint found for the requested context.` without traceback noise.
 - BERTH argument must be non-empty when provided.
 - `--branch` must be non-empty when provided.
 
