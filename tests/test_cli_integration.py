@@ -13368,6 +13368,104 @@ def test_search_tag_repo_filter_semantics_non_json(git_repo: Path, tmp_path: Pat
     assert "Traceback" not in filtered
 
 
+def test_search_tag_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
+    """Search should honor combined tag+branch filters in table mode."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    default_branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "ptb-default",
+            "--decisions",
+            "default branch checkpoint for primary tag+branch filtering",
+            "--next-step",
+            "run primary tag+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo default",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/primary-tag-branch-filter"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "ptb-feature",
+            "--decisions",
+            "feature branch checkpoint for primary tag+branch filtering",
+            "--next-step",
+            "run primary tag+branch filter",
+            "--risks",
+            "none",
+            "--command",
+            "echo feature",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    subprocess.run(
+        ["git", "checkout", default_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    filtered = _run_dock(
+        [
+            "search",
+            "ptb",
+            "--tag",
+            "alpha",
+            "--branch",
+            "feature/primary-tag-branch-filter",
+        ],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "ptb-feature" in filtered
+    assert "ptb-default" not in filtered
+    assert "Traceback" not in filtered
+
+
 def test_search_tag_repo_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
