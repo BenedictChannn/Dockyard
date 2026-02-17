@@ -7233,19 +7233,24 @@ def test_review_open_shows_missing_checkpoint_notice(
     assert "status: missing from index" in opened.stdout
 
 
-def test_review_open_displays_file_list(git_repo: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_displays_file_list(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
     """Review open output should include associated file paths."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Review file display baseline",
+            f"Review file display baseline ({command_name})",
             "--decisions",
             "Create review with file metadata",
             "--next-step",
