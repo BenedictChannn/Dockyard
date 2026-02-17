@@ -3781,6 +3781,19 @@ def test_no_subcommand_defaults_to_harbor(git_repo: Path, tmp_path: Path) -> Non
     assert "Dockyard Harbor" in result.stdout
 
 
+def test_root_help_includes_no_subcommand_ls_flags(tmp_path: Path) -> None:
+    """Root help should advertise ls-style flags for bare callback usage."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["--help"], cwd=tmp_path, env=env)
+    help_text = result.stdout
+    assert "--stale" in help_text
+    assert "--tag" in help_text
+    assert "--limit" in help_text
+    assert "--json" in help_text
+
+
 def test_no_subcommand_supports_ls_flags(git_repo: Path, tmp_path: Path) -> None:
     """Bare dock invocation should honor ls-style filter/output flags."""
     env = dict(os.environ)
