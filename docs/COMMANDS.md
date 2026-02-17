@@ -160,6 +160,8 @@ Search checkpoint objectives, decisions, next steps, and risks.
 ```bash
 python3 -m dockyard search "<query>"
 python3 -m dockyard search "<query>" --json
+python3 -m dockyard search "<query>" --tag backend --repo my_repo
+python3 -m dockyard search "<query>" --tag backend --repo my_repo --branch feature/workstream
 python3 -m dockyard search "<query>" --repo my_repo --tag backend --json
 python3 -m dockyard search "<query>" --tag backend --branch feature/workstream --json
 python3 -m dockyard search "<query>" --tag backend --repo my_repo --branch feature/workstream --json

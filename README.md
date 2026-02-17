@@ -161,6 +161,7 @@ Bare callback validation mirrors `ls` constraints (`--stale >= 0`,
 
 ```bash
 python3 -m dockyard search "migration"
+python3 -m dockyard search "search indexing" --tag backend --repo <repo_id|berth_name>
 python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --tag mvp
 python3 -m dockyard search "auth" --json
 python3 -m dockyard search "auth" --tag backend --branch feature/workstream --json
