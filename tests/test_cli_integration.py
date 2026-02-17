@@ -8126,6 +8126,135 @@ def test_review_add_accepts_berth_name_override(
     assert "berth_name_override" in listed
 
 
+def test_review_add_prefers_repo_id_over_colliding_berth_name(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review add should resolve exact repo-id before colliding berth names."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    branch = _git_current_branch(git_repo)
+
+    other_repo = tmp_path / "review-collision-other"
+    other_repo.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "dockyard@example.com"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Dockyard Test"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:org/review-other.git"],
+        cwd=str(other_repo),
+        check=True,
+        capture_output=True,
+    )
+    (other_repo / "README.md").write_text("seed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=str(other_repo), check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=str(other_repo), check=True, capture_output=True)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(other_repo),
+            "--no-prompt",
+            "--objective",
+            "review-collision-other",
+            "--decisions",
+            "other berth setup for review override collision test",
+            "--next-step",
+            "add review using repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo other",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=other_repo,
+        env=env,
+    )
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "review-collision-target",
+            "--decisions",
+            "target berth setup for review override collision test",
+            "--next-step",
+            "add review using repo id",
+            "--risks",
+            "none",
+            "--command",
+            "echo target",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = tmp_path / ".dockyard_data" / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    target_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(git_repo),),
+    ).fetchone()[0]
+    other_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(other_repo),),
+    ).fetchone()[0]
+    conn.execute("UPDATE berths SET name = ? WHERE repo_id = ?", (target_repo_id, other_repo_id))
+    conn.commit()
+    conn.close()
+
+    _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            "review_repo_id_collision",
+            "--severity",
+            "low",
+            "--repo",
+            target_repo_id,
+            "--branch",
+            branch,
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    listed = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert f"{target_repo_id}/{branch}" in listed
+    assert f"{other_repo_id}/{branch}" not in listed
+    assert "review_repo_id_collision" in listed
+
+
 def test_save_repo_id_uses_non_origin_remote_when_origin_missing(
     git_repo: Path,
     tmp_path: Path,
