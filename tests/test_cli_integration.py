@@ -13787,6 +13787,9 @@ def test_ls_stale_handles_naive_updated_timestamp(git_repo: Path, tmp_path: Path
     harbor_rows = json.loads(_run_dock(["harbor", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(harbor_rows) == 1
     assert harbor_rows[0]["branch"] == branch
+    callback_rows = json.loads(_run_dock(["--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(callback_rows) == 1
+    assert callback_rows[0]["branch"] == branch
 
 
 def test_ls_stale_skips_invalid_updated_timestamp(git_repo: Path, tmp_path: Path) -> None:
@@ -13839,6 +13842,8 @@ def test_ls_stale_skips_invalid_updated_timestamp(git_repo: Path, tmp_path: Path
     assert ls_rows == []
     harbor_rows = json.loads(_run_dock(["harbor", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
     assert harbor_rows == []
+    callback_rows = json.loads(_run_dock(["--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert callback_rows == []
 
 
 def test_ls_stale_skips_non_string_updated_timestamp(git_repo: Path, tmp_path: Path) -> None:
@@ -13891,6 +13896,8 @@ def test_ls_stale_skips_non_string_updated_timestamp(git_repo: Path, tmp_path: P
     assert ls_rows == []
     harbor_rows = json.loads(_run_dock(["harbor", "--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
     assert harbor_rows == []
+    callback_rows = json.loads(_run_dock(["--stale", "1", "--json"], cwd=tmp_path, env=env).stdout)
+    assert callback_rows == []
 
 
 def test_ls_json_limit_and_tag_combination(git_repo: Path, tmp_path: Path) -> None:
