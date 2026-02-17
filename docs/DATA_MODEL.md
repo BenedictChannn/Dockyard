@@ -127,8 +127,9 @@ Parser normalization notes:
   (for example, both `- step` and `-step` are accepted).
 - `next steps` also accepts plain non-bulleted lines as list items in manually
   edited checkpoint files.
-- Structural markdown separator/fence lines (`---`, `***`, `___`, ``````, `~~~`)
-  are ignored within `next steps` (including longer 4+ marker variants).
+- Structural markdown separator/fence lines (`---`, `***`, `___`, ``````,
+  `~~~`, and language-tagged fences like `````bash`) are ignored within
+  `next steps` (including longer 4+ marker variants).
 - Next-step parser strips checklist prefixes from markdown list entries
   (for example, `- [ ] step` and `1. [x] step` normalize to `step`).
 - Checklist prefix stripping for next steps requires separator spacing
@@ -144,8 +145,9 @@ Parser normalization notes:
   edited checkpoint files.
 - Malformed backtick command lines are ignored for both bulleted and plain-line
   resume command entries.
-- Structural markdown separator/fence lines (`---`, `***`, `___`, ``````, `~~~`)
-  are ignored within `resume commands` (including longer 4+ marker variants).
+- Structural markdown separator/fence lines (`---`, `***`, `___`, ``````,
+  `~~~`, and language-tagged fences like `````bash`) are ignored within
+  `resume commands` (including longer 4+ marker variants).
 - Resume command parser strips checklist prefixes only when they include
   separator spacing (for example, `- [x] cmd` -> `cmd`; `- [x]cmd` remains
   literal).
