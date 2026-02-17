@@ -165,6 +165,8 @@ Parser normalization notes:
 - Symbolic heading delimiters (`/`, `-`, `&`) are normalized equivalently,
   including tight forms without surrounding spaces (for example,
   `Decision&Finding`, `Risks-Review Needed`).
+- This delimiter normalization also applies to list-section headings such as
+  `Next-Steps` and `Resume&Commands`.
 - Known heading labels may be wrapped with simple markdown emphasis markers
   (`**...**`, `__...__`, `` `...` ``, `*...*`, `_..._`).
 - Nested combinations of these wrappers are also normalized (for example,
