@@ -8514,6 +8514,81 @@ def test_review_default_command_supports_all_flag(git_repo: Path, tmp_path: Path
     assert "done" in with_all_subcommand
 
 
+def test_review_listing_tie_breaks_by_recency_within_same_severity(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Review listings should order same-severity items by newest timestamp."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Review recency tie-break baseline",
+            "--decisions",
+            "Ensure same-severity reviews sort by recency",
+            "--next-step",
+            "list review items",
+            "--risks",
+            "none",
+            "--command",
+            "echo review",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    created_older = _run_dock(
+        ["review", "add", "--reason", "recency_older", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+    older_match = re.search(r"rev_[a-f0-9]+", created_older.stdout)
+    assert older_match is not None
+    older_id = older_match.group(0)
+
+    created_newer = _run_dock(
+        ["review", "add", "--reason", "recency_newer", "--severity", "med"],
+        cwd=git_repo,
+        env=env,
+    )
+    newer_match = re.search(r"rev_[a-f0-9]+", created_newer.stdout)
+    assert newer_match is not None
+    newer_id = newer_match.group(0)
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE review_items SET created_at = ? WHERE id = ?", ("2000-01-01T00:00:00+00:00", older_id))
+    conn.execute("UPDATE review_items SET created_at = ? WHERE id = ?", ("2005-01-01T00:00:00+00:00", newer_id))
+    conn.commit()
+    conn.close()
+
+    default_output = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    list_output = _run_dock(["review", "list"], cwd=tmp_path, env=env).stdout
+
+    default_ids = re.findall(r"rev_[a-f0-9]+", default_output)
+    list_ids = re.findall(r"rev_[a-f0-9]+", list_output)
+    assert newer_id in default_ids and older_id in default_ids
+    assert newer_id in list_ids and older_id in list_ids
+    assert default_ids.index(newer_id) < default_ids.index(older_id)
+    assert list_ids.index(newer_id) < list_ids.index(older_id)
+
+
 def test_review_list_subcommand_matches_default_listing(git_repo: Path, tmp_path: Path) -> None:
     """`review list` should mirror default `review` open-item listing."""
     env = dict(os.environ)
