@@ -700,6 +700,42 @@ Risk text
     assert parsed["resume_commands"] == ["pytest -q"]
 
 
+def test_markdown_parser_accepts_hyphenated_risks_heading_alias() -> None:
+    """Parser should accept `Risks - Review Needed` heading alias."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+## Risks - Review Needed
+Risk text
+## Resume Commands
+- `pytest -q`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["objective"] == "Objective text"
+    assert parsed["decisions"] == "Decision text"
+    assert parsed["next_steps"] == ["Keep moving"]
+    assert parsed["risks_review"] == "Risk text"
+    assert parsed["resume_commands"] == ["pytest -q"]
+
+
 def test_markdown_parser_accepts_wrapped_markdown_heading_labels() -> None:
     """Parser should resolve known headings wrapped in basic markdown markup."""
     markdown = """# Checkpoint
@@ -824,6 +860,43 @@ Risk text
 ## Resume Commands
 - `echo first`
 ## Internal command note
+- `echo should-not-parse`
+## Auto-captured Git Evidence
+`git status --porcelain`: clean
+`head`: abc (subject)
+`recent commits`: (none)
+`diff stat`: (no diff)
+`touched files`: (none)
+## Verification Status
+- tests_run: false
+- tests_command: none
+- tests_timestamp: none
+- build_ok: false
+- lint_ok: false
+- smoke_ok: false
+"""
+    parsed = parse_checkpoint_markdown(markdown)
+
+    assert parsed["next_steps"] == ["Keep moving"]
+    assert parsed["resume_commands"] == ["echo first"]
+
+
+def test_markdown_parser_stops_list_capture_on_deeper_unknown_headings() -> None:
+    """Unknown level-3+ headings should terminate list-section parsing."""
+    markdown = """# Checkpoint
+## Objective
+Objective text
+## Decisions/Findings
+Decision text
+## Next Steps
+1. Keep moving
+### Internal next-step note
+2. Should not be parsed
+## Risks/Review Needed
+Risk text
+## Resume Commands
+- `echo first`
+#### Internal command note
 - `echo should-not-parse`
 ## Auto-captured Git Evidence
 `git status --porcelain`: clean
