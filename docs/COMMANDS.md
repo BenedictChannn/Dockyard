@@ -199,7 +199,7 @@ No-match semantics are unchanged when `--limit` is also supplied alongside
 those filters.
 Queries that contain FTS parser-sensitive syntax (for example `security/path`)
 automatically fall back to parser-safe matching while preserving the same
-filter semantics.
+filter semantics (including when `--limit` is combined with filters).
 
 ### Options
 

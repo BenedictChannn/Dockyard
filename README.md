@@ -203,6 +203,7 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # handled with parser-safe fallback matching
 # parser-safe fallback keeps --tag/--repo/--branch filter semantics in both
 # table and --json output modes
+# parser-safe fallback also preserves those semantics when --limit is present
 ```
 
 ### 5) Review queue
