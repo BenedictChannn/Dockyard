@@ -7118,7 +7118,12 @@ def test_undock_alias_supports_handoff_and_json_for_explicit_berth(
     assert payload["objective"] == "Undock handoff/json objective"
 
 
-def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_review_open_shows_associated_checkpoint(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
     """Auto-created review should link back to associated checkpoint details."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
@@ -7129,12 +7134,12 @@ def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path)
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Trigger risky review linkage",
+            f"Trigger risky review linkage ({command_name})",
             "--decisions",
             "Touch security path to create heuristic review",
             "--next-step",
@@ -7161,7 +7166,7 @@ def test_review_open_shows_associated_checkpoint(git_repo: Path, tmp_path: Path)
     assert "Review Item" in open_result.stdout
     assert "checkpoint_id: cp_" in open_result.stdout
     assert "Associated Checkpoint" in open_result.stdout
-    assert "Trigger risky review linkage" in open_result.stdout
+    assert f"Trigger risky review linkage ({command_name})" in open_result.stdout
 
 
 def test_review_open_shows_missing_checkpoint_notice(git_repo: Path, tmp_path: Path) -> None:
