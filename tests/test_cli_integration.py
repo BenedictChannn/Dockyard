@@ -13619,6 +13619,84 @@ def test_dashboard_paths_map_short_status_token(
     assert json_rows[0]["status"] == " y "
 
 
+@pytest.mark.parametrize(
+    ("status_value", "expected_table_fragment"),
+    [
+        ("  paused  ", "paused"),
+        ("paused\nreview", "paused review"),
+    ],
+    ids=["trimmed_unknown_status", "multiline_unknown_status"],
+)
+@pytest.mark.parametrize(
+    ("command_prefix", "label"),
+    [
+        (["ls"], "ls"),
+        (["harbor"], "harbor"),
+        ([], "callback"),
+    ],
+)
+def test_dashboard_paths_normalize_unknown_status_text(
+    git_repo: Path,
+    tmp_path: Path,
+    status_value: str,
+    expected_table_fragment: str,
+    command_prefix: list[str],
+    label: str,
+) -> None:
+    """Dashboard command paths should normalize unknown status text in tables."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    branch = _git_current_branch(git_repo)
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"Dashboard {label} normalized unknown status baseline",
+            "--decisions",
+            "Normalize unknown status text across dashboard paths",
+            "--next-step",
+            "run dashboard paths",
+            "--risks",
+            "none",
+            "--command",
+            "echo dashboard",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    db_path = dock_home / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE slips SET status = ? WHERE branch = ?",
+        (status_value, branch),
+    )
+    conn.commit()
+    conn.close()
+
+    output = _run_dock(command_prefix, cwd=tmp_path, env=env).stdout
+    assert expected_table_fragment in output
+    assert "Traceback" not in output
+
+    json_rows = json.loads(_run_dock([*command_prefix, "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(json_rows) == 1
+    assert json_rows[0]["status"] == status_value
+
+
 def test_harbor_alias_compacts_multiline_branch_text(git_repo: Path, tmp_path: Path) -> None:
     """Harbor alias should compact multiline branch values in table output."""
     env = dict(os.environ)
