@@ -250,6 +250,8 @@ python3 -m dockyard review open <review_id>
 `review open` displays review metadata plus associated checkpoint details (if
 available), including creation timestamp, checkpoint id, and any attached file
 paths.
+This includes review items created from checkpoints captured via `save`, `s`,
+or `dock`.
 Blank metadata fields are rendered with explicit fallback text where
 applicable (`(unknown)` / `(none)`), and multiline values are compacted to
 single-line text (including `checkpoint_id`, `notes`, and `files` fields).

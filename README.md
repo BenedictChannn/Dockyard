@@ -200,6 +200,8 @@ python3 -m dockyard review done <id>
 Review list/open outputs compact multiline fields into single-line text and use
 explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
 (including checkpoint id, notes, and file fields in `review open`).
+Associated checkpoint details in `review open` include reviews sourced from
+checkpoints captured via `save`, `s`, and `dock`.
 `review add` ignores blank `--file` entries and de-duplicates exact repeats.
 Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
 treated as missing.
