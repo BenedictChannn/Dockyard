@@ -6633,7 +6633,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Alias branch filter objective default",
+            "asbf-default",
             "--decisions",
             "default branch checkpoint",
             "--next-step",
@@ -6668,7 +6668,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Alias branch filter objective feature",
+            "asbf-feature",
             "--decisions",
             "feature branch checkpoint",
             "--next-step",
@@ -6699,7 +6699,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
 
     rows = json.loads(
         _run_dock(
-            ["f", "Alias branch filter objective", "--branch", "feature/alias-branch-filter", "--json"],
+            ["f", "asbf", "--branch", "feature/alias-branch-filter", "--json"],
             cwd=tmp_path,
             env=env,
         ).stdout
@@ -6708,7 +6708,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     assert rows[0]["branch"] == "feature/alias-branch-filter"
     default_rows = json.loads(
         _run_dock(
-            ["f", "Alias branch filter objective", "--branch", default_branch, "--json"],
+            ["f", "asbf", "--branch", default_branch, "--json"],
             cwd=tmp_path,
             env=env,
         ).stdout
@@ -6716,7 +6716,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     assert len(default_rows) == 1
     assert default_rows[0]["branch"] == default_branch
     missing_branch_result = _run_dock(
-        ["f", "Alias branch filter objective", "--branch", "missing/branch", "--json"],
+        ["f", "asbf", "--branch", "missing/branch", "--json"],
         cwd=tmp_path,
         env=env,
     )
@@ -6726,7 +6726,7 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
         _run_dock(
             [
                 "f",
-                "Alias branch filter objective",
+                "asbf",
                 "--repo",
                 git_repo.name,
                 "--branch",
@@ -6739,6 +6739,14 @@ def test_search_alias_supports_branch_filter(git_repo: Path, tmp_path: Path) -> 
     )
     assert len(combo_rows) == 1
     assert combo_rows[0]["branch"] == "feature/alias-branch-filter"
+    feature_table = _run_dock(
+        ["f", "asbf", "--branch", "feature/alias-branch-filter"],
+        cwd=tmp_path,
+        env=env,
+    ).stdout
+    assert "asbf-feature" in feature_table
+    assert "asbf-default" not in feature_table
+    assert "Traceback" not in feature_table
 
 
 def test_search_alias_repo_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:
