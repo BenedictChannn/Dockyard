@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -541,3 +542,62 @@ def test_perf_smoke_script_applies_custom_search_limit(tmp_path) -> None:
     assert "dock search query:" in completed.stdout
     assert "search query limit: 1" in completed.stdout
     assert "(rows=1)" in completed.stdout
+
+
+def test_perf_smoke_script_emits_json_output(tmp_path) -> None:
+    """Perf smoke script should emit machine-readable metrics with --json."""
+    db_path = tmp_path / "perf_smoke_cli_json.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    payload = json.loads(completed.stdout)
+    assert payload["ls"]["limit"] == 50
+    assert payload["search"]["limit"] == 20
+    assert payload["search"]["query"] == "search pipeline"
+    assert isinstance(payload["targets_met"], bool)
+
+
+def test_perf_smoke_script_json_enforce_targets_failure_exit(tmp_path) -> None:
+    """Perf smoke script should fail with --json when targets are not met."""
+    db_path = tmp_path / "perf_smoke_cli_json_strict.sqlite"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db-path",
+            str(db_path),
+            "--berths",
+            "1",
+            "--checkpoints",
+            "0",
+            "--json",
+            "--enforce-targets",
+            "--ls-target-ms",
+            "0",
+            "--search-target-ms",
+            "0",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    payload = json.loads(completed.stdout)
+    assert payload["enforce_targets"] is True
+    assert payload["targets_met"] is False

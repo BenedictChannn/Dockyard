@@ -11,6 +11,7 @@ measured timings exceed PRD targets.
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -114,6 +115,11 @@ def parse_args() -> argparse.Namespace:
         type=_positive_int_arg,
         default=20,
         help="Result limit used for search query benchmark.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit benchmark results as JSON payload.",
     )
     return parser.parse_args()
 
@@ -232,6 +238,34 @@ def main() -> int:
     start_search = time.perf_counter()
     search_rows = store.search_checkpoints(args.search_query, limit=args.search_limit)
     elapsed_search_ms = (time.perf_counter() - start_search) * 1000
+    targets_met = _targets_met(
+        elapsed_ls_ms=elapsed_ls_ms,
+        elapsed_search_ms=elapsed_search_ms,
+        ls_target_ms=args.ls_target_ms,
+        search_target_ms=args.search_target_ms,
+    )
+
+    payload = {
+        "ls": {
+            "elapsed_ms": round(elapsed_ls_ms, 2),
+            "rows": len(harbor_rows),
+            "limit": args.ls_limit,
+            "target_ms": args.ls_target_ms,
+        },
+        "search": {
+            "elapsed_ms": round(elapsed_search_ms, 2),
+            "rows": len(search_rows),
+            "limit": args.search_limit,
+            "target_ms": args.search_target_ms,
+            "query": args.search_query,
+        },
+        "targets_met": targets_met,
+        "enforce_targets": args.enforce_targets,
+    }
+
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0 if (not args.enforce_targets or targets_met) else 1
 
     print(
         "dock ls query: "
@@ -250,12 +284,7 @@ def main() -> int:
     if not args.enforce_targets:
         return 0
 
-    if not _targets_met(
-        elapsed_ls_ms=elapsed_ls_ms,
-        elapsed_search_ms=elapsed_search_ms,
-        ls_target_ms=args.ls_target_ms,
-        search_target_ms=args.search_target_ms,
-    ):
+    if not targets_met:
         return 1
     return 0
 
