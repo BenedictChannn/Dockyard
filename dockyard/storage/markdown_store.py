@@ -11,7 +11,7 @@ from dockyard.models import Checkpoint
 SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
 LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
 CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
-SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|-|:)\s*")
+SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|[-–—]|:)\s*")
 SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
     ("**", "**"),
     ("__", "__"),
