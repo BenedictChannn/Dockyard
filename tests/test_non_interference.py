@@ -187,6 +187,7 @@ SEARCH_BRANCH_PLACEHOLDER = "{base_branch}"
 DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
     DashboardReadVariantMeta(()),
     DashboardReadVariantMeta(("--json",)),
+    DashboardReadVariantMeta(("--tag", "missing-tag", "--json")),
     DashboardReadVariantMeta(("--tag", "baseline", "--limit", "1", "--json")),
     DashboardReadVariantMeta(("--limit", "1", "--json")),
     DashboardReadVariantMeta(("--stale", "0", "--json")),
@@ -194,6 +195,10 @@ DASHBOARD_READ_VARIANTS: tuple[DashboardReadVariantMeta, ...] = (
     DashboardReadVariantMeta(("--tag", "baseline", "--stale", "0", "--limit", "1", "--json")),
     DashboardReadVariantMeta(
         ("--tag", "baseline", "--limit", "1"),
+        include_only_when_requested=True,
+    ),
+    DashboardReadVariantMeta(
+        ("--tag", "missing-tag"),
         include_only_when_requested=True,
     ),
     DashboardReadVariantMeta(
