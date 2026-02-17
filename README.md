@@ -259,4 +259,6 @@ Performance smoke script:
 python3 scripts/perf_smoke.py
 # optional target enforcement
 python3 scripts/perf_smoke.py --enforce-targets
+# custom dataset sizing (`--berths` must be >0, `--checkpoints` >=0)
+python3 scripts/perf_smoke.py --berths 200 --checkpoints 5000
 ```
