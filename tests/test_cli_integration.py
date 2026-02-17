@@ -7226,6 +7226,67 @@ def test_save_repo_id_fallback_remote_ordering_is_case_insensitive(
     assert payload["repo_id"] == hashlib.sha1(alpha_url.encode("utf-8")).hexdigest()[:16]
 
 
+def test_save_repo_id_fallback_remote_case_collision_ordering_is_deterministic(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save/resume should deterministically resolve case-colliding remotes."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    subprocess.run(
+        ["git", "remote", "remove", "origin"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    alpha_upper_url = "https://example.com/team/alpha-upper.git"
+    subprocess.run(
+        ["git", "remote", "add", "alpha", "https://example.com/team/alpha-lower.git"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "Alpha", alpha_upper_url],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Repo id case-collision fallback objective",
+            "--decisions",
+            "Use deterministic ordering for case-colliding remote names",
+            "--next-step",
+            "assert deterministic case-collision ordering",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["repo_id"] == hashlib.sha1(alpha_upper_url.encode("utf-8")).hexdigest()[:16]
+
+
 def test_review_add_accepts_trimmed_repo_and_branch_override(
     git_repo: Path,
     tmp_path: Path,
