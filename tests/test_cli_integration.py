@@ -4755,6 +4755,52 @@ def test_resume_by_berth_from_outside_repo_preserves_top_lines_contract(
 
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_by_trimmed_berth_from_outside_repo_preserves_top_lines_contract(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Trimmed explicit-berth resume paths should keep top-lines contract outside repos."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} outside-repo trimmed berth top-lines objective",
+            "--decisions",
+            "Validate trimmed explicit berth top-lines contract outside repo context",
+            "--next-step",
+            "Resume by trimmed berth from outside repo",
+            "--next-step",
+            "Continue work",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock([command_name, f"  {git_repo.name}  "], cwd=tmp_path, env=env)
+    _assert_resume_top_lines_contract(result.stdout)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 def test_resume_by_berth_branch_from_outside_repo_preserves_top_lines_contract(
     git_repo: Path,
     tmp_path: Path,
