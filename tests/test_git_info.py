@@ -253,3 +253,24 @@ def test_remote_url_returns_none_for_blank_remote_names(
     monkeypatch.setattr(git_info_module, "_run_git", _run_git_with_blank_remote_names)
 
     assert git_info_module._remote_url(Path("/tmp/repo")) is None
+
+
+def test_remote_url_returns_none_when_only_origin_is_blank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Remote resolver should return None when origin exists but URL is blank."""
+    origin_lookup_count = 0
+
+    def _run_git_origin_blank_only(args: list[str], cwd: Path) -> str:
+        nonlocal origin_lookup_count
+        if args == ["config", "--get", "remote.origin.url"]:
+            origin_lookup_count += 1
+            return ""
+        if args == ["remote"]:
+            return "origin"
+        raise AssertionError(f"Unexpected git args: {args}")
+
+    monkeypatch.setattr(git_info_module, "_run_git", _run_git_origin_blank_only)
+
+    assert git_info_module._remote_url(Path("/tmp/repo")) is None
+    assert origin_lookup_count == 1
