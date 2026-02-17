@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from dockyard.config import ReviewHeuristicsConfig
 from dockyard.models import Checkpoint, VerificationState
 from dockyard.services.reviews import build_review_item, review_triggers, severity_from_triggers
@@ -74,6 +76,36 @@ def test_status_red_for_risky_paths_without_tests_even_with_open_reviews() -> No
         verification=VerificationState(tests_run=False, build_ok=True),
     )
     assert compute_slip_status(cp, open_review_count=2, has_high_open_review=False) == "red"
+
+
+@pytest.mark.parametrize(
+    "touched_path",
+    [
+        "auth/login.py",
+        "infra/deploy.tf",
+        ".github/workflows/ci.yml",
+        "terraform/main.tf",
+        "migrations/001_init.sql",
+        "payments/handler.py",
+        "security/token.py",
+    ],
+)
+def test_status_red_for_each_risky_path_token_when_tests_missing(touched_path: str) -> None:
+    """Each risky-path token should force red when tests are missing."""
+    cp = _checkpoint(
+        touched_files=[touched_path],
+        verification=VerificationState(tests_run=False, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "red"
+
+
+def test_status_green_for_risky_path_when_tests_and_build_are_present() -> None:
+    """Risky paths can still be green with strong verification and no reviews."""
+    cp = _checkpoint(
+        touched_files=["security/token.py"],
+        verification=VerificationState(tests_run=True, build_ok=True),
+    )
+    assert compute_slip_status(cp, open_review_count=0, has_high_open_review=False) == "green"
 
 
 def test_status_yellow_for_large_diff_when_open_review_exists() -> None:
