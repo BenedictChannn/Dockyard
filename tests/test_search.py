@@ -85,6 +85,20 @@ def test_search_returns_matches_and_honors_filters(tmp_path: Path) -> None:
     assert common_term_branch_hits[0]["id"] == "cp1"
 
 
+def test_resolve_berth_prefers_repo_id_over_name_collision(tmp_path: Path) -> None:
+    """Repo-id lookups should win when another berth has a colliding name."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_b", name="repo_a", root_path="/tmp/b", remote_url=None))
+    store.upsert_berth(Berth(repo_id="repo_a", name="A", root_path="/tmp/a", remote_url=None))
+
+    resolved = store.resolve_berth("repo_a")
+    assert resolved is not None
+    assert resolved.repo_id == "repo_a"
+    assert resolved.name == "A"
+
+
 def test_search_falls_back_for_fts_special_characters(tmp_path: Path) -> None:
     """Search should succeed when query contains FTS-special syntax."""
     db_path = tmp_path / "dock.sqlite"

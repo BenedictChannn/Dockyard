@@ -13640,6 +13640,31 @@ def test_search_repo_filter_semantics_non_json_across_multiple_berths(
     assert rows[0]["objective"] == "psrf-target"
     assert rows[0]["berth_name"] == git_repo.name
 
+    db_path = tmp_path / ".dockyard_data" / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    target_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(git_repo),),
+    ).fetchone()[0]
+    other_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(other_repo),),
+    ).fetchone()[0]
+    conn.execute("UPDATE berths SET name = ? WHERE repo_id = ?", (target_repo_id, other_repo_id))
+    conn.commit()
+    conn.close()
+
+    repo_id_rows = json.loads(
+        _run_dock(
+            ["search", "psrf", "--repo", target_repo_id, "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(repo_id_rows) == 1
+    assert repo_id_rows[0]["repo_id"] == target_repo_id
+    assert repo_id_rows[0]["objective"] == "psrf-target"
+
 
 def test_search_alias_repo_filter_semantics_non_json_across_multiple_berths(
     git_repo: Path,
@@ -13753,6 +13778,31 @@ def test_search_alias_repo_filter_semantics_non_json_across_multiple_berths(
     assert len(rows) == 1
     assert rows[0]["objective"] == "asrf-target"
     assert rows[0]["berth_name"] == git_repo.name
+
+    db_path = tmp_path / ".dockyard_data" / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    target_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(git_repo),),
+    ).fetchone()[0]
+    other_repo_id = conn.execute(
+        "SELECT repo_id FROM berths WHERE root_path = ?",
+        (str(other_repo),),
+    ).fetchone()[0]
+    conn.execute("UPDATE berths SET name = ? WHERE repo_id = ?", (target_repo_id, other_repo_id))
+    conn.commit()
+    conn.close()
+
+    repo_id_rows = json.loads(
+        _run_dock(
+            ["f", "asrf", "--repo", target_repo_id, "--json"],
+            cwd=tmp_path,
+            env=env,
+        ).stdout
+    )
+    assert len(repo_id_rows) == 1
+    assert repo_id_rows[0]["repo_id"] == target_repo_id
+    assert repo_id_rows[0]["objective"] == "asrf-target"
 
 
 def test_search_branch_filter_semantics_non_json(git_repo: Path, tmp_path: Path) -> None:

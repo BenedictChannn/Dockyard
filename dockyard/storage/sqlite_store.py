@@ -550,17 +550,27 @@ class SQLiteStore:
         return self._row_to_checkpoint(row)
 
     def resolve_berth(self, berth_lookup: str) -> Berth | None:
-        """Resolve berth by repo_id or exact name."""
+        """Resolve berth by repo_id first, then exact berth name."""
         with self.connect() as conn:
             row = conn.execute(
                 """
                 SELECT repo_id, name, root_path, remote_url, created_at, updated_at
                 FROM berths
-                WHERE repo_id = ? OR name = ?
+                WHERE repo_id = ?
                 LIMIT 1
                 """,
-                (berth_lookup, berth_lookup),
+                (berth_lookup,),
             ).fetchone()
+            if row is None:
+                row = conn.execute(
+                    """
+                    SELECT repo_id, name, root_path, remote_url, created_at, updated_at
+                    FROM berths
+                    WHERE name = ?
+                    LIMIT 1
+                    """,
+                    (berth_lookup,),
+                ).fetchone()
         if not row:
             return None
         return Berth(
