@@ -9675,10 +9675,12 @@ def test_save_repo_id_falls_back_to_path_hash_when_origin_is_blank(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_aliases_repo_id_prefer_origin_when_multiple_remotes_exist(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should prioritize origin URL over other remotes."""
     env = dict(os.environ)
@@ -9697,6 +9699,7 @@ def test_save_aliases_repo_id_prefer_origin_when_multiple_remotes_exist(
         capture_output=True,
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -9723,7 +9726,7 @@ def test_save_aliases_repo_id_prefer_origin_when_multiple_remotes_exist(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
@@ -9732,10 +9735,12 @@ def test_save_aliases_repo_id_prefer_origin_when_multiple_remotes_exist(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save command aliases should honor non-origin remote repo-id fallback."""
     env = dict(os.environ)
@@ -9754,6 +9759,7 @@ def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
         capture_output=True,
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -9780,7 +9786,7 @@ def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
@@ -9789,10 +9795,12 @@ def test_save_aliases_use_non_origin_remote_for_repo_id_fallback(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save command aliases should path-hash repo id when origin URL is blank."""
     env = dict(os.environ)
@@ -9804,6 +9812,7 @@ def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
         capture_output=True,
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -9830,7 +9839,7 @@ def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
@@ -9839,10 +9848,12 @@ def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_aliases_repo_id_fallback_remote_ordering_is_case_insensitive(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should choose fallback remotes using case-insensitive sort."""
     env = dict(os.environ)
@@ -9867,6 +9878,7 @@ def test_save_aliases_repo_id_fallback_remote_ordering_is_case_insensitive(
         capture_output=True,
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -9893,7 +9905,7 @@ def test_save_aliases_repo_id_fallback_remote_ordering_is_case_insensitive(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
@@ -9902,10 +9914,12 @@ def test_save_aliases_repo_id_fallback_remote_ordering_is_case_insensitive(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_aliases_repo_id_fallback_remote_case_collision_ordering_is_deterministic(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should deterministically resolve case-colliding remotes."""
     env = dict(os.environ)
@@ -9930,6 +9944,7 @@ def test_save_aliases_repo_id_fallback_remote_case_collision_ordering_is_determi
         capture_output=True,
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -9956,7 +9971,7 @@ def test_save_aliases_repo_id_fallback_remote_case_collision_ordering_is_determi
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
