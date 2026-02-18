@@ -11628,6 +11628,56 @@ def test_negative_threshold_config_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+@pytest.mark.parametrize(
+    ("config_text", "expected_fragment"),
+    [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ],
+)
+def test_save_alias_invalid_config_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    config_text: str,
+    expected_fragment: str,
+) -> None:
+    """Save aliases should surface actionable config validation errors."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(config_text, encoding="utf-8")
+
+    result = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias invalid config case",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix config",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 def test_unknown_config_sections_do_not_block_save(
     git_repo: Path,
     tmp_path: Path,
