@@ -11917,6 +11917,55 @@ def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) 
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_bool_like_strings_are_coerced_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Bool-like template verification values should coerce outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / f"{command_name}_outside_bool_like_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside bool-like objective",
+                "decisions": "Use string booleans in outside-repo alias template",
+                "next_steps": ["Run resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "build_ok": "1",
+                    "lint_ok": "no",
+                    "smoke_ok": "false",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_template_verification_text_fields_are_normalized(
     git_repo: Path,
     tmp_path: Path,

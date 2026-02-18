@@ -2694,6 +2694,59 @@ def test_save_toml_template_flows_outside_repo_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_template_bool_like_values_outside_repo_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo bool-like template coercion should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / f"{command_name}_outside_bool_like_template_non_interference.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside bool-like non-interference",
+                "decisions": "verify bool-like template coercion path stays read-only",
+                "next_steps": ["run resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "build_ok": "1",
+                    "lint_ok": "no",
+                    "smoke_ok": "false",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+
+    payload = json.loads(_run(_dockyard_command("resume", "--json"), cwd=git_repo, env=env))
+    assert payload["verification"]["tests_run"] is True
+    assert payload["verification"]["build_ok"] is True
+    assert payload["verification"]["lint_ok"] is False
+    assert payload["verification"]["smoke_ok"] is False
+    _assert_repo_clean(git_repo)
+
+
 def test_save_with_blank_origin_remote_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
