@@ -3859,6 +3859,27 @@ def test_resume_alias_unknown_berth_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
+def test_resume_unknown_berth_output_modes_are_actionable(
+    tmp_path: Path,
+    command_name: str,
+    output_flag: str,
+) -> None:
+    """Unknown-berth failures should stay actionable across output modes."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    args = [command_name, "missing-berth"]
+    if output_flag:
+        args.append(output_flag)
+
+    result = _run_dock(args, cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Unknown berth: missing-berth" in output
+    assert "Traceback" not in output
+
+
 def test_resume_unknown_berth_preserves_literal_markup_text(tmp_path: Path) -> None:
     """Unknown-berth errors should preserve literal bracketed tokens."""
     env = dict(os.environ)
