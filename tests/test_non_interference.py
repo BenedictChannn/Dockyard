@@ -3231,6 +3231,10 @@ def test_review_add_invalid_validation_does_not_modify_repo(
             "Provide both --repo and --branch when overriding context.",
         ),
         (
+            ("review", "add", "--reason", "ok", "--severity", "low"),
+            "Current path is not inside a git repository.",
+        ),
+        (
             (
                 "review",
                 "add",
