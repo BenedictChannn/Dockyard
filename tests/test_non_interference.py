@@ -2765,6 +2765,64 @@ def test_save_aliases_with_case_insensitive_remote_fallback_ordering_do_not_modi
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_with_case_insensitive_remote_fallback_ordering_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo save aliases should stay clean for fallback ordering paths."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "remote", "remove", "origin"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "Zeta", "https://example.com/team/zeta.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "alpha", "https://example.com/team/alpha.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"outside {command_name} case-insensitive fallback ordering non-interference",
+            "--decisions",
+            "verify outside-repo fallback ordering path remains read-only",
+            "--next-step",
+            "run alias save outside repo through case-insensitive fallback ordering",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_save_aliases_with_case_collision_remote_fallback_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
@@ -2817,6 +2875,64 @@ def test_save_aliases_with_case_collision_remote_fallback_do_not_modify_repo(
             "--no-auto-review",
         ),
         cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_with_case_collision_remote_fallback_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo save aliases should stay clean with case-collision remotes."""
+    env = _dockyard_env(tmp_path)
+
+    _run(
+        ["git", "remote", "remove", "origin"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "alpha", "https://example.com/team/alpha-lower.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _run(
+        ["git", "remote", "add", "Alpha", "https://example.com/team/alpha-upper.git"],
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"outside {command_name} case-collision fallback non-interference",
+            "--decisions",
+            "verify alias save remains read-only with case-colliding remotes outside repo",
+            "--next-step",
+            "run alias save outside repo with case-collision fallback remotes",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=tmp_path,
         env=env,
     )
     _assert_repo_clean(git_repo)
