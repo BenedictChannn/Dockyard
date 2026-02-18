@@ -2644,6 +2644,56 @@ def test_save_template_flows_outside_repo_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_toml_template_flows_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo save aliases with TOML templates should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / f"{command_name}_outside_non_interference_template.toml"
+    template_path.write_text(
+        "\n".join(
+            [
+                f'objective = "{command_name} outside TOML non-interference"',
+                'decisions = "template decisions"',
+                'risks_review = "none"',
+                'next_steps = ["run resume"]',
+                'resume_commands = ["echo noop"]',
+                "",
+                "[verification]",
+                "tests_run = true",
+                'tests_command = "pytest -q"',
+                "build_ok = true",
+                'build_command = "echo build"',
+                "lint_ok = false",
+                "smoke_ok = false",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 def test_save_with_blank_origin_remote_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,

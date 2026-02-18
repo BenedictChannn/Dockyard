@@ -11536,6 +11536,61 @@ def test_save_alias_template_no_prompt_outside_repo_succeeds(
     assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_toml_template_no_prompt_outside_repo_succeeds(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """TOML template save aliases should succeed outside repo with --root."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / f"{command_name}_outside_template.toml"
+    template_path.write_text(
+        "\n".join(
+            [
+                f'objective = "{command_name} outside TOML objective"',
+                f'decisions = "{command_name} outside TOML decisions"',
+                'risks_review = "none"',
+                f'next_steps = ["run {command_name} outside TOML resume"]',
+                f'resume_commands = ["echo {command_name}-outside-toml"]',
+                f'tags = ["{command_name}-outside-toml"]',
+                "",
+                "[verification]",
+                "tests_run = true",
+                'tests_command = "pytest -q"',
+                "build_ok = true",
+                'build_command = "echo build"',
+                "lint_ok = false",
+                "smoke_ok = false",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    saved = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in saved.stdout
+
+    resume_payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert resume_payload["objective"] == f"{command_name} outside TOML objective"
+    tagged_rows = json.loads(_run_dock(["ls", "--tag", f"{command_name}-outside-toml", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(tagged_rows) == 1
+    assert tagged_rows[0]["branch"] == _git_current_branch(git_repo)
+
+
 def test_save_with_toml_template_no_prompt(git_repo: Path, tmp_path: Path) -> None:
     """TOML template should be accepted by save --template."""
     env = dict(os.environ)
