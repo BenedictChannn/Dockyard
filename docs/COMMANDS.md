@@ -73,8 +73,8 @@ Editor note:
 - template `verification` (when present) must be an object/table; status flags
   (`tests_run`, `build_ok`, `lint_ok`, `smoke_ok`) accept bool or bool-like
   strings (`yes/no`, `true/false`, `1/0`).
-- verification command/note text fields are trimmed; blank values are treated
-  as missing.
+- verification command/note text fields are trimmed for both CLI flag inputs
+  and template-provided values; blank values are treated as missing.
 
 ## `resume` (`r`, `undock`)
 

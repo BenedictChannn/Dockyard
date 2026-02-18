@@ -60,8 +60,8 @@ arrays of strings, and `verification` (when present) must be an object/table.
 Template verification status flags (`tests_run`, `build_ok`, `lint_ok`,
 `smoke_ok`) accept booleans or bool-like strings (`yes/no`, `true/false`,
 `1/0`).
-Verification command/note text flags are trimmed; blank values are treated as
-missing.
+Verification command/note text values are trimmed for both CLI flags and
+template-provided values; blank entries are treated as missing.
 
 Template-powered non-interactive mode:
 
