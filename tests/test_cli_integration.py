@@ -11752,6 +11752,56 @@ def test_save_rejects_blank_template_path(git_repo: Path, tmp_path: Path) -> Non
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize(
+    ("template_value", "expected_fragment"),
+    [
+        ("   ", "--template must be a non-empty string."),
+        ("__MISSING_TEMPLATE__", "Template not found"),
+    ],
+)
+def test_save_alias_template_path_validation_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    template_value: str,
+    expected_fragment: str,
+) -> None:
+    """Template-path validation should stay actionable outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    missing_template = tmp_path / f"{command_name}_outside_missing_template.json"
+    rendered_template = str(missing_template) if template_value == "__MISSING_TEMPLATE__" else template_value
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            rendered_template,
+            "--no-prompt",
+            "--objective",
+            f"{command_name} outside template path validation objective",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix template path",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 def test_save_template_directory_path_is_actionable(
     git_repo: Path,
     tmp_path: Path,
