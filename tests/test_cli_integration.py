@@ -2953,8 +2953,15 @@ def test_run_default_scope_stops_on_failure(
     )
 
 
-def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run output should compact multiline command labels."""
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_run_aliases_compact_multiline_command_labels(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Run aliases should compact multiline command labels in --run output."""
     env = dict(os.environ)
     dock_home = tmp_path / ".dockyard_data"
     env["DOCKYARD_HOME"] = str(dock_home)
@@ -2970,7 +2977,7 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
             "--decisions",
             "Mutate command payload to include line breaks",
             "--next-step",
-            "run resume --run",
+            f"run {command_name} --run",
             "--risks",
             "none",
             "--command",
@@ -2998,7 +3005,13 @@ def test_resume_run_compacts_multiline_command_labels(git_repo: Path, tmp_path: 
     conn.commit()
     conn.close()
 
-    run_result = _run_dock(["resume", "--run"], cwd=git_repo, env=env)
+    args = [command_name, "--run"]
+    run_cwd = git_repo
+    if run_cwd_kind == "tmp":
+        args = [command_name, git_repo.name, "--run"]
+        run_cwd = tmp_path
+
+    run_result = _run_dock(args, cwd=run_cwd, env=env)
     assert "$ echo run-one echo run-two -> exit 0" in run_result.stdout
 
 
