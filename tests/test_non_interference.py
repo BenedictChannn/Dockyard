@@ -4793,6 +4793,62 @@ def test_save_alias_unknown_config_section_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_empty_review_heuristics_section_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Empty review_heuristics config should keep save aliases non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text("[review_heuristics]\n", encoding="utf-8")
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+    _run(["git", "add", "security/guard.py"], cwd=git_repo, env=env)
+    _run(
+        ["git", "commit", "-m", "seed risky file for empty review heuristics non-interference"],
+        cwd=git_repo,
+        env=env,
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} empty review_heuristics non-interference",
+            "--decisions",
+            "empty review_heuristics should preserve default behavior",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ),
+        cwd=git_repo if run_cwd_kind == "repo" else tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
