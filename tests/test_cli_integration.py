@@ -3870,6 +3870,21 @@ def test_resume_unknown_berth_preserves_literal_markup_text(tmp_path: Path) -> N
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["r", "undock"])
+def test_resume_alias_unknown_berth_preserves_literal_markup_text(
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Resume aliases should preserve literal bracketed tokens in berth errors."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock([command_name, "[red]missing[/red]"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Unknown berth: [red]missing[/red]" in output
+    assert "Traceback" not in output
+
+
 def test_resume_rejects_blank_berth_argument(tmp_path: Path) -> None:
     """Resume should reject blank berth argument values."""
     env = dict(os.environ)
