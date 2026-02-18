@@ -63,6 +63,8 @@ Editor note:
   `$EDITOR`.
 - `--tag` / `--link` values are trimmed, blank entries are ignored, and exact
   duplicates are de-duplicated.
+- `save`, `s`, and `dock` share the same template/config validation behavior in
+  both in-repo and outside-repo invocations when `--root` is provided.
 - `--root` must be non-empty when provided.
 - `--template` path values are trimmed and must be non-empty when provided.
 - `--template` path must resolve to a readable file.

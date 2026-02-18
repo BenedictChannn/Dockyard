@@ -53,6 +53,8 @@ python3 -m dockyard save \
 
 `save` trims `--tag` / `--link` values, ignores blank entries, and de-duplicates
 exact repeats.
+`save`, `s`, and `dock` share the same template/config validation behavior in
+both in-repo and outside-repo invocations when `--root` is provided.
 `--root` override values are trimmed; blank values are rejected.
 `--template` path values are trimmed; blank values are rejected.
 `--template` must point to a readable file.
