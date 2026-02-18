@@ -2012,6 +2012,49 @@ def test_search_json_bounded_snippet_match_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("command_args", "run_cwd_kind"),
+    [
+        (("resume", "--json"), "repo"),
+        (("ls", "--json"), "tmp"),
+        (("harbor", "--json"), "tmp"),
+        (("--json",), "tmp"),
+        (("search", "jsonreadtoken", "--json"), "tmp"),
+        (("f", "jsonreadtoken", "--json"), "tmp"),
+    ],
+    ids=["resume_json", "ls_json", "harbor_json", "callback_json", "search_json", "f_json"],
+)
+def test_json_read_outputs_are_parseable_ansi_free_and_non_mutating(
+    git_repo: Path,
+    tmp_path: Path,
+    command_args: tuple[str, ...],
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """JSON read outputs should be parseable/ANSI-free and remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="jsonreadtoken objective for non-interference json read checks",
+        decisions="ensure json read outputs remain parseable and ansi-free",
+        next_step="run json read commands",
+        risks="none",
+        command="echo noop",
+        extra_args=["--no-auto-review"],
+    )
+
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(*command_args),
+        cwd=git_repo if run_cwd_kind == "repo" else tmp_path,
+        env=env,
+    )
+    assert "\x1b[" not in output
+    json.loads(output)
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     git_repo: Path,
