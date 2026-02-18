@@ -12096,12 +12096,14 @@ def test_negative_threshold_config_is_actionable(
         ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
     ],
 )
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_alias_invalid_config_is_actionable(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
     config_text: str,
     expected_fragment: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should surface actionable config validation errors."""
     env = dict(os.environ)
@@ -12110,6 +12112,7 @@ def test_save_alias_invalid_config_is_actionable(
     dock_home.mkdir(parents=True, exist_ok=True)
     (dock_home / "config.toml").write_text(config_text, encoding="utf-8")
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     result = _run_dock(
         [
             command_name,
@@ -12127,7 +12130,7 @@ def test_save_alias_invalid_config_is_actionable(
             "--command",
             "echo noop",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
         expect_code=2,
     )
@@ -12188,10 +12191,12 @@ def test_unknown_config_sections_do_not_block_save(
 
 
 @pytest.mark.parametrize("command_name", ["s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_alias_unknown_config_sections_do_not_block_save(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should ignore unknown config sections and succeed."""
     env = dict(os.environ)
@@ -12208,6 +12213,7 @@ def test_save_alias_unknown_config_sections_do_not_block_save(
         encoding="utf-8",
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     result = _run_dock(
         [
             command_name,
@@ -12234,7 +12240,7 @@ def test_save_alias_unknown_config_sections_do_not_block_save(
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
     assert "Saved checkpoint" in result.stdout
@@ -12292,10 +12298,12 @@ def test_empty_review_heuristics_section_uses_default_save_behavior(
 
 
 @pytest.mark.parametrize("command_name", ["s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_alias_empty_review_heuristics_section_uses_default_behavior(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Save aliases should preserve defaults with empty review_heuristics."""
     env = dict(os.environ)
@@ -12308,6 +12316,7 @@ def test_save_alias_empty_review_heuristics_section_uses_default_behavior(
     security_dir.mkdir(exist_ok=True)
     (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     save_result = _run_dock(
         [
             command_name,
@@ -12333,7 +12342,7 @@ def test_save_alias_empty_review_heuristics_section_uses_default_behavior(
             "--lint-fail",
             "--smoke-fail",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
     assert "Created review item" in save_result.stdout
