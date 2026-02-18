@@ -3877,6 +3877,102 @@ def test_save_required_field_validation_failures_outside_repo_do_not_modify_repo
         _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_template_path_validation_failures_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Template-path validation failures for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+    missing_template = tmp_path / f"{command_name}_missing_template.json"
+    cases = [
+        ("   ", "--template must be a non-empty string."),
+        (str(missing_template), "Template not found"),
+    ]
+
+    for template_value, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--template",
+                template_value,
+                "--no-prompt",
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(git_repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_template_path_validation_failures_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo template-path failures for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+    missing_template = tmp_path / f"{command_name}_missing_template_outside.json"
+    cases = [
+        ("   ", "--template must be a non-empty string."),
+        (str(missing_template), "Template not found"),
+    ]
+
+    for template_value, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--template",
+                template_value,
+                "--no-prompt",
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(tmp_path),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
