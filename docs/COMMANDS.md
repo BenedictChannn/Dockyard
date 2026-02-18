@@ -317,6 +317,8 @@ Validation:
 
 Branch scoping is preserved for link entries, including root-override usage
 outside repository working directories.
+The same scoping behavior applies when `--root` contains surrounding whitespace
+(trimmed root override input).
 
 `links` output compacts multiline URL/timestamp values to single-line previews
 and uses `(unknown)` fallback text for blank fields.
