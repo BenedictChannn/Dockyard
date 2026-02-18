@@ -15891,8 +15891,13 @@ def test_search_filtered_no_matches_json_returns_empty_array(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
-def test_search_repo_filter_no_match_is_informative(git_repo: Path, tmp_path: Path) -> None:
-    """Search should show no-match guidance when repo filter excludes results."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_repo_filter_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should show no-match guidance for repo filter misses."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -15927,7 +15932,7 @@ def test_search_repo_filter_no_match_is_informative(git_repo: Path, tmp_path: Pa
     )
 
     result = _run_dock(
-        ["search", "Repo filter no-match objective", "--repo", "missing-berth"],
+        [command_name, "Repo filter no-match objective", "--repo", "missing-berth"],
         cwd=tmp_path,
         env=env,
     )
@@ -15935,8 +15940,13 @@ def test_search_repo_filter_no_match_is_informative(git_repo: Path, tmp_path: Pa
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
-def test_search_repo_filter_no_match_json_returns_empty_array(git_repo: Path, tmp_path: Path) -> None:
-    """Search JSON should return [] when repo filter excludes results."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_repo_filter_no_match_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should return [] for repo-filtered no-match JSON paths."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -15971,7 +15981,7 @@ def test_search_repo_filter_no_match_json_returns_empty_array(git_repo: Path, tm
     )
 
     result = _run_dock(
-        ["search", "Repo filter no-match json objective", "--repo", "missing-berth", "--json"],
+        [command_name, "Repo filter no-match json objective", "--repo", "missing-berth", "--json"],
         cwd=tmp_path,
         env=env,
     )
@@ -15979,11 +15989,13 @@ def test_search_repo_filter_no_match_json_returns_empty_array(git_repo: Path, tm
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_repo_branch_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search JSON should return [] for combined repo+branch filter misses."""
+    """Search aliases should return [] for combined repo+branch filter misses."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -16019,7 +16031,7 @@ def test_search_repo_branch_filter_no_match_json_returns_empty_array(
 
     result = _run_dock(
         [
-            "search",
+            command_name,
             "Repo branch filter no-match objective",
             "--repo",
             "missing-berth",
@@ -16034,11 +16046,13 @@ def test_search_repo_branch_filter_no_match_json_returns_empty_array(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_repo_branch_filter_no_match_is_informative(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search should show no-match guidance for combined repo+branch misses."""
+    """Search aliases should show no-match guidance for repo+branch misses."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -16074,7 +16088,7 @@ def test_search_repo_branch_filter_no_match_is_informative(
 
     result = _run_dock(
         [
-            "search",
+            command_name,
             "Repo branch filter message objective",
             "--repo",
             "missing-berth",
