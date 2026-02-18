@@ -2238,6 +2238,70 @@ def test_json_empty_state_outputs_are_parseable_ansi_free_and_non_mutating(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("dashboard_args", "dashboard_label"),
+    [
+        (("ls", "--json"), "ls"),
+        (("harbor", "--json"), "harbor"),
+        (("--json",), "callback"),
+    ],
+    ids=["ls", "harbor", "callback"],
+)
+def test_review_lifecycle_status_recompute_dashboard_reads_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    dashboard_args: tuple[str, ...],
+    dashboard_label: str,
+) -> None:
+    """Review lifecycle dashboard-read status checks should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    objective = f"non-interference status recompute ({dashboard_label})"
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=objective,
+        decisions="verify status recompute reads are non-mutating",
+        next_step="run dashboard status reads",
+        risks="none",
+        command="echo status",
+    )
+
+    def _status_for_objective() -> str:
+        rows = json.loads(_run(_dockyard_command(*dashboard_args), cwd=tmp_path, env=env))
+        target = next(row for row in rows if row.get("objective") == objective)
+        return str(target["status"])
+
+    _assert_repo_clean(git_repo)
+    assert _status_for_objective() == "green"
+    _assert_repo_clean(git_repo)
+
+    added = _run(
+        _dockyard_command(
+            "review",
+            "add",
+            "--reason",
+            f"critical_non_interference_{dashboard_label}",
+            "--severity",
+            "high",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", added)
+    assert review_match is not None
+    review_id = review_match.group(0)
+
+    _assert_repo_clean(git_repo)
+    assert _status_for_objective() == "red"
+    _assert_repo_clean(git_repo)
+
+    _run(_dockyard_command("review", "done", review_id), cwd=tmp_path, env=env)
+    _assert_repo_clean(git_repo)
+    assert _status_for_objective() == "green"
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     git_repo: Path,

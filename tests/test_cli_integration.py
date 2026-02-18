@@ -9934,6 +9934,84 @@ def test_review_lifecycle_recomputes_slip_status(git_repo: Path, tmp_path: Path)
     assert after_done_rows[0]["status"] == "green"
 
 
+@pytest.mark.parametrize(
+    ("dashboard_args", "dashboard_label"),
+    [
+        (["ls", "--json"], "ls"),
+        (["harbor", "--json"], "harbor"),
+        (["--json"], "callback"),
+    ],
+    ids=["ls", "harbor", "callback"],
+)
+def test_review_lifecycle_recomputes_slip_status_across_dashboard_aliases(
+    git_repo: Path,
+    tmp_path: Path,
+    dashboard_args: list[str],
+    dashboard_label: str,
+) -> None:
+    """Slip status recomputation should be consistent across dashboard aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    objective = f"Status recompute alias baseline ({dashboard_label})"
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            objective,
+            "--decisions",
+            "Start with verified checkpoint so status is green",
+            "--next-step",
+            "Add high review then resolve it",
+            "--risks",
+            "None",
+            "--command",
+            "echo status",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    def _status_for_objective() -> str:
+        rows = json.loads(_run_dock(dashboard_args, cwd=tmp_path, env=env).stdout)
+        target = next(row for row in rows if row.get("objective") == objective)
+        return str(target["status"])
+
+    assert _status_for_objective() == "green"
+
+    review_added = _run_dock(
+        [
+            "review",
+            "add",
+            "--reason",
+            f"critical_validation_{dashboard_label}",
+            "--severity",
+            "high",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    review_match = re.search(r"rev_[a-f0-9]+", review_added.stdout)
+    assert review_match is not None
+    review_id = review_match.group(0)
+    assert _status_for_objective() == "red"
+
+    _run_dock(["review", "done", review_id], cwd=tmp_path, env=env)
+    assert _status_for_objective() == "green"
+
+
 def test_review_cli_list_prioritizes_high_severity(git_repo: Path, tmp_path: Path) -> None:
     """Review CLI listing should show high-severity items before lower ones."""
     env = dict(os.environ)
