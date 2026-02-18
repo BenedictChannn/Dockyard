@@ -3066,6 +3066,52 @@ def test_run_branch_scopes_stop_on_failure(
     )
 
 
+@pytest.mark.parametrize("command_name", RUN_SCOPE_COMMANDS, ids=RUN_SCOPE_COMMANDS)
+def test_run_berth_scope_executes_commands_on_success(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+) -> None:
+    """Berth-scoped run aliases should execute recorded commands successfully."""
+    _assert_run_executes_commands_for_scope(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        command_name=command_name,
+        include_berth=True,
+        include_branch=False,
+        run_cwd_kind="tmp",
+        objective=f"{command_name} berth run success objective",
+        decisions=f"Validate {command_name} berth run success-path behavior",
+        next_step=f"run {command_name} berth",
+        resume_commands=(
+            f"echo {command_name}-berth-run-one",
+            f"echo {command_name}-berth-run-two",
+        ),
+    )
+
+
+@pytest.mark.parametrize("command_name", RUN_SCOPE_COMMANDS, ids=RUN_SCOPE_COMMANDS)
+def test_run_berth_scope_stops_on_failure(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+) -> None:
+    """Berth-scoped run aliases should stop execution on first failure."""
+    _assert_run_stops_on_failure_for_scope(
+        git_repo=git_repo,
+        tmp_path=tmp_path,
+        command_name=command_name,
+        include_berth=True,
+        include_branch=False,
+        run_cwd_kind="tmp",
+        objective=f"{command_name} berth run failure objective",
+        decisions=f"Validate {command_name} berth run stop-on-failure behavior",
+        next_step=f"run {command_name} berth failure",
+        first_command=f"echo {command_name}-berth-first",
+        skipped_command=f"echo {command_name}-berth-should-not-run",
+    )
+
+
 def test_resume_handles_scalar_list_payload_fields(git_repo: Path, tmp_path: Path) -> None:
     """Resume handoff/run should coerce scalar list payloads safely."""
     env = dict(os.environ)
@@ -15731,6 +15777,57 @@ def test_search_filtered_no_matches_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_filtered_limit_no_matches_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should keep no-match guidance for filtered+limit misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filtered limit no-match objective",
+            "--decisions",
+            "Filtered limit no-match decisions",
+            "--next-step",
+            "run filtered limit search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "present-tag",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Filtered limit no-match objective", "--tag", "missing-tag", "--limit", "1"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
 def test_search_output_falls_back_for_blank_timestamp(
     git_repo: Path,
     tmp_path: Path,
@@ -15884,6 +15981,57 @@ def test_search_filtered_no_matches_json_returns_empty_array(
 
     result = _run_dock(
         [command_name, "Filtered no-match json objective", "--tag", "missing-tag", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_filtered_limit_no_matches_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Filtered+limit JSON search aliases should remain [] when no rows survive."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Filtered limit no-match json objective",
+            "--decisions",
+            "Filtered limit no-match json decisions",
+            "--next-step",
+            "run filtered limit search json",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "present-tag",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Filtered limit no-match json objective", "--tag", "missing-tag", "--limit", "1", "--json"],
         cwd=tmp_path,
         env=env,
     )
