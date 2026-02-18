@@ -202,6 +202,8 @@ When no results match, Dockyard prints: `No checkpoint matches found.`
 With `--json`, no-match output is `[]`.
 `--limit` is applied after `--tag` / `--repo` / `--branch` filters.
 Snippets are normalized to compact single-line text for scanability.
+When multiple fields match, snippets prioritize objective text first.
+JSON snippet text is bounded to 140 characters for stable payload size.
 Non-JSON `search`/`f` table output truncates long snippets for readability.
 `search --json` and `f --json` rows share a stable schema:
 `id`, `repo_id`, `berth_name`, `branch`, `created_at`, `snippet`, `objective`.

@@ -211,6 +211,8 @@ python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch 
 # search/f --json rows expose: id, repo_id, berth_name, branch,
 # created_at, snippet, objective
 # snippets are compacted to single-line text for scanability
+# when multiple fields match, snippets prioritize objective text first
+# snippet payloads are bounded to 140 chars in --json output
 # non-JSON search/f table output truncates long snippets for readability
 # unicode characters are emitted as-is in --json output
 # filtered searches keep the same no-match behavior/message semantics
