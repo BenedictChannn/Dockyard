@@ -2106,6 +2106,60 @@ def test_json_read_outputs_preserve_unicode_and_remain_non_mutating(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("command_args", "run_cwd_kind", "expected_fragment"),
+    [
+        (("resume", "--json"), "repo", "risklong"),
+        (("ls", "--json"), "tmp", "longtoken"),
+        (("harbor", "--json"), "tmp", "longtoken"),
+        (("--json",), "tmp", "longtoken"),
+        (("search", "longtoken", "--json"), "tmp", "longtoken"),
+        (("f", "longtoken", "--json"), "tmp", "longtoken"),
+    ],
+    ids=[
+        "resume_json_long_text",
+        "ls_json_long_text",
+        "harbor_json_long_text",
+        "callback_json_long_text",
+        "search_json_long_text",
+        "f_json_long_text",
+    ],
+)
+def test_json_read_outputs_handle_long_text_and_remain_non_mutating(
+    git_repo: Path,
+    tmp_path: Path,
+    command_args: tuple[str, ...],
+    run_cwd_kind: RunCwdKind,
+    expected_fragment: str,
+) -> None:
+    """Long-text JSON read outputs should be parseable and non-mutating."""
+    env = _dockyard_env(tmp_path)
+    long_objective = "longtoken " + ("x" * 500)
+    long_risks = "risklong " + ("y" * 500)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=long_objective,
+        decisions="long text json non-interference",
+        next_step="run long text json read commands",
+        risks=long_risks,
+        command="echo noop",
+        extra_args=["--no-auto-review"],
+    )
+
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(*command_args),
+        cwd=git_repo if run_cwd_kind == "repo" else tmp_path,
+        env=env,
+    )
+    assert expected_fragment in output
+    assert "\x1b[" not in output
+    json.loads(output)
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     git_repo: Path,
