@@ -17614,8 +17614,13 @@ def test_search_tag_repo_branch_limit_no_match_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
-def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path) -> None:
-    """Search snippets should surface matches from risks text."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_includes_risk_match(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search command aliases should surface snippets from risks text."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -17649,7 +17654,7 @@ def test_search_json_snippet_includes_risk_match(git_repo: Path, tmp_path: Path)
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "risktoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(_run_dock([command_name, "risktoken", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert "risktoken" in rows[0]["snippet"].lower()
 
@@ -18032,8 +18037,13 @@ def test_search_alias_parser_error_query_honors_repo_branch_filters(
     assert "Traceback" not in tagged_limit_table_output
 
 
-def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: Path) -> None:
-    """Search snippets should surface matches from next-step text."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_includes_next_step_match(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search command aliases should surface snippets from next-step text."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18067,13 +18077,18 @@ def test_search_json_snippet_includes_next_step_match(git_repo: Path, tmp_path: 
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "nexttoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(_run_dock([command_name, "nexttoken", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert "nexttoken" in rows[0]["snippet"].lower()
 
 
-def test_search_json_snippet_includes_decisions_match(git_repo: Path, tmp_path: Path) -> None:
-    """Search snippets should surface matches from decisions text."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_includes_decisions_match(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search command aliases should surface snippets from decisions text."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18107,13 +18122,20 @@ def test_search_json_snippet_includes_decisions_match(git_repo: Path, tmp_path: 
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "decisiontoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(
+        _run_dock([command_name, "decisiontoken", "--json"], cwd=tmp_path, env=env).stdout
+    )
     assert len(rows) == 1
     assert "decisiontoken" in rows[0]["snippet"].lower()
 
 
-def test_search_json_snippet_includes_objective_match(git_repo: Path, tmp_path: Path) -> None:
-    """Search snippets should surface matches from objective text."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_includes_objective_match(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search command aliases should surface snippets from objective text."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18147,13 +18169,20 @@ def test_search_json_snippet_includes_objective_match(git_repo: Path, tmp_path: 
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "objectivetoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(
+        _run_dock([command_name, "objectivetoken", "--json"], cwd=tmp_path, env=env).stdout
+    )
     assert len(rows) == 1
     assert "objectivetoken" in rows[0]["snippet"].lower()
 
 
-def test_search_json_snippet_is_bounded(git_repo: Path, tmp_path: Path) -> None:
-    """Search snippets should stay within bounded length for readability."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_is_bounded(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search command aliases should keep snippets within bounded length."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18188,16 +18217,18 @@ def test_search_json_snippet_is_bounded(git_repo: Path, tmp_path: Path) -> None:
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "boundtoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(_run_dock([command_name, "boundtoken", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert len(rows[0]["snippet"]) <= 140
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_multiline_snippet_remains_parseable(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search JSON should remain parseable when snippet includes newlines."""
+    """Search aliases should keep multiline snippets parseable in JSON."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18232,15 +18263,22 @@ def test_search_json_multiline_snippet_remains_parseable(
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "multilinetoken", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(
+        _run_dock([command_name, "multilinetoken", "--json"], cwd=tmp_path, env=env).stdout
+    )
     assert len(rows) == 1
     assert "multilinetoken" in rows[0]["snippet"]
     assert "\n" not in rows[0]["snippet"]
     assert rows[0]["snippet"] == "line1 multilinetoken line2 line3"
 
 
-def test_search_json_preserves_unicode_snippets(git_repo: Path, tmp_path: Path) -> None:
-    """Search JSON output should preserve unicode text in snippets."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_preserves_unicode_snippets(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should preserve unicode text in snippets."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -18275,7 +18313,7 @@ def test_search_json_preserves_unicode_snippets(git_repo: Path, tmp_path: Path) 
         env=env,
     )
 
-    rows = json.loads(_run_dock(["search", "façade", "--json"], cwd=tmp_path, env=env).stdout)
+    rows = json.loads(_run_dock([command_name, "façade", "--json"], cwd=tmp_path, env=env).stdout)
     assert len(rows) == 1
     assert "façade" in rows[0]["snippet"]
 
