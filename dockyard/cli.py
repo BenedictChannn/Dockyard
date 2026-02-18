@@ -81,7 +81,14 @@ def _comma_or_pipe_values(raw: str) -> list[str]:
 
 def _emit_json(payload: Any) -> None:
     """Emit machine-readable JSON without Rich wrapping effects."""
-    typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+    typer.echo(
+        json.dumps(
+            payload,
+            indent=2,
+            ensure_ascii=False,
+            default=lambda value: str(value),
+        )
+    )
 
 
 def _safe_text(value: Any) -> str:

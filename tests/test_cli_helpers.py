@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -162,6 +163,40 @@ def test_emit_json_list_payload_is_pretty_indented(monkeypatch: pytest.MonkeyPat
 
     assert len(captured) == 1
     assert captured[0].startswith("[\n  ")
+
+
+def test_emit_json_coerces_non_serializable_values_to_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """JSON emitter should stringify non-serializable scalar values."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json({"path": Path("/tmp/demo")})
+
+    assert len(captured) == 1
+    assert "\x1b[" not in captured[0]
+    assert json.loads(captured[0])["path"] == "/tmp/demo"
+
+
+def test_emit_json_coerces_non_serializable_list_values_to_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """JSON emitter should stringify non-serializable list values."""
+    captured: list[str] = []
+
+    def _fake_echo(message: str) -> None:
+        captured.append(message)
+
+    monkeypatch.setattr(cli_module.typer, "echo", _fake_echo)
+    _emit_json([Path("/tmp/demo")])
+
+    assert len(captured) == 1
+    assert "\x1b[" not in captured[0]
+    assert json.loads(captured[0]) == ["/tmp/demo"]
 
 
 def test_safe_text_escapes_markup_tokens() -> None:
