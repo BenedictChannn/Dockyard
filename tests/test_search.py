@@ -572,3 +572,39 @@ def test_search_snippet_preserves_unicode_characters(tmp_path: Path) -> None:
     hits = store.search_checkpoints("façade")
     assert len(hits) == 1
     assert "façade" in hits[0]["snippet"]
+
+
+def test_search_snippet_is_bounded_to_140_chars(tmp_path: Path) -> None:
+    """Snippet text should be hard-limited to 140 characters."""
+    db_path = tmp_path / "dock.sqlite"
+    store = SQLiteStore(db_path)
+    store.initialize()
+    store.upsert_berth(Berth(repo_id="repo_bound", name="Bound", root_path="/tmp/b", remote_url=None))
+    store.add_checkpoint(
+        Checkpoint(
+            id="cp_bound",
+            repo_id="repo_bound",
+            branch="main",
+            created_at="2026-01-01T00:00:00+00:00",
+            objective="Bound objective",
+            decisions="",
+            next_steps=["step"],
+            risks_review="boundtoken " + ("x" * 400),
+            resume_commands=[],
+            git_dirty=False,
+            head_sha="abc123",
+            head_subject="subject",
+            recent_commits=[],
+            diff_files_changed=1,
+            diff_insertions=1,
+            diff_deletions=0,
+            touched_files=[],
+            diff_stat_text="",
+            verification=VerificationState(),
+            tags=[],
+        )
+    )
+
+    hits = store.search_checkpoints("boundtoken")
+    assert len(hits) == 1
+    assert len(hits[0]["snippet"]) <= 140

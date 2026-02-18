@@ -1978,6 +1978,40 @@ def test_search_json_unicode_snippet_match_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_bounded_snippet_match_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+) -> None:
+    """Bounded snippet search read paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="bounded snippet non-interference baseline",
+        decisions="bounded snippet read path should not mutate repo",
+        next_step="Run bounded snippet read path",
+        risks="boundtoken " + ("x" * 400),
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    rows = json.loads(
+        _run(
+            _dockyard_command(command_name, "boundtoken", "--json"),
+            cwd=tmp_path,
+            env=env,
+        )
+    )
+    assert len(rows) == 1
+    assert "boundtoken" in rows[0]["snippet"]
+    assert len(rows[0]["snippet"]) <= 140
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
