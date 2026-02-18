@@ -293,8 +293,9 @@ Layout:
 
 `repo_id` is a stable hash derived from a configured git remote URL when
 available (preferring `origin`, then other remotes in deterministic
-case-insensitive name order), with repository-path hash fallback for repos
-without remotes.
+case-insensitive name order with deterministic case-collision handling), with
+repository-path hash fallback for repos without remotes.
+This derivation contract is shared across `save`, `s`, and `dock`.
 
 Override base path with:
 
