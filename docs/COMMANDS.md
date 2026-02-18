@@ -166,6 +166,8 @@ Validation:
 no slips are indexed.
 The same JSON no-match contract applies to filtered dashboard paths as well
 (`--tag`, `--stale`, `--limit`, and combined filter variants).
+Slip status recomputation after `review add` / `review done` is consistent
+across `ls`, `harbor`, and root callback JSON dashboard paths.
 
 ## `search` (`f`)
 

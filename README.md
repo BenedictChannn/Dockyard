@@ -175,6 +175,8 @@ In `--json` mode, both `ls` and the bare callback path return `[]` when no
 slips are indexed.
 This JSON no-match contract also holds for filtered dashboard queries
 (`--tag`, `--stale`, `--limit`, and combined filter variants).
+Slip status recomputation after `review add` / `review done` is consistent
+across `ls`, `harbor`, and the bare callback JSON dashboard path.
 
 ### 4) Search objectives, decisions, next steps, and risks
 
