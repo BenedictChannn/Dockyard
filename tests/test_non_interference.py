@@ -1872,6 +1872,48 @@ def test_search_json_no_match_read_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("command_name", "args_suffix"),
+    [
+        ("search", ("definitely-no-match",)),
+        ("search", ("baseline", "--tag", "missing-tag")),
+        ("f", ("definitely-no-match",)),
+        ("f", ("baseline", "--tag", "missing-tag")),
+    ],
+    ids=[
+        "search_query_no_match_table",
+        "search_filtered_no_match_table",
+        "f_query_no_match_table",
+        "f_filtered_no_match_table",
+    ],
+)
+def test_search_no_match_read_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+    args_suffix: tuple[str, ...],
+) -> None:
+    """Table search no-match paths should be informative and non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="baseline objective for search no-match table non-interference",
+        decisions="seed checkpoint for no-match table path checks",
+        next_step="run table search no-match commands",
+        risks="none",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    output = _run(_dockyard_command(command_name, *args_suffix), cwd=tmp_path, env=env)
+    assert "No checkpoint matches found." in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 @pytest.mark.parametrize(
     "query",
