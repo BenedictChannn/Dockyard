@@ -68,6 +68,10 @@ Editor note:
 - config validation failures (parse errors, invalid section shapes/regex
   values, or negative thresholds) return actionable, traceback-free errors
   consistently across `save`, `s`, and `dock` in both invocation contexts.
+- configured review-heuristic overrides (including default-trigger suppression
+  and forced-trigger behavior) apply consistently across `save`, `s`, and
+  `dock` in both in-repo and outside-repo invocations when `--root` is
+  provided.
 - `--root` must be non-empty when provided.
 - `--template` path values are trimmed and must be non-empty when provided.
 - `--template` path must resolve to a readable file.
