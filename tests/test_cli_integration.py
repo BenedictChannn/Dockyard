@@ -13320,6 +13320,117 @@ def test_template_type_validation_for_remaining_schema_fields(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize(
+    ("template_payload", "expected_fragment"),
+    [
+        (
+            {
+                "objective": "invalid tests bool-like value",
+                "decisions": "tests_run should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"tests_run": "maybe"},
+            },
+            "Template field 'tests_run' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid build bool-like value",
+                "decisions": "build_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"build_ok": "maybe"},
+            },
+            "Template field 'build_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid lint bool-like value",
+                "decisions": "lint_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"lint_ok": "maybe"},
+            },
+            "Template field 'lint_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid smoke bool-like value",
+                "decisions": "smoke_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"smoke_ok": "perhaps"},
+            },
+            "Template field 'smoke_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid build command type",
+                "decisions": "build_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"build_command": 123},
+            },
+            "Template field 'build_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid lint command type",
+                "decisions": "lint_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"lint_command": 123},
+            },
+            "Template field 'lint_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid smoke notes type",
+                "decisions": "smoke_notes should be a string",
+                "next_steps": ["step"],
+                "verification": {"smoke_notes": 123},
+            },
+            "Template field 'smoke_notes' must be a string",
+        ),
+    ],
+)
+def test_save_alias_template_type_validation_for_remaining_schema_fields_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    template_payload: dict[str, Any],
+    expected_fragment: str,
+) -> None:
+    """Remaining schema field type errors should be actionable outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_remaining_schema_fields.json"
+    bad_template.write_text(json.dumps(template_payload), encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 @pytest.mark.parametrize(
     ("template_payload", "expected_fragment"),
     [
@@ -13405,6 +13516,97 @@ def test_template_type_validation_for_additional_top_level_fields(
         expect_code=2,
     )
     output = f"{result.stdout}\n{result.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize(
+    ("template_payload", "expected_fragment"),
+    [
+        (
+            {
+                "objective": "invalid decisions type",
+                "decisions": 123,
+                "next_steps": ["step"],
+            },
+            "Template field 'decisions' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid next steps list item type",
+                "decisions": "next_steps should contain only strings",
+                "next_steps": ["step", 7],
+            },
+            "Template field 'next_steps' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid resume_commands shape",
+                "decisions": "resume_commands must be a list",
+                "next_steps": ["step"],
+                "resume_commands": "echo not-a-list",
+            },
+            "Template field 'resume_commands' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid tags shape",
+                "decisions": "tags must be a list",
+                "next_steps": ["step"],
+                "tags": "alpha",
+            },
+            "Template field 'tags' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid links shape",
+                "decisions": "links must be a list",
+                "next_steps": ["step"],
+                "links": "https://example.invalid",
+            },
+            "Template field 'links' must be an array of strings",
+        ),
+    ],
+)
+def test_save_alias_template_type_validation_for_additional_top_level_fields_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    template_payload: dict[str, Any],
+    expected_fragment: str,
+) -> None:
+    """Additional top-level field type errors should be actionable outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_additional_top_level_fields.json"
+    bad_template.write_text(json.dumps(template_payload), encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
     assert expected_fragment in output
     assert "Traceback" not in output
 

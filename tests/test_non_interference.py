@@ -5480,6 +5480,158 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"])
+@pytest.mark.parametrize(
+    ("template_payload", "expected_fragment"),
+    [
+        (
+            {
+                "objective": "invalid build bool-like value",
+                "decisions": "build_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"build_ok": "maybe"},
+            },
+            "Template field 'build_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid lint bool-like value",
+                "decisions": "lint_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"lint_ok": "maybe"},
+            },
+            "Template field 'lint_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid smoke bool-like value",
+                "decisions": "smoke_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"smoke_ok": "perhaps"},
+            },
+            "Template field 'smoke_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid build command type",
+                "decisions": "build_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"build_command": 123},
+            },
+            "Template field 'build_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid lint command type",
+                "decisions": "lint_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"lint_command": 123},
+            },
+            "Template field 'lint_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid smoke notes type",
+                "decisions": "smoke_notes should be a string",
+                "next_steps": ["step"],
+                "verification": {"smoke_notes": 123},
+            },
+            "Template field 'smoke_notes' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid decisions type",
+                "decisions": 123,
+                "next_steps": ["step"],
+            },
+            "Template field 'decisions' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid next steps list item type",
+                "decisions": "next_steps should contain only strings",
+                "next_steps": ["step", 7],
+            },
+            "Template field 'next_steps' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid resume_commands shape",
+                "decisions": "resume_commands must be a list",
+                "next_steps": ["step"],
+                "resume_commands": "echo not-a-list",
+            },
+            "Template field 'resume_commands' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid tags shape",
+                "decisions": "tags must be a list",
+                "next_steps": ["step"],
+                "tags": "alpha",
+            },
+            "Template field 'tags' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid links shape",
+                "decisions": "links must be a list",
+                "next_steps": ["step"],
+                "links": "https://example.invalid",
+            },
+            "Template field 'links' must be an array of strings",
+        ),
+    ],
+)
+def test_save_alias_template_additional_type_validation_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+    run_cwd_kind: RunCwdKind,
+    template_payload: dict[str, object],
+    expected_fragment: str,
+) -> None:
+    """Additional template type-validation paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, run_cwd_kind)
+
+    bad_template = tmp_path / f"{command_name}_{run_cwd_kind}_additional_type_validation.json"
+    bad_template.write_text(json.dumps(template_payload), encoding="utf-8")
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override objective",
+            "--decisions",
+            "override decisions",
+            "--next-step",
+            "override step",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(run_cwd),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 def test_save_required_field_validation_failures_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
