@@ -6719,6 +6719,129 @@ def test_save_empty_review_heuristics_section_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_configured_heuristics_disable_default_trigger_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Configured heuristics disable-default-trigger paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                'risky_path_patterns = ["(^|/)critical/"]',
+                "files_changed_threshold = 999",
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'branch_prefixes = ["urgent/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, run_cwd_kind)
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} configurable review trigger behavior",
+            "--decisions",
+            "custom heuristic should skip default trigger",
+            "--next-step",
+            "confirm no auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ),
+        cwd=run_cwd,
+        env=env,
+    )
+    assert "Created review item" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_configured_heuristics_force_trigger_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Configured heuristics force-trigger paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "files_changed_threshold = 0",
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'risky_path_patterns = ["(^|/)never-match/"]',
+                'branch_prefixes = ["never/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, run_cwd_kind)
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} configurable force review trigger behavior",
+            "--decisions",
+            "threshold override should force review creation",
+            "--next-step",
+            "confirm auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ),
+        cwd=run_cwd,
+        env=env,
+    )
+    assert "Created review item" in output
+    assert "many_files_changed" in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(

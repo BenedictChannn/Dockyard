@@ -14060,6 +14060,141 @@ def test_configured_heuristics_can_force_review_trigger(
     assert "No review items." not in review_list
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_alias_configured_heuristics_can_disable_default_review_trigger(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Configured heuristics should disable default review trigger across save aliases."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                'risky_path_patterns = ["(^|/)critical/"]',
+                "files_changed_threshold = 999",
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'branch_prefixes = ["urgent/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
+    save_result = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} configurable review trigger behavior",
+            "--decisions",
+            "Custom heuristic should skip default security trigger",
+            "--next-step",
+            "Confirm no auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=run_cwd,
+        env=env,
+    )
+    assert "Created review item" not in save_result.stdout
+    assert "Review triggers:" not in save_result.stdout
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env)
+    assert "No review items." in review_list.stdout
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_alias_configured_heuristics_can_force_review_trigger(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Configured heuristics should force review trigger across save aliases."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[review_heuristics]",
+                "files_changed_threshold = 0",
+                "churn_threshold = 9999",
+                "non_trivial_files_threshold = 999",
+                "non_trivial_churn_threshold = 9999",
+                'risky_path_patterns = ["(^|/)never-match/"]',
+                'branch_prefixes = ["never/"]',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
+    save_result = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} configurable force review trigger behavior",
+            "--decisions",
+            "Threshold override should force review creation",
+            "--next-step",
+            "Confirm auto review generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=run_cwd,
+        env=env,
+    )
+    output = f"{save_result.stdout}\n{save_result.stderr}"
+    assert "Created review item" in output
+    assert "Review triggers:" in output
+    assert "many_files_changed" in output
+    assert "Traceback" not in output
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "No review items." not in review_list
+
+
 def test_cli_ls_and_search_filters(git_repo: Path, tmp_path: Path) -> None:
     """CLI filters for harbor and search should narrow results correctly."""
     env = dict(os.environ)
