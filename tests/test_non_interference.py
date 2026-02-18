@@ -2160,6 +2160,58 @@ def test_json_read_outputs_handle_long_text_and_remain_non_mutating(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("command_args", "run_cwd_kind", "expect_resume_payload"),
+    [
+        (("resume", "--json"), "repo", True),
+        (("ls", "--json"), "tmp", False),
+        (("harbor", "--json"), "tmp", False),
+        (("--json",), "tmp", False),
+    ],
+    ids=[
+        "resume_json_multiline",
+        "ls_json_multiline",
+        "harbor_json_multiline",
+        "callback_json_multiline",
+    ],
+)
+def test_json_read_outputs_preserve_multiline_text_and_remain_non_mutating(
+    git_repo: Path,
+    tmp_path: Path,
+    command_args: tuple[str, ...],
+    run_cwd_kind: RunCwdKind,
+    expect_resume_payload: bool,
+) -> None:
+    """Multiline JSON read outputs should remain parseable and non-mutating."""
+    env = _dockyard_env(tmp_path)
+    multiline_objective = "line one\nline two"
+    multiline_decisions = "decision one\ndecision two\ndecision three"
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective=multiline_objective,
+        decisions=multiline_decisions,
+        next_step="run multiline json read commands",
+        risks="none",
+        command="echo noop",
+        extra_args=["--no-auto-review"],
+    )
+
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(*command_args),
+        cwd=git_repo if run_cwd_kind == "repo" else tmp_path,
+        env=env,
+    )
+    payload = json.loads(output)
+    if expect_resume_payload:
+        assert payload["decisions"] == multiline_decisions
+    else:
+        assert any(row.get("objective") == multiline_objective for row in payload)
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     git_repo: Path,
