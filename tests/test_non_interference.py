@@ -1877,14 +1877,32 @@ def test_search_json_no_match_read_paths_keep_repo_clean(
     [
         ("search", ("definitely-no-match",)),
         ("search", ("baseline", "--tag", "missing-tag")),
+        ("search", ("baseline", "--repo", "missing-berth")),
+        ("search", ("baseline", "--branch", "missing/branch")),
+        (
+            "search",
+            ("baseline", "--tag", "baseline", "--repo", "missing-berth", "--branch", "missing/branch"),
+        ),
         ("f", ("definitely-no-match",)),
         ("f", ("baseline", "--tag", "missing-tag")),
+        ("f", ("baseline", "--repo", "missing-berth")),
+        ("f", ("baseline", "--branch", "missing/branch")),
+        (
+            "f",
+            ("baseline", "--tag", "baseline", "--repo", "missing-berth", "--branch", "missing/branch"),
+        ),
     ],
     ids=[
         "search_query_no_match_table",
         "search_filtered_no_match_table",
+        "search_repo_no_match_table",
+        "search_branch_no_match_table",
+        "search_tag_repo_branch_no_match_table",
         "f_query_no_match_table",
         "f_filtered_no_match_table",
+        "f_repo_no_match_table",
+        "f_branch_no_match_table",
+        "f_tag_repo_branch_no_match_table",
     ],
 )
 def test_search_no_match_read_paths_keep_repo_clean(
