@@ -225,6 +225,8 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--repo", "missing-berth")),
     SearchReadVariantMeta(("baseline", "--branch", "missing/branch")),
+    SearchReadVariantMeta(("baseline", "--branch", "missing/branch", "--limit", "1")),
+    SearchReadVariantMeta(("baseline", "--branch", "missing/branch", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--repo", "missing-berth", "--branch", "missing/branch")),
     SearchReadVariantMeta(("baseline", "--repo", "missing-berth", "--branch", "missing/branch", "--limit", "1")),
     SearchReadVariantMeta(
@@ -240,6 +242,8 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
         ("baseline", "--tag", "baseline", "--branch", SEARCH_BRANCH_PLACEHOLDER, "--json"),
     ),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", "missing-berth")),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", "missing-berth", "--limit", "1")),
+    SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", "missing-berth", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER)),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", "missing-berth", "--branch", "missing/branch")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--repo", SEARCH_REPO_PLACEHOLDER, "--json")),

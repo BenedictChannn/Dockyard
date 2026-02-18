@@ -17124,6 +17124,55 @@ def test_search_branch_filter_no_match_json_returns_empty_array(
 
 
 @pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_branch_filter_limit_no_match_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases JSON should return [] for branch+limit no-match paths."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Branch filter limit no-match objective",
+            "--decisions",
+            "Branch filter limit no-match decisions",
+            "--next-step",
+            "run branch limit filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Branch filter limit no-match objective", "--branch", "missing/branch", "--limit", "1", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_branch_filter_no_match_is_informative(
     git_repo: Path,
     tmp_path: Path,
@@ -17165,6 +17214,55 @@ def test_search_branch_filter_no_match_is_informative(
 
     result = _run_dock(
         [command_name, "Branch filter no-match message objective", "--branch", "missing/branch"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_branch_filter_limit_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should keep no-match guidance for branch+limit misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Branch filter limit message objective",
+            "--decisions",
+            "Branch filter limit message decisions",
+            "--next-step",
+            "run branch limit filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Branch filter limit message objective", "--branch", "missing/branch", "--limit", "1"],
         cwd=tmp_path,
         env=env,
     )
@@ -17407,6 +17505,57 @@ def test_search_tag_repo_filter_no_match_json_returns_empty_array(
 
 
 @pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_repo_filter_limit_no_match_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases JSON should return [] for tag+repo+limit no-match paths."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tag repo filter limit no-match objective",
+            "--decisions",
+            "Tag repo filter limit no-match decisions",
+            "--next-step",
+            "run tag repo limit filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Tag repo filter limit no-match objective", "--tag", "alpha", "--repo", "missing-berth", "--limit", "1", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert json.loads(result.stdout) == []
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_tag_repo_filter_no_match_is_informative(
     git_repo: Path,
     tmp_path: Path,
@@ -17450,6 +17599,57 @@ def test_search_tag_repo_filter_no_match_is_informative(
 
     result = _run_dock(
         [command_name, "Tag repo filter message objective", "--tag", "alpha", "--repo", "missing-berth"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_tag_repo_filter_limit_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should keep no-match guidance for tag+repo+limit misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Tag repo filter limit message objective",
+            "--decisions",
+            "Tag repo filter limit message decisions",
+            "--next-step",
+            "run tag repo limit filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tag",
+            "alpha",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Tag repo filter limit message objective", "--tag", "alpha", "--repo", "missing-berth", "--limit", "1"],
         cwd=tmp_path,
         env=env,
     )
