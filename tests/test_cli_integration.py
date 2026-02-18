@@ -11833,6 +11833,59 @@ def test_empty_review_heuristics_section_uses_default_save_behavior(
     assert "No review items." not in review_list
 
 
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_empty_review_heuristics_section_uses_default_behavior(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save aliases should preserve defaults with empty review_heuristics."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text("[review_heuristics]\n", encoding="utf-8")
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    save_result = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} empty review section defaults",
+            "--decisions",
+            "Default risky-path trigger should still apply",
+            "--next-step",
+            "Confirm auto review is still generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Created review item" in save_result.stdout
+    assert "Review triggers:" in save_result.stdout
+    assert "Traceback" not in f"{save_result.stdout}\n{save_result.stderr}"
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "No review items." not in review_list
+
+
 def test_missing_template_path_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,
