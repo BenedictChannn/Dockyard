@@ -4229,6 +4229,31 @@ def test_resume_unknown_berth_literal_markup_error_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def test_link_branch_scoped_paths_keep_repo_clean(git_repo: Path, tmp_path: Path) -> None:
+    """Branch-scoped link/list flows should remain non-mutating to repo tree/index."""
+    env = _dockyard_env(tmp_path)
+    main_branch = _current_branch(git_repo)
+
+    _assert_repo_clean(git_repo)
+    _run(_dockyard_command("link", "https://example.com/non-interference-main-link"), cwd=git_repo, env=env)
+    main_links = _run(_dockyard_command("links"), cwd=git_repo, env=env)
+    assert "https://example.com/non-interference-main-link" in main_links
+    _assert_repo_clean(git_repo)
+
+    _run(["git", "checkout", "-b", "feature/non-interference-links"], cwd=git_repo, env=env)
+    _run(_dockyard_command("link", "https://example.com/non-interference-feature-link"), cwd=git_repo, env=env)
+    feature_links = _run(_dockyard_command("links"), cwd=git_repo, env=env)
+    assert "https://example.com/non-interference-feature-link" in feature_links
+    assert "https://example.com/non-interference-main-link" not in feature_links
+    _assert_repo_clean(git_repo)
+
+    _run(["git", "checkout", main_branch], cwd=git_repo, env=env)
+    restored_main_links = _run(_dockyard_command("links"), cwd=git_repo, env=env)
+    assert "https://example.com/non-interference-main-link" in restored_main_links
+    assert "https://example.com/non-interference-feature-link" not in restored_main_links
+    _assert_repo_clean(git_repo)
+
+
 def test_save_template_validation_failures_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
