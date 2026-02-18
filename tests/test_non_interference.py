@@ -3417,6 +3417,124 @@ def test_link_invalid_validation_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+def test_save_template_validation_failures_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Template validation failures during save should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    missing_template = tmp_path / "missing_template.json"
+    bad_parse_template = tmp_path / "bad_parse_template.toml"
+    bad_parse_template.write_text("[broken\nvalue = 1", encoding="utf-8")
+    bad_schema_template = tmp_path / "bad_schema_template.json"
+    bad_schema_template.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    unsupported_template = tmp_path / "bad_template.yaml"
+    unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
+    non_utf_template = tmp_path / "bad_non_utf_template.json"
+    non_utf_template.write_bytes(b"\xff\xfe\x00")
+
+    cases = [
+        (missing_template, "Template not found"),
+        (bad_parse_template, "Failed to parse template"),
+        (bad_schema_template, "Template must contain an object/table"),
+        (unsupported_template, "Template must be .json or .toml"),
+        (non_utf_template, "Failed to read template"),
+    ]
+
+    for template_path, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                "save",
+                "--root",
+                str(git_repo),
+                "--template",
+                str(template_path),
+                "--no-prompt",
+                "--objective",
+                "override objective",
+                "--decisions",
+                "override decisions",
+                "--next-step",
+                "override step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(git_repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
+def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Outside-repo template validation failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    missing_template = tmp_path / "missing_template_outside.json"
+    bad_parse_template = tmp_path / "bad_parse_template_outside.toml"
+    bad_parse_template.write_text("[broken\nvalue = 1", encoding="utf-8")
+    bad_schema_template = tmp_path / "bad_schema_template_outside.json"
+    bad_schema_template.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    unsupported_template = tmp_path / "bad_template_outside.yaml"
+    unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
+    non_utf_template = tmp_path / "bad_non_utf_template_outside.json"
+    non_utf_template.write_bytes(b"\xff\xfe\x00")
+
+    cases = [
+        (missing_template, "Template not found"),
+        (bad_parse_template, "Failed to parse template"),
+        (bad_schema_template, "Template must contain an object/table"),
+        (unsupported_template, "Template must be .json or .toml"),
+        (non_utf_template, "Failed to read template"),
+    ]
+
+    for template_path, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                "save",
+                "--root",
+                str(git_repo),
+                "--template",
+                str(template_path),
+                "--no-prompt",
+                "--objective",
+                "override objective",
+                "--decisions",
+                "override decisions",
+                "--next-step",
+                "override step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(tmp_path),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
