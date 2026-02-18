@@ -3072,6 +3072,14 @@ def test_dashboard_invalid_flag_validation_outside_repo_does_not_modify_repo(
         (("baseline", "--tag", "   "), "--tag must be a non-empty string."),
         (("baseline", "--repo", "   "), "--repo must be a non-empty string."),
         (("baseline", "--branch", "   "), "--branch must be a non-empty string."),
+        (
+            ("baseline", "--repo", "   ", "--branch", "main"),
+            "--repo must be a non-empty string.",
+        ),
+        (
+            ("baseline", "--repo", "repo-x", "--branch", "   "),
+            "--branch must be a non-empty string.",
+        ),
         (("baseline", "--tag", "baseline", "--limit", "0"), "--limit must be >= 1."),
         (("baseline", "--tag", "   ", "--limit", "1"), "--tag must be a non-empty string."),
     ],
@@ -3111,6 +3119,14 @@ def test_search_invalid_flag_validation_does_not_modify_repo(
         (("baseline", "--tag", "   "), "--tag must be a non-empty string."),
         (("baseline", "--repo", "   "), "--repo must be a non-empty string."),
         (("baseline", "--branch", "   "), "--branch must be a non-empty string."),
+        (
+            ("baseline", "--repo", "   ", "--branch", "main"),
+            "--repo must be a non-empty string.",
+        ),
+        (
+            ("baseline", "--repo", "repo-x", "--branch", "   "),
+            "--branch must be a non-empty string.",
+        ),
         (("baseline", "--tag", "baseline", "--limit", "0"), "--limit must be >= 1."),
         (("baseline", "--tag", "   ", "--limit", "1"), "--tag must be a non-empty string."),
     ],
