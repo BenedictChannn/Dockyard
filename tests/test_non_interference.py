@@ -1872,6 +1872,45 @@ def test_search_json_no_match_read_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+@pytest.mark.parametrize(
+    "query",
+    [
+        "risktoken",
+        "nexttoken",
+        "decisiontoken",
+        "objectivetoken",
+    ],
+    ids=["risks", "next_steps", "decisions", "objective"],
+)
+def test_search_json_snippet_match_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+    query: str,
+) -> None:
+    """Snippet-producing search/read paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="objectivetoken objective for search snippet non-interference",
+        decisions="decisiontoken decisions for search snippet non-interference",
+        next_step="Run nexttoken validation for search snippet non-interference",
+        risks="Requires risktoken validation for search snippet non-interference",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    rows = json.loads(_run(_dockyard_command(command_name, query, "--json"), cwd=tmp_path, env=env))
+    assert len(rows) == 1
+    assert query in rows[0]["snippet"].lower()
+    assert rows[0]["objective"]
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
