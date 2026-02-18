@@ -15990,6 +15990,55 @@ def test_search_repo_filter_no_match_json_returns_empty_array(
 
 
 @pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_repo_filter_limit_no_match_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should keep no-match guidance for repo+limit misses."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Repo filter limit message objective",
+            "--decisions",
+            "Repo filter limit message decisions",
+            "--next-step",
+            "run repo limit filtered search",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    result = _run_dock(
+        [command_name, "Repo filter limit message objective", "--repo", "missing-berth", "--limit", "1"],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "No checkpoint matches found." in result.stdout
+    assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_repo_filter_limit_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
