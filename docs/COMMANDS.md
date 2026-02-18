@@ -77,6 +77,8 @@ Editor note:
   strings (`yes/no`, `true/false`, `1/0`).
 - verification command/note text fields are trimmed for both CLI flag inputs
   and template-provided values; blank values are treated as missing.
+- verification text normalization is consistent across `save`, `s`, and `dock`,
+  including outside-repo invocations when `--root` is provided.
 - `repo_id` is derived from git remotes using stable precedence for
   `save`, `s`, and `dock`: prefer `origin` when available, otherwise use the
   first remote in deterministic case-insensitive name order (including

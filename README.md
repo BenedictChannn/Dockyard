@@ -66,6 +66,8 @@ Template verification status flags (`tests_run`, `build_ok`, `lint_ok`,
 `1/0`).
 Verification command/note text values are trimmed for both CLI flags and
 template-provided values; blank entries are treated as missing.
+This verification-text normalization behavior is consistent for `save`, `s`,
+and `dock`, including outside-repo invocations when `--root` is provided.
 
 Template-powered non-interactive mode:
 
