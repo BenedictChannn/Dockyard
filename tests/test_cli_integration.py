@@ -819,6 +819,64 @@ def test_resume_json_preserves_multiline_text(git_repo: Path, tmp_path: Path) ->
     assert payload["decisions"] == multiline_decisions
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_resume_alias_json_preserves_long_unicode_multiline_text(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Resume aliases should preserve long/unicode/multiline JSON payload text."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    multiline_unicode_decisions = "line one\nConfirm naïve façade safety\nline three"
+    long_risks = "risklong " + ("z" * 500)
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "Alias JSON text preservation objective",
+            "--decisions",
+            multiline_unicode_decisions,
+            "--next-step",
+            "run resume json",
+            "--risks",
+            long_risks,
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    args = [command_name, "--json"]
+    run_cwd = git_repo
+    if run_cwd_kind == "tmp":
+        args = [command_name, git_repo.name, "--json"]
+        run_cwd = tmp_path
+
+    output = _run_dock(args, cwd=run_cwd, env=env)
+    payload = json.loads(output.stdout)
+    assert payload["decisions"] == multiline_unicode_decisions
+    assert payload["risks_review"] == long_risks
+    assert "façade" in output.stdout
+    assert "\\u00e7" not in output.stdout
+
+
 def test_json_outputs_do_not_include_ansi_sequences(git_repo: Path, tmp_path: Path) -> None:
     """JSON output modes should emit plain parseable text without ANSI codes."""
     env = dict(os.environ)

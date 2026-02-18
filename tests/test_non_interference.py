@@ -5809,6 +5809,45 @@ def test_unknown_explicit_berth_branch_resume_errors_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_resume_alias_json_long_unicode_multiline_read_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Resume alias JSON read paths with rich text payloads should be non-mutating."""
+    env = _dockyard_env(tmp_path)
+    multiline_unicode_decisions = "line one\nConfirm naïve façade safety\nline three"
+    long_risks = "risklong " + ("z" * 500)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="resume alias json rich text non-interference objective",
+        decisions=multiline_unicode_decisions,
+        next_step="run resume json rich text read paths",
+        risks=long_risks,
+        command="echo noop",
+    )
+
+    args = [command_name, "--json"]
+    run_cwd = git_repo
+    if run_cwd_kind == "tmp":
+        args = [command_name, git_repo.name, "--json"]
+        run_cwd = tmp_path
+
+    _assert_repo_clean(git_repo)
+    output = _run(_dockyard_command(*args), cwd=run_cwd, env=env)
+    payload = json.loads(output)
+    assert payload["decisions"] == multiline_unicode_decisions
+    assert payload["risks_review"] == long_risks
+    assert "façade" in output
+    assert "\\u00e7" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RUN_NO_COMMAND_SCENARIOS,
