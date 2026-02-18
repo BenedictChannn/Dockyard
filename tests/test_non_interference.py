@@ -3639,18 +3639,23 @@ def test_resume_blank_branch_validation_outside_repo_does_not_modify_repo(
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_resume_blank_berth_validation_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
     command_name: RunCommandName,
     run_cwd_kind: RunCwdKind,
+    output_flag: str,
 ) -> None:
     """Blank berth argument validation should remain non-mutating."""
     env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
+    args = [command_name, "   "]
+    if output_flag:
+        args.append(output_flag)
     completed = subprocess.run(
-        _dockyard_command(command_name, "   "),
+        _dockyard_command(*args),
         cwd=str(git_repo if run_cwd_kind == "repo" else tmp_path),
         check=False,
         capture_output=True,

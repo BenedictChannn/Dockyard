@@ -3939,6 +3939,27 @@ def test_undock_rejects_blank_berth_argument(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+@pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
+def test_resume_blank_berth_output_modes_are_rejected(
+    tmp_path: Path,
+    command_name: str,
+    output_flag: str,
+) -> None:
+    """Blank berth arguments should be rejected across output modes."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    args = [command_name, "   "]
+    if output_flag:
+        args.append(output_flag)
+
+    result = _run_dock(args, cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Berth must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
 def test_resume_rejects_blank_branch_option(git_repo: Path, tmp_path: Path) -> None:
     """Resume should reject blank --branch option values."""
     env = dict(os.environ)
