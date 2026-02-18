@@ -4095,6 +4095,222 @@ def test_save_template_path_validation_failures_outside_repo_do_not_modify_repo(
         _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_required_field_validation_failures_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Required-field validation failures for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+
+    cases: list[tuple[list[str], str]] = [
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "--no-prompt requires --objective, --decisions, and at least one --next-step.",
+        ),
+        (
+            [
+                "--objective",
+                "   ",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "Objective is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "   ",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "Decisions / Findings is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "   ",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "At least one next step is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "   ",
+                "--command",
+                "echo noop",
+            ],
+            "Risks / Review Needed is required.",
+        ),
+    ]
+
+    for args_suffix, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                *args_suffix,
+            ),
+            cwd=str(git_repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_required_field_validation_failures_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Outside-repo required-field failures for save aliases stay clean."""
+    env = _dockyard_env(tmp_path)
+
+    cases: list[tuple[list[str], str]] = [
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "--no-prompt requires --objective, --decisions, and at least one --next-step.",
+        ),
+        (
+            [
+                "--objective",
+                "   ",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "Objective is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "   ",
+                "--next-step",
+                "step",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "Decisions / Findings is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "   ",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ],
+            "At least one next step is required.",
+        ),
+        (
+            [
+                "--objective",
+                "objective",
+                "--decisions",
+                "decisions",
+                "--next-step",
+                "step",
+                "--risks",
+                "   ",
+                "--command",
+                "echo noop",
+            ],
+            "Risks / Review Needed is required.",
+        ),
+    ]
+
+    for args_suffix, expected_fragment in cases:
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                *args_suffix,
+            ),
+            cwd=str(tmp_path),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
