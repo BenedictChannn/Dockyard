@@ -12954,6 +12954,57 @@ def test_template_verification_section_must_be_object_or_table(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_verification_section_shape_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Non-object verification sections should fail cleanly outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_verification_shape.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside bad verification shape",
+                "decisions": "verification section is not object-like",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'verification' must be a table/object" in output
+    assert "Traceback" not in output
+
+
 @pytest.mark.parametrize(
     ("template_payload", "expected_fragment"),
     [

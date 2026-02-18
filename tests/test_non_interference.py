@@ -5024,6 +5024,18 @@ def test_save_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_shape_template = tmp_path / "bad_verification_shape_template.json"
+    bad_verification_shape_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid verification shape",
+                "decisions": "verification section should be object-like",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5033,6 +5045,7 @@ def test_save_template_validation_failures_do_not_modify_repo(
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
+        (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5109,6 +5122,18 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_shape_template = tmp_path / "bad_verification_shape_template_outside.json"
+    bad_verification_shape_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid verification shape outside",
+                "decisions": "verification section should be object-like outside",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5118,6 +5143,7 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
+        (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5196,6 +5222,18 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_shape_template = tmp_path / f"{command_name}_bad_verification_shape_template.json"
+    bad_verification_shape_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid verification shape",
+                "decisions": "verification section should be object-like",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5205,6 +5243,7 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
+        (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5283,6 +5322,18 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         ),
         encoding="utf-8",
     )
+    bad_verification_shape_template = tmp_path / f"{command_name}_bad_verification_shape_template_outside.json"
+    bad_verification_shape_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid verification shape outside",
+                "decisions": "verification section should be object-like outside",
+                "next_steps": ["step"],
+                "verification": "not-a-table",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5292,6 +5343,7 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
+        (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
     ]
 
     for template_path, expected_fragment in cases:
