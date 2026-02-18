@@ -224,6 +224,8 @@ SEARCH_READ_VARIANTS: tuple[SearchReadVariantMeta, ...] = (
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--limit", "1")),
     SearchReadVariantMeta(("baseline", "--tag", "baseline", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--repo", "missing-berth")),
+    SearchReadVariantMeta(("baseline", "--repo", "missing-berth", "--limit", "1")),
+    SearchReadVariantMeta(("baseline", "--repo", "missing-berth", "--limit", "1", "--json")),
     SearchReadVariantMeta(("baseline", "--branch", "missing/branch")),
     SearchReadVariantMeta(("baseline", "--branch", "missing/branch", "--limit", "1")),
     SearchReadVariantMeta(("baseline", "--branch", "missing/branch", "--limit", "1", "--json")),
