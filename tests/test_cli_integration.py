@@ -11353,9 +11353,11 @@ def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) 
     assert payload["verification"]["smoke_ok"] is False
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_template_verification_text_fields_are_normalized(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
     """Template verification text fields should trim values and drop blanks."""
     env = dict(os.environ)
@@ -11386,7 +11388,7 @@ def test_template_verification_text_fields_are_normalized(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--template",
