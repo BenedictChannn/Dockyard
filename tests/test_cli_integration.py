@@ -12076,6 +12076,57 @@ def test_template_bool_like_invalid_string_is_rejected(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_bool_like_invalid_string_is_rejected_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Unknown bool-like template values should fail cleanly outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_bool_like.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside invalid bool-like",
+                "decisions": "bad tests_run value outside repo",
+                "next_steps": ["step"],
+                "risks_review": "none",
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
 def test_invalid_config_produces_actionable_error(git_repo: Path, tmp_path: Path) -> None:
     """Invalid config TOML should fail with concise actionable message."""
     env = dict(os.environ)

@@ -5000,6 +5000,18 @@ def test_save_template_validation_failures_do_not_modify_repo(
     unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
     non_utf_template = tmp_path / "bad_non_utf_template.json"
     non_utf_template.write_bytes(b"\xff\xfe\x00")
+    bad_bool_like_template = tmp_path / "bad_bool_like_template.json"
+    bad_bool_like_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid bool-like",
+                "decisions": "bad tests_run value",
+                "next_steps": ["step"],
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5007,6 +5019,7 @@ def test_save_template_validation_failures_do_not_modify_repo(
         (bad_schema_template, "Template must contain an object/table"),
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
+        (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5059,6 +5072,18 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
     unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
     non_utf_template = tmp_path / "bad_non_utf_template_outside.json"
     non_utf_template.write_bytes(b"\xff\xfe\x00")
+    bad_bool_like_template = tmp_path / "bad_bool_like_template_outside.json"
+    bad_bool_like_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid bool-like outside",
+                "decisions": "bad tests_run value outside",
+                "next_steps": ["step"],
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5066,6 +5091,7 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         (bad_schema_template, "Template must contain an object/table"),
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
+        (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5120,6 +5146,18 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
     unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
     non_utf_template = tmp_path / f"{command_name}_bad_non_utf_template.json"
     non_utf_template.write_bytes(b"\xff\xfe\x00")
+    bad_bool_like_template = tmp_path / f"{command_name}_bad_bool_like_template.json"
+    bad_bool_like_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid bool-like",
+                "decisions": "bad tests_run value",
+                "next_steps": ["step"],
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5127,6 +5165,7 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         (bad_schema_template, "Template must contain an object/table"),
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
+        (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5181,6 +5220,18 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
     unsupported_template.write_text("objective: unsupported\n", encoding="utf-8")
     non_utf_template = tmp_path / f"{command_name}_bad_non_utf_template_outside.json"
     non_utf_template.write_bytes(b"\xff\xfe\x00")
+    bad_bool_like_template = tmp_path / f"{command_name}_bad_bool_like_template_outside.json"
+    bad_bool_like_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid bool-like outside",
+                "decisions": "bad tests_run value outside",
+                "next_steps": ["step"],
+                "verification": {"tests_run": "maybe"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5188,6 +5239,7 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         (bad_schema_template, "Template must contain an object/table"),
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
+        (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
     ]
 
     for template_path, expected_fragment in cases:
