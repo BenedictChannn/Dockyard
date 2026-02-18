@@ -1945,6 +1945,39 @@ def test_search_json_multiline_snippet_match_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_unicode_snippet_match_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+) -> None:
+    """Unicode snippet search read paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="unicode snippet non-interference baseline",
+        decisions="unicode snippet read path should not mutate repo",
+        next_step="Run unicode search read path",
+        risks="Requires façade validation before merge",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    rows = json.loads(
+        _run(
+            _dockyard_command(command_name, "façade", "--json"),
+            cwd=tmp_path,
+            env=env,
+        )
+    )
+    assert len(rows) == 1
+    assert "façade" in rows[0]["snippet"]
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
