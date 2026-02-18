@@ -3351,6 +3351,72 @@ def test_review_open_done_invalid_id_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("link", "   "), "URL must be a non-empty string."),
+        (("link", "https://example.com/no-root", "--root", "   "), "--root must be a non-empty string."),
+        (("links", "--root", "   "), "--root must be a non-empty string."),
+    ],
+)
+def test_link_invalid_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Invalid link/links input validation failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(*args),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("link", "   "), "URL must be a non-empty string."),
+        (("link", "https://example.com/no-root", "--root", "   "), "--root must be a non-empty string."),
+        (("links", "--root", "   "), "--root must be a non-empty string."),
+    ],
+)
+def test_link_invalid_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Outside-repo invalid link/links input should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(*args),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
