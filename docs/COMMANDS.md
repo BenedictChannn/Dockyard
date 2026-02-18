@@ -109,6 +109,9 @@ Notes:
 - BERTH + `--branch` scoped resume lookups support `--handoff` and `--json`
   from outside repo directories (for example:
   `python3 -m dockyard resume my-berth --branch main --handoff`).
+- BERTH values are validated as non-empty strings for `resume`, `r`, and
+  `undock`; unknown berth values fail with actionable errors while preserving
+  literal text.
 - When handoff next steps or commands are empty, Dockyard prints
   `(none recorded)` placeholders.
 - Blank objective/risks values in handoff render as `(none)` for explicitness.

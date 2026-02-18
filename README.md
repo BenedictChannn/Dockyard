@@ -113,6 +113,12 @@ Useful flags:
 - `--handoff` print agent-ready block
 - `--run` run recorded commands in sequence (stop on first failure)
 - `--json` structured output
+- BERTH values are validated as non-empty strings for `resume`, `r`, and
+  `undock`; unknown berth values return actionable errors while preserving
+  literal text.
+
+`resume`/`r`/`undock` validate BERTH values as non-empty strings and return
+actionable unknown-berth errors while preserving literal text.
 - Resume summary lines compact multiline objective/next-step text into single
   line previews for faster scanning.
 - Resume top-lines summary contract (Project/Branch, Last Checkpoint,
