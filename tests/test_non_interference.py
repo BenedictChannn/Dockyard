@@ -1541,6 +1541,7 @@ RUN_NO_COMMAND_SCENARIOS: tuple[RunNoCommandScenarioMeta, ...] = _build_no_comma
     RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
 )
 RUN_NO_COMMAND_IDS: tuple[str, ...] = case_ids(RUN_NO_COMMAND_SCENARIOS)
+RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH: tuple[str, ...] = case_ids(RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH)
 RUN_OPT_IN_MUTATION_SCENARIOS: tuple[RunOptInMutationScenarioMeta, ...] = (
     _build_opt_in_mutation_run_scope_scenarios(RUN_SCOPE_CASES_DEFAULT_BRANCH_BERTH)
 )
@@ -6081,6 +6082,92 @@ def test_run_scopes_without_commands_keep_repo_clean(
         decisions=case.decisions,
         next_step=case.next_step,
     )
+
+
+def _overwrite_resume_commands_payload(env: dict[str, str], commands: Sequence[str] | str) -> None:
+    """Overwrite persisted resume command payload for latest checkpoint."""
+    db_path = Path(env["DOCKYARD_HOME"]) / "db" / "index.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE checkpoints SET resume_commands_json = ?",
+        (json.dumps(commands),),
+    )
+    conn.commit()
+    conn.close()
+
+
+@pytest.mark.parametrize(
+    "case",
+    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+    ids=RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH,
+)
+def test_run_scopes_blank_command_entries_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    case: RunScopeCaseMeta,
+) -> None:
+    """Blank command entries should normalize safely across run scope variants."""
+    branch = _current_branch(git_repo) if case.include_branch else None
+    env = _seed_opt_in_checkpoint(
+        git_repo,
+        tmp_path,
+        objective=f"{case.case_id} blank entry normalization non-interference",
+        decisions=f"verify {case.case_id} trims blank command entries safely",
+        next_step=f"run {case.case_id} blank command normalization",
+        command="echo placeholder",
+    )
+    _overwrite_resume_commands_payload(env, ["   ", "\n\t", "  echo noop  "])
+
+    run_command = _build_opt_in_run_command(
+        command_name=case.command_name,
+        git_repo=git_repo,
+        branch=branch,
+        include_berth=case.include_berth,
+    )
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, case.run_cwd_kind)
+
+    _assert_repo_clean(git_repo)
+    output = _run(run_command, cwd=run_cwd, env=env)
+    assert "$ echo noop -> exit 0" in output
+    assert "$   echo noop   -> exit" not in output
+    assert "$  -> exit" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
+    "case",
+    RUN_SCOPE_CASES_DEFAULT_BERTH_BRANCH,
+    ids=RUN_SCOPE_IDS_DEFAULT_BERTH_BRANCH,
+)
+def test_run_scopes_all_blank_commands_are_noop_and_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    case: RunScopeCaseMeta,
+) -> None:
+    """All-blank command payloads should no-op cleanly across run scope variants."""
+    branch = _current_branch(git_repo) if case.include_branch else None
+    env = _seed_opt_in_checkpoint(
+        git_repo,
+        tmp_path,
+        objective=f"{case.case_id} all blank command non-interference",
+        decisions=f"verify {case.case_id} no-op behavior for all blank commands",
+        next_step=f"run {case.case_id} all blank commands",
+        command="echo placeholder",
+    )
+    _overwrite_resume_commands_payload(env, ["   ", "\n\t", ""])
+
+    run_command = _build_opt_in_run_command(
+        command_name=case.command_name,
+        git_repo=git_repo,
+        branch=branch,
+        include_berth=case.include_berth,
+    )
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, case.run_cwd_kind)
+
+    _assert_repo_clean(git_repo)
+    output = _run(run_command, cwd=run_cwd, env=env)
+    assert "-> exit" not in output
+    _assert_repo_clean(git_repo)
 
 
 @pytest.mark.parametrize(
