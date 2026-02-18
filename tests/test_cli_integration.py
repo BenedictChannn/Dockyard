@@ -15810,18 +15810,24 @@ def test_search_output_falls_back_for_blank_branch(
     assert "(unknown)" in result.stdout
 
 
-def test_search_no_matches_json_returns_empty_array(tmp_path: Path) -> None:
-    """JSON search output should remain machine-parseable when empty."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_no_matches_json_returns_empty_array(tmp_path: Path, command_name: str) -> None:
+    """JSON search aliases should remain machine-parseable when empty."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    result = _run_dock(["search", "nothing-will-match", "--json"], cwd=tmp_path, env=env)
+    result = _run_dock([command_name, "nothing-will-match", "--json"], cwd=tmp_path, env=env)
     assert json.loads(result.stdout) == []
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
-def test_search_filtered_no_matches_json_returns_empty_array(git_repo: Path, tmp_path: Path) -> None:
-    """Filtered JSON search output should remain [] when no rows survive."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_filtered_no_matches_json_returns_empty_array(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Filtered JSON search aliases should remain [] when no rows survive."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -15858,7 +15864,7 @@ def test_search_filtered_no_matches_json_returns_empty_array(git_repo: Path, tmp
     )
 
     result = _run_dock(
-        ["search", "Filtered no-match json objective", "--tag", "missing-tag", "--json"],
+        [command_name, "Filtered no-match json objective", "--tag", "missing-tag", "--json"],
         cwd=tmp_path,
         env=env,
     )
