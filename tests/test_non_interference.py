@@ -5364,6 +5364,35 @@ def test_save_template_path_validation_failures_outside_repo_do_not_modify_repo(
         _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_template_trimmed_path_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo trimmed template paths for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / f"{command_name}_outside_trimmed_template_non_interference.json"
+    _write_non_interference_template(template_path=template_path, objective=f"{command_name} outside trimmed template")
+
+    _assert_repo_clean(git_repo)
+    output = _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            f"  {template_path}  ",
+            "--no-prompt",
+            "--no-auto-review",
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["s", "dock"])
 def test_save_alias_required_field_validation_failures_do_not_modify_repo(
     git_repo: Path,

@@ -11623,6 +11623,49 @@ def test_save_template_path_accepts_trimmed_value(git_repo: Path, tmp_path: Path
     assert payload["objective"] == "Trimmed template objective"
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_path_accepts_trimmed_value_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save aliases should trim template path values outside repo contexts."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / f"{command_name}_outside_trimmed_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside trimmed template objective",
+                "decisions": "Template path trimming behavior outside repo",
+                "next_steps": ["run resume"],
+                "risks_review": "none",
+                "resume_commands": [f"echo {command_name}-outside-trimmed-template"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    saved = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            f"  {template_path}  ",
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in saved.stdout
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    assert payload["objective"] == f"{command_name} outside trimmed template objective"
+
+
 def test_save_rejects_blank_template_path(git_repo: Path, tmp_path: Path) -> None:
     """Save should reject blank template option values."""
     env = dict(os.environ)
