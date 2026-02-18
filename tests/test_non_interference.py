@@ -1911,6 +1911,40 @@ def test_search_json_snippet_match_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_multiline_snippet_match_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+) -> None:
+    """Multiline snippet normalization search paths should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="multiline snippet non-interference baseline",
+        decisions="multiline snippet read path should not mutate repo",
+        next_step="Run multiline search read path",
+        risks="line1\nmultilinetoken line2\nline3",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    rows = json.loads(
+        _run(
+            _dockyard_command(command_name, "multilinetoken", "--json"),
+            cwd=tmp_path,
+            env=env,
+        )
+    )
+    assert len(rows) == 1
+    assert rows[0]["snippet"] == "line1 multilinetoken line2 line3"
+    assert "\n" not in rows[0]["snippet"]
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,
