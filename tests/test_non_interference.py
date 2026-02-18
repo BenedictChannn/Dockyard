@@ -3040,6 +3040,75 @@ def test_save_aliases_with_non_origin_remote_fallback_do_not_modify_repo(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_aliases_tag_link_normalization_paths_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Tag/link normalization save paths should remain non-mutating across aliases."""
+    env = _dockyard_env(tmp_path)
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} tag/link normalization non-interference",
+            "--decisions",
+            "trim and de-duplicate alias tag/link values",
+            "--next-step",
+            "run normalized filters",
+            "--risks",
+            "none",
+            "--command",
+            "echo normalized",
+            "--tag",
+            " alpha ",
+            "--tag",
+            "alpha",
+            "--tag",
+            "   ",
+            "--tag",
+            "beta",
+            "--link",
+            " https://example.com/trimmed ",
+            "--link",
+            "https://example.com/trimmed",
+            "--link",
+            "   ",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=run_cwd,
+        env=env,
+    )
+
+    alpha_rows = json.loads(_run(_dockyard_command("ls", "--tag", "alpha", "--json"), cwd=tmp_path, env=env))
+    beta_rows = json.loads(_run(_dockyard_command("ls", "--tag", "beta", "--json"), cwd=tmp_path, env=env))
+    assert len(alpha_rows) == 1
+    assert len(beta_rows) == 1
+    assert "alpha " not in json.dumps(alpha_rows, ensure_ascii=False)
+
+    links_output = _run(_dockyard_command("links"), cwd=git_repo, env=env)
+    assert links_output.count("https://example.com/trimmed") == 1
+    assert " https://example.com/trimmed " not in links_output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
 def test_review_open_after_save_alias_with_linked_checkpoint_keeps_repo_clean(
     git_repo: Path,
     tmp_path: Path,

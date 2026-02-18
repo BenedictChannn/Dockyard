@@ -3909,19 +3909,27 @@ def test_save_truncates_next_steps_and_commands_to_mvp_limits(
     assert payload["resume_commands"] == ["cmd-1", "cmd-2", "cmd-3", "cmd-4", "cmd-5"]
 
 
-def test_save_normalizes_tag_and_link_values(git_repo: Path, tmp_path: Path) -> None:
-    """Save should trim and de-duplicate tag/link values."""
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_aliases_normalize_tag_and_link_values(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Save aliases should trim and de-duplicate tag/link values."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Tag/link normalization objective",
+            f"{command_name} tag/link normalization objective",
             "--decisions",
             "Trim and de-duplicate save tag/link values",
             "--next-step",
@@ -3954,7 +3962,7 @@ def test_save_normalizes_tag_and_link_values(git_repo: Path, tmp_path: Path) -> 
             "--smoke-fail",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 
