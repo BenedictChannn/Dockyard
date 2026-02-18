@@ -54,6 +54,12 @@ exact repeats.
 `--root` override values are trimmed; blank values are rejected.
 `--template` path values are trimmed; blank values are rejected.
 `--template` must point to a readable file.
+Template files must decode/parse as `.json` or `.toml` object/table payloads.
+Template list fields (`next_steps`, `resume_commands`, `tags`, `links`) must be
+arrays of strings, and `verification` (when present) must be an object/table.
+Template verification status flags (`tests_run`, `build_ok`, `lint_ok`,
+`smoke_ok`) accept booleans or bool-like strings (`yes/no`, `true/false`,
+`1/0`).
 Verification command/note text flags are trimmed; blank values are treated as
 missing.
 

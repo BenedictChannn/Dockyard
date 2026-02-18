@@ -66,6 +66,13 @@ Editor note:
 - `--root` must be non-empty when provided.
 - `--template` path values are trimmed and must be non-empty when provided.
 - `--template` path must resolve to a readable file.
+- template payloads must parse as object/table structures (`.json` or `.toml`);
+  non-object payloads are rejected.
+- template list fields (`next_steps`, `resume_commands`, `tags`, `links`) must
+  be arrays of strings.
+- template `verification` (when present) must be an object/table; status flags
+  (`tests_run`, `build_ok`, `lint_ok`, `smoke_ok`) accept bool or bool-like
+  strings (`yes/no`, `true/false`, `1/0`).
 - verification command/note text fields are trimmed; blank values are treated
   as missing.
 
