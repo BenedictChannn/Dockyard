@@ -4435,6 +4435,98 @@ def test_save_invalid_config_failures_outside_repo_do_not_modify_repo(
         _assert_repo_clean(git_repo)
 
 
+def test_save_unknown_config_section_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Unknown config sections should not affect non-interference guarantees."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "[other_section]\nfoo = \"bar\"\n",
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "unknown config section non-interference",
+            "--decisions",
+            "unknown section should be ignored",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+def test_save_unknown_config_section_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Outside-repo save with unknown config sections should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "[other_section]\nfoo = \"bar\"\n",
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "outside unknown config section non-interference",
+            "--decisions",
+            "unknown section should be ignored outside repo",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
