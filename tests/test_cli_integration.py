@@ -11353,6 +11353,63 @@ def test_template_bool_like_strings_are_coerced(git_repo: Path, tmp_path: Path) 
     assert payload["verification"]["smoke_ok"] is False
 
 
+def test_template_verification_text_fields_are_normalized(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Template verification text fields should trim values and drop blanks."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    template_path = tmp_path / "verification_text_normalization_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": "Template verification text normalization objective",
+                "decisions": "Trim verification command and note text from template values",
+                "next_steps": ["Inspect resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "tests_command": "   ",
+                    "build_ok": "1",
+                    "build_command": "  make build  ",
+                    "lint_ok": "true",
+                    "lint_command": "  ruff check  ",
+                    "smoke_ok": "y",
+                    "smoke_notes": "  smoke passed  ",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    payload = json.loads(_run_dock(["resume", "--json"], cwd=git_repo, env=env).stdout)
+    verification = payload["verification"]
+    assert verification["tests_run"] is True
+    assert verification["build_ok"] is True
+    assert verification["lint_ok"] is True
+    assert verification["smoke_ok"] is True
+    assert verification["tests_command"] is None
+    assert verification["build_command"] == "make build"
+    assert verification["lint_command"] == "ruff check"
+    assert verification["smoke_notes"] == "smoke passed"
+
+
 def test_template_bool_like_invalid_string_is_rejected(
     git_repo: Path,
     tmp_path: Path,
