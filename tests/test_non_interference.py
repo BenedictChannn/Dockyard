@@ -3666,13 +3666,15 @@ def test_resume_blank_berth_validation_does_not_modify_repo(
 
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
-def test_resume_unknown_berth_validation_outside_repo_does_not_modify_repo(
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_resume_unknown_berth_validation_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
     command_name: RunCommandName,
     output_flag: str,
+    run_cwd_kind: RunCwdKind,
 ) -> None:
-    """Unknown berth validation outside repo should remain non-mutating."""
+    """Unknown berth validation should remain non-mutating across cwd contexts."""
     env = _dockyard_env(tmp_path)
 
     _assert_repo_clean(git_repo)
@@ -3681,7 +3683,7 @@ def test_resume_unknown_berth_validation_outside_repo_does_not_modify_repo(
         args.append(output_flag)
     completed = subprocess.run(
         _dockyard_command(*args),
-        cwd=str(tmp_path),
+        cwd=str(git_repo if run_cwd_kind == "repo" else tmp_path),
         check=False,
         capture_output=True,
         text=True,
