@@ -65,6 +65,9 @@ Editor note:
   duplicates are de-duplicated.
 - `save`, `s`, and `dock` share the same template/config validation behavior in
   both in-repo and outside-repo invocations when `--root` is provided.
+- config validation failures (parse errors, invalid section shapes/regex
+  values, or negative thresholds) return actionable, traceback-free errors
+  consistently across `save`, `s`, and `dock` in both invocation contexts.
 - `--root` must be non-empty when provided.
 - `--template` path values are trimmed and must be non-empty when provided.
 - `--template` path must resolve to a readable file.

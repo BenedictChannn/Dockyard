@@ -55,6 +55,9 @@ python3 -m dockyard save \
 exact repeats.
 `save`, `s`, and `dock` share the same template/config validation behavior in
 both in-repo and outside-repo invocations when `--root` is provided.
+Config validation failures (parse errors, invalid section shapes/regex values,
+or negative thresholds) return actionable, traceback-free errors consistently
+across `save`, `s`, and `dock` in both invocation contexts.
 `--root` override values are trimmed; blank values are rejected.
 `--template` path values are trimmed; blank values are rejected.
 `--template` must point to a readable file.
