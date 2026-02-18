@@ -2609,6 +2609,41 @@ def test_save_template_flows_do_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    "case",
+    SAVE_TEMPLATE_SCENARIOS,
+    ids=SAVE_TEMPLATE_IDS,
+)
+def test_save_template_flows_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    case: SaveTemplateScenarioMeta,
+) -> None:
+    """Outside-repo save/template flows should not alter tree or index."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / f"outside_{case.template_name}"
+    _write_non_interference_template(template_path=template_path, objective=f"outside {case.objective}")
+
+    _assert_repo_clean(git_repo)
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            case.command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
 def test_save_with_blank_origin_remote_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
