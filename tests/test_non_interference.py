@@ -2088,6 +2088,39 @@ def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_objective_whitespace_snippet_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SearchCommandName,
+) -> None:
+    """Objective whitespace snippet normalization paths should stay non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _save_checkpoint(
+        git_repo,
+        env,
+        objective="token   with\t\tspace",
+        decisions="objective whitespace snippet should not mutate repo",
+        next_step="Run objective whitespace snippet read path",
+        risks="none",
+        command="echo noop",
+        extra_args=["--tag", "baseline"],
+    )
+
+    _assert_repo_clean(git_repo)
+    rows = json.loads(
+        _run(
+            _dockyard_command(command_name, "token", "--json"),
+            cwd=tmp_path,
+            env=env,
+        )
+    )
+    assert len(rows) == 1
+    assert rows[0]["snippet"] == "token with space"
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize(
     "case",
     RESUME_READ_PATH_SCENARIOS,

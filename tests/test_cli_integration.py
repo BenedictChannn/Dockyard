@@ -18177,6 +18177,51 @@ def test_search_json_snippet_includes_objective_match(
 
 
 @pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_normalizes_objective_whitespace(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should normalize repeated objective whitespace in snippets."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "token   with\t\tspace",
+            "--decisions",
+            "generic decisions",
+            "--next-step",
+            "generic next step",
+            "--risks",
+            "generic risks",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock([command_name, "token", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["snippet"] == "token with space"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_snippet_prioritizes_objective_when_all_fields_match(
     git_repo: Path,
     tmp_path: Path,
