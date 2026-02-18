@@ -18616,6 +18616,49 @@ def test_link_commands_support_root_override_outside_repo(
     assert "https://example.com/root-override" in listed
 
 
+def test_link_branch_scoping_with_root_override_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Root-override link flows should remain branch-scoped outside repo cwd."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    main_branch = _git_current_branch(git_repo)
+    _run_dock(
+        ["link", "https://example.com/root-main-link", "--root", str(git_repo)],
+        cwd=tmp_path,
+        env=env,
+    )
+    main_links = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
+    assert "https://example.com/root-main-link" in main_links
+
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/root-override-links-scope"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    _run_dock(
+        ["link", "https://example.com/root-feature-link", "--root", str(git_repo)],
+        cwd=tmp_path,
+        env=env,
+    )
+    feature_links = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
+    assert "https://example.com/root-feature-link" in feature_links
+    assert "https://example.com/root-main-link" not in feature_links
+
+    subprocess.run(
+        ["git", "checkout", main_branch],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    restored_main_links = _run_dock(["links", "--root", str(git_repo)], cwd=tmp_path, env=env).stdout
+    assert "https://example.com/root-main-link" in restored_main_links
+    assert "https://example.com/root-feature-link" not in restored_main_links
+
+
 def test_link_and_links_accept_trimmed_root_override(
     git_repo: Path,
     tmp_path: Path,

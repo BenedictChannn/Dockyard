@@ -4254,6 +4254,52 @@ def test_link_branch_scoped_paths_keep_repo_clean(git_repo: Path, tmp_path: Path
     _assert_repo_clean(git_repo)
 
 
+def test_link_branch_scoped_root_override_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Root-override branch-scoped link/list flows should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    main_branch = _current_branch(git_repo)
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            "link",
+            "https://example.com/non-interference-root-main-link",
+            "--root",
+            str(git_repo),
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    main_links = _run(_dockyard_command("links", "--root", str(git_repo)), cwd=tmp_path, env=env)
+    assert "https://example.com/non-interference-root-main-link" in main_links
+    _assert_repo_clean(git_repo)
+
+    _run(["git", "checkout", "-b", "feature/non-interference-root-links"], cwd=git_repo, env=env)
+    _run(
+        _dockyard_command(
+            "link",
+            "https://example.com/non-interference-root-feature-link",
+            "--root",
+            str(git_repo),
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    feature_links = _run(_dockyard_command("links", "--root", str(git_repo)), cwd=tmp_path, env=env)
+    assert "https://example.com/non-interference-root-feature-link" in feature_links
+    assert "https://example.com/non-interference-root-main-link" not in feature_links
+    _assert_repo_clean(git_repo)
+
+    _run(["git", "checkout", main_branch], cwd=git_repo, env=env)
+    restored_main_links = _run(_dockyard_command("links", "--root", str(git_repo)), cwd=tmp_path, env=env)
+    assert "https://example.com/non-interference-root-main-link" in restored_main_links
+    assert "https://example.com/non-interference-root-feature-link" not in restored_main_links
+    _assert_repo_clean(git_repo)
+
+
 def test_save_template_validation_failures_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
