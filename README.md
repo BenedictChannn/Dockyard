@@ -269,6 +269,8 @@ python3 -m dockyard links
 `link` validates URL input as a non-empty string.
 Outer whitespace on URL input is trimmed before persistence/display.
 `--root` override values are trimmed; blank values are rejected.
+Link entries remain branch-scoped, including when `link` / `links` are invoked
+outside the repository with `--root`.
 `links` output also compacts multiline values and uses `(unknown)` fallback for
 blank timestamp/URL fields.
 

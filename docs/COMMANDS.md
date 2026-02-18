@@ -315,5 +315,8 @@ Validation:
 - surrounding whitespace is trimmed from URL input before persistence/display
 - `--root` must be non-empty when provided
 
+Branch scoping is preserved for link entries, including root-override usage
+outside repository working directories.
+
 `links` output compacts multiline URL/timestamp values to single-line previews
 and uses `(unknown)` fallback text for blank fields.
