@@ -12074,6 +12074,133 @@ def test_template_type_validation_for_string_and_list_item_fields(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize(
+    ("template_payload", "expected_fragment"),
+    [
+        (
+            {
+                "objective": "invalid risks type",
+                "decisions": "risks_review should be a string",
+                "next_steps": ["step"],
+                "risks_review": 123,
+            },
+            "Template field 'risks_review' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid tags list item type",
+                "decisions": "tags should contain only strings",
+                "next_steps": ["step"],
+                "tags": ["alpha", 7],
+            },
+            "Template field 'tags' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid links list item type",
+                "decisions": "links should contain only strings",
+                "next_steps": ["step"],
+                "links": ["https://example.invalid", 7],
+            },
+            "Template field 'links' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid build bool-like value",
+                "decisions": "build_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"build_ok": "maybe"},
+            },
+            "Template field 'build_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid lint bool-like value",
+                "decisions": "lint_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"lint_ok": "maybe"},
+            },
+            "Template field 'lint_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid smoke bool-like value",
+                "decisions": "smoke_ok should be bool-like",
+                "next_steps": ["step"],
+                "verification": {"smoke_ok": "perhaps"},
+            },
+            "Template field 'smoke_ok' must be bool or bool-like string",
+        ),
+        (
+            {
+                "objective": "invalid build command type",
+                "decisions": "build_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"build_command": 123},
+            },
+            "Template field 'build_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid lint command type",
+                "decisions": "lint_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"lint_command": 123},
+            },
+            "Template field 'lint_command' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid smoke notes type",
+                "decisions": "smoke_notes should be a string",
+                "next_steps": ["step"],
+                "verification": {"smoke_notes": 123},
+            },
+            "Template field 'smoke_notes' must be a string",
+        ),
+    ],
+)
+def test_template_type_validation_for_remaining_schema_fields(
+    git_repo: Path,
+    tmp_path: Path,
+    template_payload: dict[str, Any],
+    expected_fragment: str,
+) -> None:
+    """Template should reject invalid remaining schema field shapes/types."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_remaining_schema_fields.json"
+    bad_template.write_text(json.dumps(template_payload), encoding="utf-8")
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 def test_no_prompt_requires_risks_field(git_repo: Path, tmp_path: Path) -> None:
     """No-prompt save should require non-empty risks/review notes."""
     env = dict(os.environ)
