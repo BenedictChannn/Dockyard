@@ -4348,6 +4348,7 @@ def test_save_invalid_config_failures_do_not_modify_repo(
     cases = [
         ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
         ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
         ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
     ]
 
@@ -4397,6 +4398,7 @@ def test_save_invalid_config_failures_outside_repo_do_not_modify_repo(
     cases = [
         ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
         ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
         ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
     ]
 
