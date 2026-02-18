@@ -3844,6 +3844,21 @@ def test_resume_unknown_berth_is_actionable(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["r", "undock"])
+def test_resume_alias_unknown_berth_is_actionable(
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Resume aliases should fail cleanly for unknown berth names."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock([command_name, "missing-berth"], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Unknown berth: missing-berth" in output
+    assert "Traceback" not in output
+
+
 def test_resume_unknown_berth_preserves_literal_markup_text(tmp_path: Path) -> None:
     """Unknown-berth errors should preserve literal bracketed tokens."""
     env = dict(os.environ)
@@ -3872,6 +3887,17 @@ def test_resume_alias_rejects_blank_berth_argument(tmp_path: Path) -> None:
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     result = _run_dock(["r", "   "], cwd=tmp_path, env=env, expect_code=2)
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Berth must be a non-empty string." in output
+    assert "Traceback" not in output
+
+
+def test_undock_rejects_blank_berth_argument(tmp_path: Path) -> None:
+    """Undock alias should reject blank berth argument values."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(["undock", "   "], cwd=tmp_path, env=env, expect_code=2)
     output = f"{result.stdout}\n{result.stderr}"
     assert "Berth must be a non-empty string." in output
     assert "Traceback" not in output
