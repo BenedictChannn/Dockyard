@@ -2212,6 +2212,32 @@ def test_json_read_outputs_preserve_multiline_text_and_remain_non_mutating(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    "command_args",
+    [
+        ("ls", "--json"),
+        ("harbor", "--json"),
+        ("--json",),
+        ("search", "definitely-no-match", "--json"),
+        ("f", "definitely-no-match", "--json"),
+    ],
+    ids=["ls_empty_json", "harbor_empty_json", "callback_empty_json", "search_empty_json", "f_empty_json"],
+)
+def test_json_empty_state_outputs_are_parseable_ansi_free_and_non_mutating(
+    git_repo: Path,
+    tmp_path: Path,
+    command_args: tuple[str, ...],
+) -> None:
+    """Empty-state JSON outputs should be parseable, ANSI-free, and non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    output = _run(_dockyard_command(*command_args), cwd=tmp_path, env=env)
+    assert "\x1b[" not in output
+    assert json.loads(output) == []
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_objective_first_snippet_paths_keep_repo_clean(
     git_repo: Path,
