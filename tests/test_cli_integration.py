@@ -18177,6 +18177,51 @@ def test_search_json_snippet_includes_objective_match(
 
 
 @pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_json_snippet_prioritizes_objective_when_all_fields_match(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should prefer objective snippets when all fields match."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "prioritytoken objective text",
+            "--decisions",
+            "prioritytoken decisions text",
+            "--next-step",
+            "prioritytoken next step text",
+            "--risks",
+            "prioritytoken risks text",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+
+    rows = json.loads(_run_dock([command_name, "prioritytoken", "--json"], cwd=tmp_path, env=env).stdout)
+    assert len(rows) == 1
+    assert rows[0]["snippet"] == "prioritytoken objective text"
+
+
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_json_snippet_is_bounded(
     git_repo: Path,
     tmp_path: Path,
