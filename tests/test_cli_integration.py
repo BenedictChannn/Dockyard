@@ -11758,6 +11758,7 @@ def test_save_rejects_blank_template_path(git_repo: Path, tmp_path: Path) -> Non
     [
         ("   ", "--template must be a non-empty string."),
         ("__MISSING_TEMPLATE__", "Template not found"),
+        ("__DIRECTORY_TEMPLATE__", "Failed to read template:"),
     ],
 )
 def test_save_alias_template_path_validation_outside_repo_is_actionable(
@@ -11772,7 +11773,11 @@ def test_save_alias_template_path_validation_outside_repo_is_actionable(
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
     missing_template = tmp_path / f"{command_name}_outside_missing_template.json"
-    rendered_template = str(missing_template) if template_value == "__MISSING_TEMPLATE__" else template_value
+    rendered_template = template_value
+    if template_value == "__MISSING_TEMPLATE__":
+        rendered_template = str(missing_template)
+    elif template_value == "__DIRECTORY_TEMPLATE__":
+        rendered_template = str(tmp_path)
 
     failed = _run_dock(
         [

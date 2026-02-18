@@ -5942,6 +5942,7 @@ def test_save_template_path_validation_failures_do_not_modify_repo(
     cases = [
         ("   ", "--template must be a non-empty string."),
         (str(missing_template), "Template not found"),
+        (str(tmp_path), "Failed to read template:"),
     ]
 
     for template_value, expected_fragment in cases:
@@ -5990,6 +5991,7 @@ def test_save_template_path_validation_failures_outside_repo_do_not_modify_repo(
     cases = [
         ("   ", "--template must be a non-empty string."),
         (str(missing_template), "Template not found"),
+        (str(tmp_path), "Failed to read template:"),
     ]
 
     for template_value, expected_fragment in cases:
