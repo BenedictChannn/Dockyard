@@ -17449,11 +17449,13 @@ def test_search_tag_repo_filter_no_match_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_tag_branch_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search JSON should return [] when combined tag+branch filters miss."""
+    """Search aliases JSON should return [] when tag+branch filters miss."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -17490,7 +17492,7 @@ def test_search_tag_branch_filter_no_match_json_returns_empty_array(
     )
 
     result = _run_dock(
-        ["search", "Tag branch filter no-match objective", "--tag", "alpha", "--branch", "missing/branch", "--json"],
+        [command_name, "Tag branch filter no-match objective", "--tag", "alpha", "--branch", "missing/branch", "--json"],
         cwd=tmp_path,
         env=env,
     )
@@ -17498,11 +17500,13 @@ def test_search_tag_branch_filter_no_match_json_returns_empty_array(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_tag_branch_filter_no_match_is_informative(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search should keep no-match guidance for combined tag+branch misses."""
+    """Search aliases should keep no-match guidance for tag+branch misses."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -17539,7 +17543,7 @@ def test_search_tag_branch_filter_no_match_is_informative(
     )
 
     result = _run_dock(
-        ["search", "Tag branch filter message objective", "--tag", "alpha", "--branch", "missing/branch"],
+        [command_name, "Tag branch filter message objective", "--tag", "alpha", "--branch", "missing/branch"],
         cwd=tmp_path,
         env=env,
     )
@@ -17547,11 +17551,13 @@ def test_search_tag_branch_filter_no_match_is_informative(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_tag_repo_branch_filter_no_match_json_returns_empty_array(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search JSON should return [] when tag+repo+branch filters exclude rows."""
+    """Search aliases JSON should return [] when tag+repo+branch filters miss."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -17589,7 +17595,7 @@ def test_search_tag_repo_branch_filter_no_match_json_returns_empty_array(
 
     result = _run_dock(
         [
-            "search",
+            command_name,
             "Tag repo branch filter no-match objective",
             "--tag",
             "alpha",
@@ -17606,11 +17612,13 @@ def test_search_tag_repo_branch_filter_no_match_json_returns_empty_array(
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
+@pytest.mark.parametrize("command_name", ["search", "f"])
 def test_search_tag_repo_branch_filter_no_match_is_informative(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Search should keep no-match guidance for tag+repo+branch misses."""
+    """Search aliases should keep no-match guidance for tag+repo+branch misses."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -17648,7 +17656,7 @@ def test_search_tag_repo_branch_filter_no_match_is_informative(
 
     result = _run_dock(
         [
-            "search",
+            command_name,
             "Tag repo branch filter message objective",
             "--tag",
             "alpha",
