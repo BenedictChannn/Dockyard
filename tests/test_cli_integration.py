@@ -9674,11 +9674,13 @@ def test_save_repo_id_falls_back_to_path_hash_when_origin_is_blank(
     assert payload["repo_id"] == hashlib.sha1(str(git_repo).encode("utf-8")).hexdigest()[:16]
 
 
-def test_save_repo_id_prefers_origin_when_multiple_remotes_exist(
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_repo_id_prefer_origin_when_multiple_remotes_exist(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Save/resume flow should prioritize origin URL over other remotes."""
+    """Save aliases should prioritize origin URL over other remotes."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     origin_url = subprocess.run(
@@ -9697,12 +9699,12 @@ def test_save_repo_id_prefers_origin_when_multiple_remotes_exist(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Repo id origin preference objective",
+            f"{command_name} repo id origin preference objective",
             "--decisions",
             "Use origin even when other remotes exist",
             "--next-step",
@@ -9836,11 +9838,13 @@ def test_save_aliases_use_path_hash_repo_id_fallback_when_origin_blank(
     assert payload["repo_id"] == hashlib.sha1(str(git_repo).encode("utf-8")).hexdigest()[:16]
 
 
-def test_save_repo_id_fallback_remote_ordering_is_case_insensitive(
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_repo_id_fallback_remote_ordering_is_case_insensitive(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Save/resume should choose fallback remotes using case-insensitive sort."""
+    """Save aliases should choose fallback remotes using case-insensitive sort."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     subprocess.run(
@@ -9865,12 +9869,12 @@ def test_save_repo_id_fallback_remote_ordering_is_case_insensitive(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Repo id case-insensitive fallback objective",
+            f"{command_name} repo id case-insensitive fallback objective",
             "--decisions",
             "Prefer alpha before Zeta in fallback ordering",
             "--next-step",
@@ -9897,11 +9901,13 @@ def test_save_repo_id_fallback_remote_ordering_is_case_insensitive(
     assert payload["repo_id"] == hashlib.sha1(alpha_url.encode("utf-8")).hexdigest()[:16]
 
 
-def test_save_repo_id_fallback_remote_case_collision_ordering_is_deterministic(
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_aliases_repo_id_fallback_remote_case_collision_ordering_is_deterministic(
     git_repo: Path,
     tmp_path: Path,
+    command_name: str,
 ) -> None:
-    """Save/resume should deterministically resolve case-colliding remotes."""
+    """Save aliases should deterministically resolve case-colliding remotes."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     subprocess.run(
@@ -9926,12 +9932,12 @@ def test_save_repo_id_fallback_remote_case_collision_ordering_is_deterministic(
 
     _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Repo id case-collision fallback objective",
+            f"{command_name} repo id case-collision fallback objective",
             "--decisions",
             "Use deterministic ordering for case-colliding remote names",
             "--next-step",
