@@ -15656,18 +15656,24 @@ def test_search_rejects_blank_query(tmp_path: Path) -> None:
     assert "Traceback" not in output
 
 
-def test_search_no_matches_is_informative(tmp_path: Path) -> None:
-    """Search should display explicit no-match message when empty."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_no_matches_is_informative(tmp_path: Path, command_name: str) -> None:
+    """Search aliases should display explicit no-match message when empty."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
-    result = _run_dock(["search", "nothing-will-match"], cwd=tmp_path, env=env)
+    result = _run_dock([command_name, "nothing-will-match"], cwd=tmp_path, env=env)
     assert "No checkpoint matches found." in result.stdout
     assert "Traceback" not in f"{result.stdout}\n{result.stderr}"
 
 
-def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Path) -> None:
-    """Search should keep no-match guidance when filters eliminate results."""
+@pytest.mark.parametrize("command_name", ["search", "f"])
+def test_search_filtered_no_matches_is_informative(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Search aliases should keep no-match guidance when filters eliminate results."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
 
@@ -15704,7 +15710,7 @@ def test_search_filtered_no_matches_is_informative(git_repo: Path, tmp_path: Pat
     )
 
     result = _run_dock(
-        ["search", "Filtered no-match objective", "--tag", "missing-tag"],
+        [command_name, "Filtered no-match objective", "--tag", "missing-tag"],
         cwd=tmp_path,
         env=env,
     )
