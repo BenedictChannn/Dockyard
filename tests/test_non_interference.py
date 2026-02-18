@@ -3073,12 +3073,20 @@ def test_dashboard_invalid_flag_validation_outside_repo_does_not_modify_repo(
         (("baseline", "--repo", "   "), "--repo must be a non-empty string."),
         (("baseline", "--branch", "   "), "--branch must be a non-empty string."),
         (
+            ("baseline", "--tag", "   ", "--repo", "repo-x"),
+            "--tag must be a non-empty string.",
+        ),
+        (
             ("baseline", "--repo", "   ", "--branch", "main"),
             "--repo must be a non-empty string.",
         ),
         (
             ("baseline", "--repo", "repo-x", "--branch", "   "),
             "--branch must be a non-empty string.",
+        ),
+        (
+            ("baseline", "--tag", "baseline", "--repo", "   ", "--branch", "main"),
+            "--repo must be a non-empty string.",
         ),
         (("baseline", "--tag", "baseline", "--limit", "0"), "--limit must be >= 1."),
         (("baseline", "--tag", "   ", "--limit", "1"), "--tag must be a non-empty string."),
@@ -3120,12 +3128,20 @@ def test_search_invalid_flag_validation_does_not_modify_repo(
         (("baseline", "--repo", "   "), "--repo must be a non-empty string."),
         (("baseline", "--branch", "   "), "--branch must be a non-empty string."),
         (
+            ("baseline", "--tag", "   ", "--repo", "repo-x"),
+            "--tag must be a non-empty string.",
+        ),
+        (
             ("baseline", "--repo", "   ", "--branch", "main"),
             "--repo must be a non-empty string.",
         ),
         (
             ("baseline", "--repo", "repo-x", "--branch", "   "),
             "--branch must be a non-empty string.",
+        ),
+        (
+            ("baseline", "--tag", "baseline", "--repo", "   ", "--branch", "main"),
+            "--repo must be a non-empty string.",
         ),
         (("baseline", "--tag", "baseline", "--limit", "0"), "--limit must be >= 1."),
         (("baseline", "--tag", "   ", "--limit", "1"), "--tag must be a non-empty string."),
@@ -3567,6 +3583,56 @@ def test_resume_blank_root_validation_outside_repo_does_not_modify_repo(
     assert completed.returncode != 0
     output = f"{completed.stdout}\n{completed.stderr}"
     assert "No such option: --root" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_blank_branch_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+) -> None:
+    """Blank branch validation for resume aliases should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, "--branch", "   "),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "--branch must be a non-empty string." in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_blank_branch_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+) -> None:
+    """Outside-repo blank branch validation for resume aliases stays clean."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, "--branch", "   "),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "--branch must be a non-empty string." in output
     assert "Traceback" not in output
     _assert_repo_clean(git_repo)
 
