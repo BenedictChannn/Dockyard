@@ -5012,6 +5012,18 @@ def test_save_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_command_template = tmp_path / "bad_verification_command_template.json"
+    bad_verification_command_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid verification command type",
+                "decisions": "tests_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5020,6 +5032,7 @@ def test_save_template_validation_failures_do_not_modify_repo(
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
+        (bad_verification_command_template, "Template field 'tests_command' must be a string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5084,6 +5097,18 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_command_template = tmp_path / "bad_verification_command_template_outside.json"
+    bad_verification_command_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid verification command type outside",
+                "decisions": "tests_command should be a string outside",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5092,6 +5117,7 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
+        (bad_verification_command_template, "Template field 'tests_command' must be a string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5158,6 +5184,18 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_verification_command_template = tmp_path / f"{command_name}_bad_verification_command_template.json"
+    bad_verification_command_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid verification command type",
+                "decisions": "tests_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5166,6 +5204,7 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
+        (bad_verification_command_template, "Template field 'tests_command' must be a string"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5232,6 +5271,18 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         ),
         encoding="utf-8",
     )
+    bad_verification_command_template = tmp_path / f"{command_name}_bad_verification_command_template_outside.json"
+    bad_verification_command_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid verification command type outside",
+                "decisions": "tests_command should be a string outside",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5240,6 +5291,7 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         (unsupported_template, "Template must be .json or .toml"),
         (non_utf_template, "Failed to read template"),
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
+        (bad_verification_command_template, "Template field 'tests_command' must be a string"),
     ]
 
     for template_path, expected_fragment in cases:

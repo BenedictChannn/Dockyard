@@ -13026,6 +13026,57 @@ def test_template_type_validation_for_string_and_list_item_fields(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_verification_command_type_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Verification command type errors should remain actionable outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_verification_command_type.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} outside invalid verification command type",
+                "decisions": "tests_command should be a string outside repo",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template field 'tests_command' must be a string" in output
+    assert "Traceback" not in output
+
+
 @pytest.mark.parametrize(
     ("template_payload", "expected_fragment"),
     [
