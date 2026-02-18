@@ -3431,8 +3431,15 @@ def test_run_scopes_with_no_commands_are_noop_success(
     )
 
 
-def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run should ignore blank entries and normalize command spacing."""
+@pytest.mark.parametrize("command_name", RUN_SCOPE_COMMANDS, ids=RUN_SCOPE_COMMANDS)
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_run_aliases_skip_blank_command_entries(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Run aliases should ignore blank entries and normalize command spacing."""
     env = dict(os.environ)
     dock_home = tmp_path / ".dockyard_data"
     env["DOCKYARD_HOME"] = str(dock_home)
@@ -3444,11 +3451,11 @@ def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) 
             str(git_repo),
             "--no-prompt",
             "--objective",
-            "Blank run command baseline",
+            f"{command_name} blank run command baseline",
             "--decisions",
             "Mutate run command payload with blank entries",
             "--next-step",
-            "run resume --run",
+            f"run {command_name} --run",
             "--risks",
             "none",
             "--command",
@@ -3476,20 +3483,35 @@ def test_resume_run_skips_blank_command_entries(git_repo: Path, tmp_path: Path) 
     conn.commit()
     conn.close()
 
-    output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
+    output = _run_dock(
+        _build_run_args(
+            command_name,
+            git_repo=git_repo,
+            include_berth=run_cwd_kind == "tmp",
+        ),
+        cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+        env=env,
+    ).stdout
     assert "$ echo keep-me -> exit 0" in output
     assert "$   echo keep-me   -> exit" not in output
     assert "$  -> exit" not in output
 
 
-def test_resume_run_all_blank_commands_is_noop_success(git_repo: Path, tmp_path: Path) -> None:
-    """Resume --run should no-op successfully when all commands are blank."""
+@pytest.mark.parametrize("command_name", RUN_SCOPE_COMMANDS, ids=RUN_SCOPE_COMMANDS)
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_run_aliases_all_blank_commands_are_noop_success(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: RunCommandName,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Run aliases should no-op successfully when all commands are blank."""
     env = _seed_checkpoint_for_run(
         git_repo=git_repo,
         tmp_path=tmp_path,
-        objective="All blank run commands",
+        objective=f"{command_name} all blank run commands",
         decisions="Rewrite commands payload to blank values",
-        next_step="Run resume --run",
+        next_step=f"Run {command_name} --run",
         resume_commands=["echo placeholder"],
     )
 
@@ -3502,7 +3524,15 @@ def test_resume_run_all_blank_commands_is_noop_success(git_repo: Path, tmp_path:
     conn.commit()
     conn.close()
 
-    output = _run_dock(["resume", "--run"], cwd=git_repo, env=env).stdout
+    output = _run_dock(
+        _build_run_args(
+            command_name,
+            git_repo=git_repo,
+            include_berth=run_cwd_kind == "tmp",
+        ),
+        cwd=_resolve_run_cwd(git_repo, tmp_path, run_cwd_kind),
+        env=env,
+    ).stdout
     assert "-> exit" not in output
 
 
