@@ -3417,6 +3417,136 @@ def test_link_invalid_validation_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_blank_root_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Blank root validation failures for save aliases should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            "   ",
+            "--no-prompt",
+            "--objective",
+            "objective",
+            "--decisions",
+            "decisions",
+            "--next-step",
+            "step",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "--root must be a non-empty string." in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_blank_root_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo blank root validation for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            "   ",
+            "--no-prompt",
+            "--objective",
+            "objective",
+            "--decisions",
+            "decisions",
+            "--next-step",
+            "step",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "--root must be a non-empty string." in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_blank_root_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Unknown root option failures for resume aliases should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, "--root", "   "),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "No such option: --root" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
+def test_resume_blank_root_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo unknown root option for resume aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(command_name, "--root", "   "),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "No such option: --root" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 def test_save_template_validation_failures_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
