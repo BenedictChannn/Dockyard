@@ -3137,6 +3137,152 @@ def test_search_invalid_flag_validation_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("review", "add", "--reason", "invalid", "--severity", "critical"), "Invalid severity"),
+        (
+            ("review", "add", "--reason", "invalid", "--severity", "   "),
+            "Severity must be a non-empty string.",
+        ),
+        (
+            ("review", "add", "--reason", "   ", "--severity", "low"),
+            "--reason must be a non-empty string.",
+        ),
+        (
+            ("review", "add", "--reason", "ok", "--severity", "low", "--repo", "repo-x"),
+            "Provide both --repo and --branch when overriding context.",
+        ),
+        (
+            (
+                "review",
+                "add",
+                "--reason",
+                "ok",
+                "--severity",
+                "low",
+                "--repo",
+                "   ",
+                "--branch",
+                "main",
+            ),
+            "--repo must be a non-empty string.",
+        ),
+        (
+            (
+                "review",
+                "add",
+                "--reason",
+                "ok",
+                "--severity",
+                "low",
+                "--repo",
+                "repo-x",
+                "--branch",
+                "   ",
+            ),
+            "--branch must be a non-empty string.",
+        ),
+    ],
+)
+def test_review_add_invalid_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Review add validation failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(*args),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize(
+    ("args", "expected_fragment"),
+    [
+        (("review", "add", "--reason", "invalid", "--severity", "critical"), "Invalid severity"),
+        (
+            ("review", "add", "--reason", "invalid", "--severity", "   "),
+            "Severity must be a non-empty string.",
+        ),
+        (
+            ("review", "add", "--reason", "   ", "--severity", "low"),
+            "--reason must be a non-empty string.",
+        ),
+        (
+            ("review", "add", "--reason", "ok", "--severity", "low", "--repo", "repo-x"),
+            "Provide both --repo and --branch when overriding context.",
+        ),
+        (
+            (
+                "review",
+                "add",
+                "--reason",
+                "ok",
+                "--severity",
+                "low",
+                "--repo",
+                "   ",
+                "--branch",
+                "main",
+            ),
+            "--repo must be a non-empty string.",
+        ),
+        (
+            (
+                "review",
+                "add",
+                "--reason",
+                "ok",
+                "--severity",
+                "low",
+                "--repo",
+                "repo-x",
+                "--branch",
+                "   ",
+            ),
+            "--branch must be a non-empty string.",
+        ),
+    ],
+)
+def test_review_add_invalid_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    args: tuple[str, ...],
+    expected_fragment: str,
+) -> None:
+    """Outside-repo review add validation failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(*args),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
