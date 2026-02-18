@@ -75,6 +75,11 @@ Editor note:
   strings (`yes/no`, `true/false`, `1/0`).
 - verification command/note text fields are trimmed for both CLI flag inputs
   and template-provided values; blank values are treated as missing.
+- `repo_id` is derived from git remotes using stable precedence for
+  `save`, `s`, and `dock`: prefer `origin` when available, otherwise use the
+  first remote in deterministic case-insensitive name order (including
+  deterministic case-collision handling), with repository-path hash fallback
+  when no usable remote URL exists.
 
 ## `resume` (`r`, `undock`)
 
