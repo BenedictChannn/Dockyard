@@ -4435,6 +4435,110 @@ def test_save_invalid_config_failures_outside_repo_do_not_modify_repo(
         _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_invalid_config_failures_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Save-alias invalid-config failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    config_path = dock_home / "config.toml"
+
+    cases = [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ]
+
+    for config_text, expected_fragment in cases:
+        config_path.write_text(config_text, encoding="utf-8")
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                "--objective",
+                "alias config failure objective",
+                "--decisions",
+                "alias config failure decisions",
+                "--next-step",
+                "fix config",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(git_repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_invalid_config_failures_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Outside-repo save-alias invalid-config failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    config_path = dock_home / "config.toml"
+
+    cases = [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ]
+
+    for config_text, expected_fragment in cases:
+        config_path.write_text(config_text, encoding="utf-8")
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                command_name,
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                "--objective",
+                "alias outside config failure objective",
+                "--decisions",
+                "alias outside config failure decisions",
+                "--next-step",
+                "fix config",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(tmp_path),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
 def test_save_unknown_config_section_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
@@ -4503,6 +4607,102 @@ def test_save_unknown_config_section_outside_repo_does_not_modify_repo(
             "--no-prompt",
             "--objective",
             "outside unknown config section non-interference",
+            "--decisions",
+            "unknown section should be ignored outside repo",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=tmp_path,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_unknown_config_section_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Unknown config sections should keep save aliases non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "[other_section]\nfoo = \"bar\"\n",
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} unknown config section non-interference",
+            "--decisions",
+            "unknown section should be ignored",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ),
+        cwd=git_repo,
+        env=env,
+    )
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_unknown_config_section_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+) -> None:
+    """Outside-repo save aliases with unknown config sections stay non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "[other_section]\nfoo = \"bar\"\n",
+        encoding="utf-8",
+    )
+
+    _assert_repo_clean(git_repo)
+    _run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"outside {command_name} unknown config section non-interference",
             "--decisions",
             "unknown section should be ignored outside repo",
             "--next-step",
