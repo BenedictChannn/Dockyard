@@ -11966,10 +11966,12 @@ def test_save_alias_template_bool_like_strings_are_coerced_outside_repo(
 
 
 @pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_template_verification_text_fields_are_normalized(
     git_repo: Path,
     tmp_path: Path,
     command_name: str,
+    run_cwd_kind: str,
 ) -> None:
     """Template verification text fields should trim values and drop blanks."""
     env = dict(os.environ)
@@ -11998,6 +12000,7 @@ def test_template_verification_text_fields_are_normalized(
         encoding="utf-8",
     )
 
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
     _run_dock(
         [
             command_name,
@@ -12008,7 +12011,7 @@ def test_template_verification_text_fields_are_normalized(
             "--no-prompt",
             "--no-auto-review",
         ],
-        cwd=git_repo,
+        cwd=run_cwd,
         env=env,
     )
 

@@ -2747,6 +2747,71 @@ def test_save_template_bool_like_values_outside_repo_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_save_template_verification_text_normalization_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    run_cwd_kind: str,
+) -> None:
+    """Template verification text normalization should stay non-mutating across contexts."""
+    env = _dockyard_env(tmp_path)
+    template_path = tmp_path / f"{command_name}_verification_text_normalization_template.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} verification text normalization non-interference",
+                "decisions": "trim verification command and notes fields from template values",
+                "next_steps": ["inspect resume json"],
+                "risks_review": "none",
+                "verification": {
+                    "tests_run": "yes",
+                    "tests_command": "   ",
+                    "build_ok": "1",
+                    "build_command": "  make build  ",
+                    "lint_ok": "true",
+                    "lint_command": "  ruff check  ",
+                    "smoke_ok": "y",
+                    "smoke_notes": "  smoke passed  ",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    run_cwd = git_repo if run_cwd_kind == "repo" else tmp_path
+
+    _assert_repo_clean(git_repo)
+    _run(
+        [
+            "python3",
+            "-m",
+            "dockyard",
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--no-auto-review",
+        ],
+        cwd=run_cwd,
+        env=env,
+    )
+
+    payload = json.loads(_run(_dockyard_command("resume", "--json"), cwd=git_repo, env=env))
+    verification = payload["verification"]
+    assert verification["tests_run"] is True
+    assert verification["build_ok"] is True
+    assert verification["lint_ok"] is True
+    assert verification["smoke_ok"] is True
+    assert verification["tests_command"] is None
+    assert verification["build_command"] == "make build"
+    assert verification["lint_command"] == "ruff check"
+    assert verification["smoke_notes"] == "smoke passed"
+    _assert_repo_clean(git_repo)
+
+
 def test_save_with_blank_origin_remote_does_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
