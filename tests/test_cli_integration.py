@@ -12774,6 +12774,46 @@ def test_template_tml_extension_is_rejected(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_tml_extension_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo `.tml` template extension should fail cleanly for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_template.tml"
+    bad_template.write_text('objective = "bad extension"\n', encoding="utf-8")
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "Unsupported template extension",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "use json or toml",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert "Template must be .json or .toml" in output
+    assert "Traceback" not in output
+
+
 def test_template_type_validation_for_list_fields(
     git_repo: Path,
     tmp_path: Path,
@@ -12817,6 +12857,55 @@ def test_template_type_validation_for_list_fields(
         expect_code=2,
     )
     output = f"{result.stdout}\n{result.stderr}"
+    assert "Template field 'next_steps' must be an array of strings" in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_next_steps_list_shape_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo next_steps list-shape validation should fail cleanly for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_next_steps_shape.json"
+    bad_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} bad list shape",
+                "decisions": "invalid next_steps type outside repo",
+                "next_steps": "not-a-list",
+            }
+        ),
+        encoding="utf-8",
+    )
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
     assert "Template field 'next_steps' must be an array of strings" in output
     assert "Traceback" not in output
 
@@ -12902,6 +12991,58 @@ def test_template_type_validation_for_verification_fields(
         expect_code=2,
     )
     output = f"{result.stdout}\n{result.stderr}"
+    assert "Template field 'tests_run' must be bool or bool-like string" in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_template_verification_bool_type_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo TOML verification bool-type validation should fail cleanly for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / f"{command_name}_outside_bad_verification.toml"
+    bad_template.write_text(
+        "\n".join(
+            [
+                f'objective = "{command_name} bad verification"',
+                'decisions = "verification section malformed outside repo"',
+                'next_steps = ["step"]',
+                "",
+                "[verification]",
+                "tests_run = 123",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
     assert "Template field 'tests_run' must be bool or bool-like string" in output
     assert "Traceback" not in output
 

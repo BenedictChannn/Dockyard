@@ -5632,6 +5632,92 @@ def test_save_alias_template_additional_type_validation_paths_keep_repo_clean(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"])
+@pytest.mark.parametrize(
+    ("scenario_id", "expected_fragment"),
+    [
+        ("tml_extension", "Template must be .json or .toml"),
+        ("next_steps_non_list", "Template field 'next_steps' must be an array of strings"),
+        ("verification_tests_run_int_toml", "Template field 'tests_run' must be bool or bool-like string"),
+    ],
+)
+def test_save_alias_template_additional_validation_variants_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: SaveCommandName,
+    run_cwd_kind: RunCwdKind,
+    scenario_id: str,
+    expected_fragment: str,
+) -> None:
+    """Additional template validation variants should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, run_cwd_kind)
+
+    if scenario_id == "tml_extension":
+        bad_template = tmp_path / f"{command_name}_{run_cwd_kind}_template.tml"
+        bad_template.write_text('objective = "bad extension"\n', encoding="utf-8")
+    elif scenario_id == "next_steps_non_list":
+        bad_template = tmp_path / f"{command_name}_{run_cwd_kind}_bad_next_steps_shape.json"
+        bad_template.write_text(
+            json.dumps(
+                {
+                    "objective": "bad list shape",
+                    "decisions": "invalid next_steps type",
+                    "next_steps": "not-a-list",
+                }
+            ),
+            encoding="utf-8",
+        )
+    else:
+        bad_template = tmp_path / f"{command_name}_{run_cwd_kind}_bad_verification.toml"
+        bad_template.write_text(
+            "\n".join(
+                [
+                    'objective = "bad verification"',
+                    'decisions = "verification section malformed"',
+                    'next_steps = ["step"]',
+                    "",
+                    "[verification]",
+                    "tests_run = 123",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override objective",
+            "--decisions",
+            "override decisions",
+            "--next-step",
+            "override step",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(run_cwd),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 def test_save_required_field_validation_failures_do_not_modify_repo(
     git_repo: Path,
     tmp_path: Path,
