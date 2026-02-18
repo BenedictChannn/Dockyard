@@ -12533,6 +12533,68 @@ def test_invalid_template_content_produces_actionable_error(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+@pytest.mark.parametrize(
+    ("fixture_kind", "expected_fragment"),
+    [
+        ("bad_parse", "Failed to parse template"),
+        ("bad_schema", "Template must contain an object/table"),
+        ("unsupported", "Template must be .json or .toml"),
+        ("non_utf", "Failed to read template"),
+    ],
+)
+def test_save_alias_template_content_validation_outside_repo_is_actionable(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+    fixture_kind: str,
+    expected_fragment: str,
+) -> None:
+    """Template content validation should stay actionable outside repo for aliases."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    if fixture_kind == "bad_parse":
+        template_path = tmp_path / f"{command_name}_outside_bad_parse_template.toml"
+        template_path.write_text("[broken\nvalue = 1", encoding="utf-8")
+    elif fixture_kind == "bad_schema":
+        template_path = tmp_path / f"{command_name}_outside_bad_schema_template.json"
+        template_path.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    elif fixture_kind == "unsupported":
+        template_path = tmp_path / f"{command_name}_outside_bad_template.yaml"
+        template_path.write_text("objective: unsupported\n", encoding="utf-8")
+    else:
+        template_path = tmp_path / f"{command_name}_outside_non_utf_template.json"
+        template_path.write_bytes(b"\xff\xfe\x00")
+
+    failed = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--template",
+            str(template_path),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} outside template content validation objective",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix template content",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 def test_unsupported_template_extension_produces_actionable_error(
     git_repo: Path,
     tmp_path: Path,
