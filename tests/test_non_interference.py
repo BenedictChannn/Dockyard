@@ -4335,6 +4335,104 @@ def test_save_alias_required_field_validation_failures_outside_repo_do_not_modif
         _assert_repo_clean(git_repo)
 
 
+def test_save_invalid_config_failures_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Save invalid-config failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    config_path = dock_home / "config.toml"
+
+    cases = [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ]
+
+    for config_text, expected_fragment in cases:
+        config_path.write_text(config_text, encoding="utf-8")
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                "save",
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                "--objective",
+                "config failure objective",
+                "--decisions",
+                "config failure decisions",
+                "--next-step",
+                "fix config",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(git_repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
+def test_save_invalid_config_failures_outside_repo_do_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Outside-repo save invalid-config failures should remain non-mutating."""
+    env = _dockyard_env(tmp_path)
+    dock_home = Path(env["DOCKYARD_HOME"])
+    dock_home.mkdir(parents=True, exist_ok=True)
+    config_path = dock_home / "config.toml"
+
+    cases = [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ]
+
+    for config_text, expected_fragment in cases:
+        config_path.write_text(config_text, encoding="utf-8")
+        _assert_repo_clean(git_repo)
+        completed = subprocess.run(
+            _dockyard_command(
+                "save",
+                "--root",
+                str(git_repo),
+                "--no-prompt",
+                "--objective",
+                "config failure objective",
+                "--decisions",
+                "config failure decisions",
+                "--next-step",
+                "fix config",
+                "--risks",
+                "none",
+                "--command",
+                "echo noop",
+            ),
+            cwd=str(tmp_path),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert completed.returncode != 0
+        output = f"{completed.stdout}\n{completed.stderr}"
+        assert expected_fragment in output
+        assert "Traceback" not in output
+        _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 @pytest.mark.parametrize("output_flag", ["", "--json", "--handoff"], ids=["default", "json", "handoff"])
 def test_trimmed_explicit_berth_resume_read_modes_keep_repo_clean(
