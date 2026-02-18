@@ -12,7 +12,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Literal
+from typing import Any, Literal
 
 import pytest
 
@@ -11999,6 +11999,78 @@ def test_template_verification_section_must_be_object_or_table(
     )
     output = f"{result.stdout}\n{result.stderr}"
     assert "Template field 'verification' must be a table/object" in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize(
+    ("template_payload", "expected_fragment"),
+    [
+        (
+            {
+                "objective": 123,
+                "decisions": "invalid objective type",
+                "next_steps": ["step"],
+            },
+            "Template field 'objective' must be a string",
+        ),
+        (
+            {
+                "objective": "invalid list item type",
+                "decisions": "resume_commands contains non-string",
+                "next_steps": ["step"],
+                "resume_commands": ["echo good", 7],
+            },
+            "Template field 'resume_commands' must be an array of strings",
+        ),
+        (
+            {
+                "objective": "invalid verification command type",
+                "decisions": "tests_command should be a string",
+                "next_steps": ["step"],
+                "verification": {"tests_command": 123},
+            },
+            "Template field 'tests_command' must be a string",
+        ),
+    ],
+)
+def test_template_type_validation_for_string_and_list_item_fields(
+    git_repo: Path,
+    tmp_path: Path,
+    template_payload: dict[str, Any],
+    expected_fragment: str,
+) -> None:
+    """Template should reject invalid string fields and list item types."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    bad_template = tmp_path / "bad_string_or_list_item_types.json"
+    bad_template.write_text(json.dumps(template_payload), encoding="utf-8")
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--template",
+            str(bad_template),
+            "--no-prompt",
+            "--objective",
+            "override",
+            "--decisions",
+            "override",
+            "--next-step",
+            "override",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=git_repo,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert expected_fragment in output
     assert "Traceback" not in output
 
 
