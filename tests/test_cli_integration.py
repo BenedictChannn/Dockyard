@@ -19605,8 +19605,9 @@ def test_links_in_repo_with_no_items_is_informative(git_repo: Path, tmp_path: Pa
     assert "No links for current slip." in output
 
 
-def test_save_with_non_git_root_is_actionable(tmp_path: Path) -> None:
-    """Save should fail clearly when --root points to a non-git directory."""
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_alias_non_git_root_is_actionable(tmp_path: Path, command_name: str) -> None:
+    """Save aliases should fail clearly when --root points to non-git directory."""
     env = dict(os.environ)
     env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
     non_git_root = tmp_path / "not_a_repo"
@@ -19614,12 +19615,12 @@ def test_save_with_non_git_root_is_actionable(tmp_path: Path) -> None:
 
     failed = _run_dock(
         [
-            "save",
+            command_name,
             "--root",
             str(non_git_root),
             "--no-prompt",
             "--objective",
-            "Non-git root validation objective",
+            f"{command_name} non-git root validation objective",
             "--decisions",
             "Ensure actionable root validation error",
             "--next-step",

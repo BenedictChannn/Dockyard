@@ -4314,6 +4314,90 @@ def test_save_blank_root_validation_outside_repo_does_not_modify_repo(
     _assert_repo_clean(git_repo)
 
 
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_non_git_root_validation_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Non-git --root validation failures for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+    non_git_root = tmp_path / "not_a_repo_non_interference"
+    non_git_root.mkdir()
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(non_git_root),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} non-git root non-interference",
+            "--decisions",
+            "ensure actionable non-git root validation path",
+            "--next-step",
+            "do not write checkpoint",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(git_repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "git repository" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
+@pytest.mark.parametrize("command_name", ["save", "s", "dock"])
+def test_save_non_git_root_validation_outside_repo_does_not_modify_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Outside-repo non-git --root validation for save aliases should stay clean."""
+    env = _dockyard_env(tmp_path)
+    non_git_root = tmp_path / "not_a_repo_outside_non_interference"
+    non_git_root.mkdir()
+
+    _assert_repo_clean(git_repo)
+    completed = subprocess.run(
+        _dockyard_command(
+            command_name,
+            "--root",
+            str(non_git_root),
+            "--no-prompt",
+            "--objective",
+            f"outside {command_name} non-git root non-interference",
+            "--decisions",
+            "ensure actionable outside-repo non-git root validation path",
+            "--next-step",
+            "do not write checkpoint outside repo",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ),
+        cwd=str(tmp_path),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert completed.returncode != 0
+    output = f"{completed.stdout}\n{completed.stderr}"
+    assert "git repository" in output
+    assert "Traceback" not in output
+    _assert_repo_clean(git_repo)
+
+
 @pytest.mark.parametrize("command_name", ["resume", "r", "undock"])
 def test_resume_blank_root_validation_does_not_modify_repo(
     git_repo: Path,
