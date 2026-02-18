@@ -12294,6 +12294,54 @@ def test_negative_threshold_config_is_actionable(
     assert "Traceback" not in output
 
 
+@pytest.mark.parametrize(
+    ("config_text", "expected_fragment"),
+    [
+        ("[review_heuristics\nfiles_changed_threshold = 4", "Invalid config TOML"),
+        ('review_heuristics = "bad-type"\n', "Config section review_heuristics must be a table."),
+        ('[review_heuristics]\nrisky_path_patterns = ["(^|/)[bad"]\n', "Invalid regex"),
+        ("[review_heuristics]\nchurn_threshold = -1\n", "Config field review_heuristics.churn_threshold must be >= 0."),
+    ],
+)
+def test_save_invalid_config_is_actionable_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+    config_text: str,
+    expected_fragment: str,
+) -> None:
+    """Primary save should surface actionable config validation errors outside repo."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(config_text, encoding="utf-8")
+
+    failed = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "save outside invalid config case",
+            "--decisions",
+            "should fail before save",
+            "--next-step",
+            "fix config",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+        ],
+        cwd=tmp_path,
+        env=env,
+        expect_code=2,
+    )
+    output = f"{failed.stdout}\n{failed.stderr}"
+    assert expected_fragment in output
+    assert "Traceback" not in output
+
+
 @pytest.mark.parametrize("command_name", ["s", "dock"])
 @pytest.mark.parametrize(
     ("config_text", "expected_fragment"),
@@ -12398,6 +12446,57 @@ def test_unknown_config_sections_do_not_block_save(
     assert "Saved checkpoint" in result.stdout
 
 
+def test_unknown_config_sections_do_not_block_save_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Outside-repo save should ignore unknown config sections and succeed."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[other_section]",
+                'foo = "bar"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "outside unknown section config",
+            "--decisions",
+            "save should succeed",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=tmp_path,
+        env=env,
+    )
+    assert "Saved checkpoint" in result.stdout
+
+
 @pytest.mark.parametrize("command_name", ["s", "dock"])
 @pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
 def test_save_alias_unknown_config_sections_do_not_block_save(
@@ -12495,6 +12594,57 @@ def test_empty_review_heuristics_section_uses_default_save_behavior(
             "--smoke-fail",
         ],
         cwd=git_repo,
+        env=env,
+    )
+    assert "Created review item" in save_result.stdout
+    assert "Review triggers:" in save_result.stdout
+    assert "Traceback" not in f"{save_result.stdout}\n{save_result.stderr}"
+
+    review_list = _run_dock(["review"], cwd=tmp_path, env=env).stdout
+    assert "No review items." not in review_list
+
+
+def test_empty_review_heuristics_section_uses_default_save_behavior_outside_repo(
+    git_repo: Path,
+    tmp_path: Path,
+) -> None:
+    """Outside-repo save should preserve defaults with empty review_heuristics."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text("[review_heuristics]\n", encoding="utf-8")
+
+    security_dir = git_repo / "security"
+    security_dir.mkdir(exist_ok=True)
+    (security_dir / "guard.py").write_text("print('guard')\n", encoding="utf-8")
+
+    save_result = _run_dock(
+        [
+            "save",
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            "outside empty review section defaults",
+            "--decisions",
+            "Default risky-path trigger should still apply",
+            "--next-step",
+            "Confirm auto review is still generated",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+        ],
+        cwd=tmp_path,
         env=env,
     )
     assert "Created review item" in save_result.stdout
