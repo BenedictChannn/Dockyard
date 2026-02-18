@@ -23,6 +23,8 @@ python3 -m dockyard --help
 ```
 
 Or via console script (`dock`) if your user script directory is on `PATH`.
+Machine-readable `--json` outputs are emitted without ANSI escapes and preserve
+unicode text without `\u` escaping.
 
 ## Core workflow
 

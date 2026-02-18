@@ -7,7 +7,7 @@ python3 -m dockyard <command>
 ```
 
 JSON flags (`--json`) emit raw machine-parseable JSON suitable for piping to
-tools like `jq` (including unicode text without escaping).
+tools like `jq` (ANSI-free and including unicode text without escaping).
 
 ## `save` (`s`, `dock`)
 
