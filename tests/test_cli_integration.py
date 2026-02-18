@@ -11729,6 +11729,59 @@ def test_unknown_config_sections_do_not_block_save(
     assert "Saved checkpoint" in result.stdout
 
 
+@pytest.mark.parametrize("command_name", ["s", "dock"])
+def test_save_alias_unknown_config_sections_do_not_block_save(
+    git_repo: Path,
+    tmp_path: Path,
+    command_name: str,
+) -> None:
+    """Save aliases should ignore unknown config sections and succeed."""
+    env = dict(os.environ)
+    dock_home = tmp_path / ".dockyard_data"
+    env["DOCKYARD_HOME"] = str(dock_home)
+    dock_home.mkdir(parents=True, exist_ok=True)
+    (dock_home / "config.toml").write_text(
+        "\n".join(
+            [
+                "[other_section]",
+                'foo = "bar"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_dock(
+        [
+            command_name,
+            "--root",
+            str(git_repo),
+            "--no-prompt",
+            "--objective",
+            f"{command_name} unknown section config",
+            "--decisions",
+            "save should succeed",
+            "--next-step",
+            "run resume",
+            "--risks",
+            "none",
+            "--command",
+            "echo noop",
+            "--tests-run",
+            "--tests-command",
+            "pytest -q",
+            "--build-ok",
+            "--build-command",
+            "echo build",
+            "--lint-fail",
+            "--smoke-fail",
+            "--no-auto-review",
+        ],
+        cwd=git_repo,
+        env=env,
+    )
+    assert "Saved checkpoint" in result.stdout
+
+
 def test_empty_review_heuristics_section_uses_default_save_behavior(
     git_repo: Path,
     tmp_path: Path,
