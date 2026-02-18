@@ -5036,6 +5036,29 @@ def test_save_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_objective_type_template = tmp_path / "bad_objective_type_template.json"
+    bad_objective_type_template.write_text(
+        json.dumps(
+            {
+                "objective": 123,
+                "decisions": "invalid objective type",
+                "next_steps": ["step"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    bad_resume_commands_item_type_template = tmp_path / "bad_resume_commands_item_type_template.json"
+    bad_resume_commands_item_type_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid resume_commands list item type",
+                "decisions": "resume_commands contains non-string",
+                "next_steps": ["step"],
+                "resume_commands": ["echo good", 7],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5046,6 +5069,8 @@ def test_save_template_validation_failures_do_not_modify_repo(
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
         (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
+        (bad_objective_type_template, "Template field 'objective' must be a string"),
+        (bad_resume_commands_item_type_template, "Template field 'resume_commands' must be an array of strings"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5134,6 +5159,29 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_objective_type_template = tmp_path / "bad_objective_type_template_outside.json"
+    bad_objective_type_template.write_text(
+        json.dumps(
+            {
+                "objective": 123,
+                "decisions": "invalid objective type outside",
+                "next_steps": ["step"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    bad_resume_commands_item_type_template = tmp_path / "bad_resume_commands_item_type_template_outside.json"
+    bad_resume_commands_item_type_template.write_text(
+        json.dumps(
+            {
+                "objective": "invalid resume_commands list item type outside",
+                "decisions": "resume_commands contains non-string outside",
+                "next_steps": ["step"],
+                "resume_commands": ["echo good", 7],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5144,6 +5192,8 @@ def test_save_template_validation_failures_outside_repo_do_not_modify_repo(
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
         (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
+        (bad_objective_type_template, "Template field 'objective' must be a string"),
+        (bad_resume_commands_item_type_template, "Template field 'resume_commands' must be an array of strings"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5234,6 +5284,29 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         ),
         encoding="utf-8",
     )
+    bad_objective_type_template = tmp_path / f"{command_name}_bad_objective_type_template.json"
+    bad_objective_type_template.write_text(
+        json.dumps(
+            {
+                "objective": 123,
+                "decisions": f"{command_name} invalid objective type",
+                "next_steps": ["step"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    bad_resume_commands_item_type_template = tmp_path / f"{command_name}_bad_resume_commands_item_type_template.json"
+    bad_resume_commands_item_type_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid resume_commands list item type",
+                "decisions": "resume_commands contains non-string",
+                "next_steps": ["step"],
+                "resume_commands": ["echo good", 7],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5244,6 +5317,8 @@ def test_save_alias_template_validation_failures_do_not_modify_repo(
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
         (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
+        (bad_objective_type_template, "Template field 'objective' must be a string"),
+        (bad_resume_commands_item_type_template, "Template field 'resume_commands' must be an array of strings"),
     ]
 
     for template_path, expected_fragment in cases:
@@ -5334,6 +5409,29 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         ),
         encoding="utf-8",
     )
+    bad_objective_type_template = tmp_path / f"{command_name}_bad_objective_type_template_outside.json"
+    bad_objective_type_template.write_text(
+        json.dumps(
+            {
+                "objective": 123,
+                "decisions": f"{command_name} invalid objective type outside",
+                "next_steps": ["step"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    bad_resume_commands_item_type_template = tmp_path / f"{command_name}_bad_resume_commands_item_type_template_outside.json"
+    bad_resume_commands_item_type_template.write_text(
+        json.dumps(
+            {
+                "objective": f"{command_name} invalid resume_commands list item type outside",
+                "decisions": "resume_commands contains non-string outside",
+                "next_steps": ["step"],
+                "resume_commands": ["echo good", 7],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     cases = [
         (missing_template, "Template not found"),
@@ -5344,6 +5442,8 @@ def test_save_alias_template_validation_failures_outside_repo_do_not_modify_repo
         (bad_bool_like_template, "Template field 'tests_run' must be bool or bool-like string"),
         (bad_verification_command_template, "Template field 'tests_command' must be a string"),
         (bad_verification_shape_template, "Template field 'verification' must be a table/object"),
+        (bad_objective_type_template, "Template field 'objective' must be a string"),
+        (bad_resume_commands_item_type_template, "Template field 'resume_commands' must be an array of strings"),
     ]
 
     for template_path, expected_fragment in cases:
