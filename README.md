@@ -1,1 +1,386 @@
 # Dockyard
+
+Dockyard is a **local-first, git-aware CLI** for capturing coding context quickly
+(`dock save`) and resuming work instantly (`dock resume`) across many repos and branches.
+
+It acts like a coding-workstream notepad with a queryable index:
+
+- stores markdown checkpoints (human-readable)
+- indexes checkpoints/reviews in SQLite (fast dashboard and search)
+- tracks review debt and verification state
+- avoids mutating project repos by default
+
+## Install
+
+```bash
+python3 -m pip install -e ".[dev]"
+```
+
+Run via module:
+
+```bash
+python3 -m dockyard --help
+```
+
+Or via console script (`dock`) if your user script directory is on `PATH`.
+Machine-readable `--json` outputs are emitted without ANSI escapes and preserve
+unicode text without `\u` escaping.
+
+## Core workflow
+
+### 1) Save a checkpoint before context switching
+
+```bash
+python3 -m dockyard save
+# alias:
+python3 -m dockyard dock
+```
+
+Fast non-interactive mode:
+
+```bash
+python3 -m dockyard save \
+  --no-prompt \
+  --objective "Implement search indexing" \
+  --decisions "Use SQLite FTS5 with LIKE fallback" \
+  --next-step "Write search tests" \
+  --next-step "Document filters" \
+  --risks "Review migration logic" \
+  --command "pytest -q" \
+  --tests-run --tests-command "pytest -q" \
+  --build-ok --build-command "python -m build"
+```
+
+`save` trims `--tag` / `--link` values, ignores blank entries, and de-duplicates
+exact repeats.
+`save`, `s`, and `dock` share the same template/config validation behavior in
+both in-repo and outside-repo invocations when `--root` is provided.
+Config validation failures (parse errors, invalid section shapes/regex values,
+or negative thresholds) return actionable, traceback-free errors consistently
+across `save`, `s`, and `dock` in both invocation contexts.
+Configured review-heuristic overrides (for default-trigger suppression or
+forced-trigger paths) apply consistently across `save`, `s`, and `dock` in both
+in-repo and outside-repo invocations when `--root` is provided.
+`--root` override values are trimmed; blank values are rejected.
+`--template` path values are trimmed; blank values are rejected.
+`--template` must point to a readable file.
+Template files must decode/parse as `.json` or `.toml` object/table payloads.
+Template list fields (`next_steps`, `resume_commands`, `tags`, `links`) must be
+arrays of strings, and `verification` (when present) must be an object/table.
+Template verification status flags (`tests_run`, `build_ok`, `lint_ok`,
+`smoke_ok`) accept booleans or bool-like strings (`yes/no`, `true/false`,
+`1/0`).
+Verification command/note text values are trimmed for both CLI flags and
+template-provided values; blank entries are treated as missing.
+This verification-text normalization behavior is consistent for `save`, `s`,
+and `dock`, including outside-repo invocations when `--root` is provided.
+
+Template-powered non-interactive mode:
+
+```bash
+python3 -m dockyard save --template ./checkpoint_template.json --no-prompt
+```
+
+Optional editor capture for decisions:
+
+```bash
+python3 -m dockyard save --editor
+# if --decisions is provided, it takes precedence and $EDITOR is not invoked
+# the scaffold heading is ignored, but intentional blank lines are preserved
+# scaffold-only input is whitespace-tolerant (including indented headings)
+# repeated scaffold heading lines are stripped before persistence
+```
+
+Example template:
+
+```json
+{
+  "objective": "Ship harbor sorting polish",
+  "decisions": "Keep sorting in SQL-backed index layer",
+  "next_steps": ["Add integration test", "Re-run perf smoke"],
+  "risks_review": "Review ordering assumptions",
+  "resume_commands": ["pytest -q"],
+  "tags": ["mvp"],
+  "links": ["https://example.com/pr/123"],
+  "verification": {
+    "tests_run": true,
+    "tests_command": "pytest -q",
+    "build_ok": true,
+    "build_command": "python -m build",
+    "lint_ok": false,
+    "smoke_ok": false
+  }
+}
+```
+
+### 2) Resume quickly
+
+```bash
+python3 -m dockyard resume
+```
+
+Useful flags:
+
+- `--branch <name>` resume specific branch
+- `--handoff` print agent-ready block
+- `--run` run recorded commands in sequence (stop on first failure)
+- `--json` structured output
+- BERTH values are validated as non-empty strings for `resume`, `r`, and
+  `undock`; unknown berth values return actionable errors while preserving
+  literal text.
+
+`resume`/`r`/`undock` validate BERTH values as non-empty strings and return
+actionable unknown-berth errors while preserving literal text.
+- Resume summary lines compact multiline objective/next-step text into single
+  line previews for faster scanning.
+- Resume top-lines summary contract (Project/Branch, Last Checkpoint,
+  Objective, Next Steps, Open Reviews, Verification) is preserved across
+  `resume`, `r`, and `undock`, including explicit BERTH and BERTH + `--branch`
+  lookups outside repos, plus in-repo `--branch` flows with trimmed values.
+- Trimmed BERTH/`--branch` inputs render canonical `Project/Branch` header
+  values (`<berth> / <branch>`).
+- Handoff bullets and `--run` command labels are compacted to single-line
+  previews for readability.
+- BERTH + `--branch` scoped resume lookups support both `--handoff` and
+  `--json` when run outside repo directories.
+- Handoff shows `(none recorded)` placeholders when no next steps or commands
+  are recorded.
+- Handoff renders blank objective/risks values as `(none)`, and `--run`
+  trims command whitespace while ignoring blank command entries after
+  normalization.
+- `--run` is always explicit opt-in, including BERTH/`--branch` variants
+  (for example: `resume my-berth --branch main --run`).
+- If no commands are recorded, run mode is a safe no-op (no command rows are
+  executed) for `resume`, `r`, and `undock`.
+- The same no-op behavior applies when persisted command entries normalize to
+  blank/whitespace values.
+- If the persisted berth root path for `--run` is missing, Dockyard prints an
+  actionable error instead of a traceback (including BERTH + `--branch`
+  variants).
+- If a BERTH/`--branch` selection has no checkpoint, Dockyard reports an
+  actionable context-not-found error (no traceback) across default, `--json`,
+  and `--handoff` outputs.
+- BERTH argument values are trimmed; blank BERTH values are rejected.
+- `--branch` values are trimmed; blank values are rejected.
+
+### 3) Harbor dashboard across projects
+
+```bash
+python3 -m dockyard ls
+# default callback path (no subcommand):
+python3 -m dockyard
+```
+
+Filters:
+
+```bash
+python3 -m dockyard ls --stale 3 --tag mvp --limit 20
+python3 -m dockyard harbor --tag mvp --limit 20
+# same filters via bare default callback:
+python3 -m dockyard --json --tag mvp --limit 20
+```
+
+`--tag` values are trimmed; blank values are rejected.
+Bare callback validation mirrors `ls` constraints (`--stale >= 0`,
+`--limit >= 1`, non-empty `--tag`).
+In `--json` mode, both `ls` and the bare callback path return `[]` when no
+slips are indexed.
+This JSON no-match contract also holds for filtered dashboard queries
+(`--tag`, `--stale`, `--limit`, and combined filter variants).
+Slip status recomputation after `review add` / `review done` is consistent
+across `ls`, `harbor`, and the bare callback JSON dashboard path.
+
+### 4) Search objectives, decisions, next steps, and risks
+
+```bash
+python3 -m dockyard search "migration"
+python3 -m dockyard search "search indexing" --tag backend --repo <repo_id|berth_name>
+python3 -m dockyard search "search indexing" --repo <repo_id> --branch main --tag mvp
+python3 -m dockyard search "auth" --json
+python3 -m dockyard search "auth" --tag backend --branch feature/workstream --json
+python3 -m dockyard search "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard search "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --limit 5 --json
+python3 -m dockyard f "auth" --branch feature/workstream
+python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream
+python3 -m dockyard f "auth" --tag backend
+python3 -m dockyard f "auth" --tag backend --branch feature/workstream
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name>
+python3 -m dockyard f "auth" --tag backend --limit 5
+python3 -m dockyard f "auth" --branch feature/workstream --json
+python3 -m dockyard f "auth" --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard f "auth" --tag backend --json
+python3 -m dockyard f "auth" --tag backend --branch feature/workstream --json
+python3 -m dockyard f "auth" --tag backend --limit 5 --json
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --json
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --json
+python3 -m dockyard f "auth" --tag backend --repo <repo_id|berth_name> --branch feature/workstream --limit 5 --json
+# --repo also accepts berth name
+# query must be non-empty, --limit must be >= 1
+# --tag must be non-empty when provided
+# --repo must be non-empty when provided
+# --branch must be non-empty when provided
+# in --json mode, no matches are returned as []
+# when --repo matches both a repo_id and a berth name, exact repo_id wins
+# --limit is applied after --tag/--repo/--branch filtering
+# search/f --json rows expose: id, repo_id, berth_name, branch,
+# created_at, snippet, objective
+# snippets are compacted to single-line text for scanability
+# when multiple fields match, snippets prioritize objective text first
+# snippet payloads are bounded to 140 chars in --json output
+# non-JSON search/f table output truncates long snippets for readability
+# unicode characters are emitted as-is in --json output
+# filtered searches keep the same no-match behavior/message semantics
+# including combined --repo+--branch and --tag+--repo+--branch filters
+# this no-match behavior also holds when --limit is combined with filters
+# queries containing FTS-special syntax (for example `security/path`) are
+# handled with parser-safe fallback matching
+# parser-safe fallback keeps --tag/--repo/--branch filter semantics in both
+# table and --json output modes
+# parser-safe fallback also preserves those semantics when --limit is present
+```
+
+### 5) Review queue
+
+```bash
+python3 -m dockyard review            # list open
+python3 -m dockyard review list       # explicit list subcommand
+python3 -m dockyard review --all      # include resolved
+python3 -m dockyard review list --all # explicit list subcommand + resolved
+python3 -m dockyard review add --reason "manual check" --severity med
+# outside repo context:
+python3 -m dockyard review add --reason "manual check" --severity med --repo <repo_id|berth_name> --branch <branch>
+python3 -m dockyard review open <id>
+python3 -m dockyard review done <id>
+```
+
+Review list/open outputs compact multiline fields into single-line text and use
+explicit fallback markers (`(unknown)` / `(none)`) for blank metadata values
+(including checkpoint id, notes, and file fields in `review open`).
+Associated checkpoint details in `review open` include reviews sourced from
+checkpoints captured via `save`, `s`, and `dock`.
+If a linked checkpoint id is missing from the index, `review open` shows
+`status: missing from index` consistently across those save-alias flows.
+`review add` ignores blank `--file` entries and de-duplicates exact repeats.
+Optional `--notes` / `--checkpoint-id` values are trimmed, and blank values are
+treated as missing.
+`--repo` / `--branch` override values are trimmed before lookup.
+`--repo` / `--branch` must be non-empty when provided.
+`--severity` must be non-empty and one of `low|med|high`.
+`review open` / `review done` IDs are trimmed; blank IDs are rejected.
+Both `review` and `review list` print `No review items.` when the ledger is empty.
+`review --all` and `review list --all` return the same ordered set of open and
+resolved items.
+
+### 6) Link URLs to a branch context
+
+```bash
+python3 -m dockyard link https://example.com/pr/123
+python3 -m dockyard links
+```
+
+`link` validates URL input as a non-empty string.
+Outer whitespace on URL input is trimmed before persistence/display.
+`--root` override values are trimmed; blank values are rejected.
+Link entries remain branch-scoped, including when `link` / `links` are invoked
+outside the repository with `--root`.
+This branch-scoping guarantee also applies when `--root` values include
+surrounding whitespace (trimmed root override input).
+`links` output also compacts multiline values and uses `(unknown)` fallback for
+blank timestamp/URL fields.
+
+## Storage
+
+By default Dockyard writes to:
+
+- Linux/macOS: `~/.local/share/dockyard/`
+- Windows: `%APPDATA%/dockyard/`
+
+Layout:
+
+- `checkpoints/<repo_id>/<branch>/<checkpoint_id>.md`
+- `db/index.sqlite`
+- `config.toml`
+
+`repo_id` is a stable hash derived from a configured git remote URL when
+available (preferring `origin`, then other remotes in deterministic
+case-insensitive name order with deterministic case-collision handling), with
+repository-path hash fallback for repos without remotes.
+This derivation contract is shared across `save`, `s`, and `dock`.
+
+Override base path with:
+
+```bash
+export DOCKYARD_HOME=/path/to/custom/store
+```
+
+Optional `config.toml` can override review heuristic thresholds/patterns (see
+`docs/HEURISTICS.md`).
+
+## Safety boundary
+
+Dockyard is intended to be non-invasive:
+
+- reads repository state and git metadata
+- writes its own markdown + sqlite store
+- does **not** mutate your repo in normal operations
+
+Only the explicit run modes (`resume --run`, `r --run`, `undock --run`)
+execute user-authored commands, which can mutate repos if those commands do so.
+
+## Development
+
+Run tests:
+
+```bash
+python3 -m pytest
+```
+
+Project docs:
+
+- `docs/PRD.md`
+- `docs/DATA_MODEL.md`
+- `docs/COMMANDS.md`
+- `docs/HEURISTICS.md`
+
+Dogfood script:
+
+```bash
+bash scripts/dogfood_demo.sh
+```
+
+Performance smoke script:
+
+```bash
+python3 scripts/perf_smoke.py
+# optional target enforcement
+python3 scripts/perf_smoke.py --enforce-targets
+# custom dataset sizing (`--berths` must be >0, `--checkpoints` >=0)
+python3 scripts/perf_smoke.py --berths 200 --checkpoints 5000
+# custom latency thresholds (milliseconds)
+python3 scripts/perf_smoke.py --enforce-targets --ls-target-ms 180 --search-target-ms 450
+# custom search workload query
+python3 scripts/perf_smoke.py --search-query "objective keyword"
+# custom row limits for harbor/search query paths
+python3 scripts/perf_smoke.py --ls-limit 25 --search-limit 10
+# machine-readable benchmark payload
+python3 scripts/perf_smoke.py --json
+# write output to file (text or JSON mode)
+python3 scripts/perf_smoke.py --output-file /tmp/perf-smoke.txt
+python3 scripts/perf_smoke.py --json --output-file /tmp/perf-smoke.json
+```
+
+The perf smoke output includes the active search workload query and effective
+harbor/search query limits for easier run-to-run comparison. The
+`--search-query` value must be non-empty after trimming. Query row limits must
+be greater than zero. Parent directories for `--db-path` are created
+automatically. Use `--json` for machine-readable benchmark output.
+JSON output includes benchmark metrics plus run context (`db_path`, seed
+dataset sizes, active limits/targets/query), a `schema_version` field, and
+`measured_at` UTC timestamp metadata plus `failed_targets` details when
+thresholds are missed.
+Use `--output-file` to write either text or JSON output to disk (parent
+directories are created automatically). The output path must be a writable
+file path (directory paths are rejected, and parent path components must be
+directories).
+When `--enforce-targets` is used in text mode and thresholds are missed, output
+includes a `failed targets:` summary line.

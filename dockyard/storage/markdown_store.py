@@ -1,0 +1,275 @@
+"""Markdown checkpoint storage backend."""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from dockyard.config import DockyardPaths
+from dockyard.models import Checkpoint
+
+SECTION_HEADING_PATTERN = re.compile(r"^#{2,}\s*(.+?)\s*$")
+LIST_ITEM_PATTERN = re.compile(r"^(?:\d+[.)]|\(\d+\)|[-*+])\s*(.*)$")
+CHECKLIST_PREFIX_PATTERN = re.compile(r"^\[(?: |x|X)\]\s+")
+SECTION_DELIMITER_PATTERN = re.compile(r"\s*(?:/|&|[-–—]|:|\+)\s*")
+STRUCTURAL_SEPARATOR_PATTERN = re.compile(r"^(?:[-*_]{3,}|`{3,}|~{3,})$")
+CODE_FENCE_PATTERN = re.compile(r"^(?:`{3,}|~{3,}).*$")
+SECTION_HEADING_WRAPPERS: tuple[tuple[str, str], ...] = (
+    ("**", "**"),
+    ("__", "__"),
+    ("`", "`"),
+    ("*", "*"),
+    ("_", "_"),
+)
+BASE_SECTION_FIELD_MAP: dict[str, str] = {
+    "objective": "objective",
+    "decisions/findings": "decisions",
+    "decision/findings": "decisions",
+    "decisions/finding": "decisions",
+    "decision/finding": "decisions",
+    "next steps": "next_steps",
+    "next step": "next_steps",
+    "next/steps": "next_steps",
+    "next/step": "next_steps",
+    "risks/review needed": "risks_review",
+    "risk/review needed": "risks_review",
+    "resume commands": "resume_commands",
+    "resume command": "resume_commands",
+    "resume/commands": "resume_commands",
+    "resume/command": "resume_commands",
+}
+FREEFORM_SECTION_FIELDS: set[str] = {"objective", "decisions", "risks_review"}
+
+
+def _build_section_field_map() -> dict[str, str]:
+    """Build lookup map including slash and space-separated heading variants."""
+    section_map: dict[str, str] = {}
+    for heading, field in BASE_SECTION_FIELD_MAP.items():
+        normalized_heading = heading.lower()
+        section_map[normalized_heading] = field
+        if "/" in normalized_heading:
+            section_map[normalized_heading.replace("/", " ")] = field
+    return section_map
+
+
+SECTION_FIELD_MAP = _build_section_field_map()
+
+
+def _safe_branch(branch: str) -> str:
+    """Normalize branch name for filesystem paths."""
+    return branch.replace("/", "__")
+
+
+def checkpoint_path(paths: DockyardPaths, checkpoint: Checkpoint) -> Path:
+    """Compute markdown file path for a checkpoint."""
+    return (
+        paths.checkpoints_dir
+        / checkpoint.repo_id
+        / _safe_branch(checkpoint.branch)
+        / f"{checkpoint.id}.md"
+    )
+
+
+def render_checkpoint_markdown(checkpoint: Checkpoint) -> str:
+    """Render checkpoint model to markdown text."""
+    lines = [
+        "---",
+        f"id: {checkpoint.id}",
+        f"repo_id: {checkpoint.repo_id}",
+        f"branch: {checkpoint.branch}",
+        f"created_at: {checkpoint.created_at}",
+        f"head_sha: {checkpoint.head_sha}",
+        f"head_subject: {checkpoint.head_subject}",
+        f"git_dirty: {str(checkpoint.git_dirty).lower()}",
+        f"diff_files_changed: {checkpoint.diff_files_changed}",
+        f"diff_insertions: {checkpoint.diff_insertions}",
+        f"diff_deletions: {checkpoint.diff_deletions}",
+        f"tags: {', '.join(checkpoint.tags)}",
+        "---",
+        "",
+        "## Objective",
+        checkpoint.objective.strip(),
+        "",
+        "## Decisions/Findings",
+        checkpoint.decisions.strip(),
+        "",
+        "## Next Steps",
+        *[f"{idx + 1}. {step}" for idx, step in enumerate(checkpoint.next_steps)],
+        "",
+        "## Risks / Review Needed",
+        checkpoint.risks_review.strip(),
+        "",
+        "## Resume Commands",
+        *[f"- `{command}`" for command in checkpoint.resume_commands],
+        "",
+        "## Auto-captured Git Evidence",
+        f"- Branch: `{checkpoint.branch}`",
+        f"- Dirty: `{checkpoint.git_dirty}`",
+        f"- Touched files: `{len(checkpoint.touched_files)}`",
+        "",
+        "### Recent Commits",
+        *[f"- {entry}" for entry in checkpoint.recent_commits],
+        "",
+        "### Touched Files",
+        *[f"- `{path}`" for path in checkpoint.touched_files],
+        "",
+        "### Diff Stat",
+        "```",
+        checkpoint.diff_stat_text.strip() or "(no diff)",
+        "```",
+        "",
+        "## Verification",
+        f"- tests_run: `{checkpoint.verification.tests_run}`",
+        f"- tests_command: `{checkpoint.verification.tests_command or ''}`",
+        f"- tests_timestamp: `{checkpoint.verification.tests_timestamp or ''}`",
+        f"- build_ok: `{checkpoint.verification.build_ok}`",
+        f"- build_command: `{checkpoint.verification.build_command or ''}`",
+        f"- build_timestamp: `{checkpoint.verification.build_timestamp or ''}`",
+        f"- lint_ok: `{checkpoint.verification.lint_ok}`",
+        f"- lint_command: `{checkpoint.verification.lint_command or ''}`",
+        f"- lint_timestamp: `{checkpoint.verification.lint_timestamp or ''}`",
+        f"- smoke_ok: `{checkpoint.verification.smoke_ok}`",
+        f"- smoke_notes: `{checkpoint.verification.smoke_notes or ''}`",
+        f"- smoke_timestamp: `{checkpoint.verification.smoke_timestamp or ''}`",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def write_checkpoint(paths: DockyardPaths, checkpoint: Checkpoint) -> Path:
+    """Write checkpoint markdown and return file path."""
+    path = checkpoint_path(paths, checkpoint)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_checkpoint_markdown(checkpoint), encoding="utf-8")
+    return path
+
+
+def parse_checkpoint_markdown(markdown_text: str) -> dict[str, str | list[str]]:
+    """Parse checkpoint markdown into a lightweight structured dictionary.
+
+    This parser is intentionally minimal and focused on Dockyard's own template
+    output. It supports round-trip validation and lightweight recovery tooling.
+
+    Args:
+        markdown_text: Markdown string generated by Dockyard.
+
+    Returns:
+        Parsed dictionary with selected sections.
+    """
+    parsed: dict[str, str | list[str]] = {
+        "objective": "",
+        "decisions": "",
+        "next_steps": [],
+        "risks_review": "",
+        "resume_commands": [],
+    }
+
+    current_title: str | None = None
+    bucket: dict[str, list[str]] = {target: [] for target in SECTION_FIELD_MAP.values()}
+    for raw_line in markdown_text.splitlines():
+        section_match = SECTION_HEADING_PATTERN.match(raw_line.strip())
+        if section_match:
+            title = section_match.group(1).strip()
+            mapped_title = SECTION_FIELD_MAP.get(_normalize_section_heading(title).lower())
+            if mapped_title:
+                current_title = mapped_title
+                continue
+            if current_title in FREEFORM_SECTION_FIELDS:
+                bucket[current_title].append(raw_line.rstrip())
+                continue
+            current_title = None
+            continue
+        if not current_title:
+            continue
+        bucket[current_title].append(raw_line.rstrip())
+
+    parsed["objective"] = _normalize_block(bucket["objective"])
+    parsed["decisions"] = _normalize_block(bucket["decisions"])
+    parsed["risks_review"] = _normalize_block(bucket["risks_review"])
+    parsed["next_steps"] = _normalize_numbered(bucket["next_steps"])
+    parsed["resume_commands"] = _normalize_commands(bucket["resume_commands"])
+    return parsed
+
+
+def _normalize_section_heading(title: str) -> str:
+    """Normalize markdown section heading text for key lookups."""
+    collapsed = " ".join(title.split())
+    collapsed = re.sub(r"\s*#+\s*$", "", collapsed).rstrip()
+    if collapsed.endswith(":"):
+        collapsed = collapsed[:-1].rstrip()
+    while True:
+        changed = False
+        for prefix, suffix in SECTION_HEADING_WRAPPERS:
+            if collapsed.startswith(prefix) and collapsed.endswith(suffix):
+                inner = collapsed[len(prefix) : len(collapsed) - len(suffix)].strip()
+                if inner:
+                    collapsed = inner
+                    changed = True
+                break
+        if not changed:
+            break
+    return SECTION_DELIMITER_PATTERN.sub("/", collapsed)
+
+
+def _normalize_block(lines: list[str]) -> str:
+    """Normalize a freeform markdown section into text."""
+    return "\n".join(lines).strip()
+
+
+def _normalize_numbered(lines: list[str]) -> list[str]:
+    """Normalize list lines (numbered or bulleted) into plain value list."""
+    results: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        item = _strip_checklist_prefix(_extract_list_item_text(stripped))
+        if _is_structural_separator_line(item):
+            continue
+        if item:
+            results.append(item)
+    return results
+
+
+def _normalize_commands(lines: list[str]) -> list[str]:
+    """Normalize command bullets into plain command strings."""
+    results: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        command = _extract_list_item_text(stripped)
+        if command.startswith("`"):
+            if len(command) < 2 or not command.endswith("`"):
+                continue
+            command = command[1:-1].strip()
+            if not command or set(command) == {"`"}:
+                continue
+        command = _strip_checklist_prefix(command)
+        if _is_structural_separator_line(command):
+            continue
+        if command:
+            results.append(command)
+    return results
+
+
+def _strip_checklist_prefix(item: str) -> str:
+    """Strip markdown checklist prefixes from list item text."""
+    return CHECKLIST_PREFIX_PATTERN.sub("", item)
+
+
+def _extract_list_item_text(stripped_line: str) -> str:
+    """Extract list-item payload text from a stripped markdown line."""
+    if _is_structural_separator_line(stripped_line):
+        return stripped_line
+    match = LIST_ITEM_PATTERN.match(stripped_line)
+    return (match.group(1) if match else stripped_line).strip()
+
+
+def _is_structural_separator_line(value: str) -> bool:
+    """Return whether text is a markdown structural separator/fence line."""
+    normalized = value.strip()
+    return bool(
+        STRUCTURAL_SEPARATOR_PATTERN.fullmatch(normalized)
+        or CODE_FENCE_PATTERN.fullmatch(normalized)
+    )
