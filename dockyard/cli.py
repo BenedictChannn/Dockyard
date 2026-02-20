@@ -438,6 +438,77 @@ def root_callback(
         ctx.invoke(ls_command, stale=stale, tag=tag, limit=limit, as_json=as_json)
 
 
+@app.command("quickstart")
+def quickstart_command(
+    as_json: bool = typer.Option(False, "--json", help="Output structured quickstart JSON."),
+) -> None:
+    """Show a concise first-run Dockyard workflow with copy-paste commands."""
+    steps: list[dict[str, str]] = [
+        {
+            "title": "Save a checkpoint before context switching",
+            "command": (
+                "python3 -m dockyard save --no-prompt --objective \"...\" "
+                "--decisions \"...\" --next-step \"...\" --risks \"...\" "
+                "--command \"python3 -m dockyard resume\""
+            ),
+            "why": "Capture objective, decisions, risks, and a concrete next action.",
+        },
+        {
+            "title": "View harbor status across berths",
+            "command": "python3 -m dockyard harbor",
+            "why": "See latest slip status and next-step previews quickly.",
+        },
+        {
+            "title": "Search historical context",
+            "command": "python3 -m dockyard search \"keyword\" --limit 5",
+            "why": "Recover prior decisions and risks by query.",
+        },
+        {
+            "title": "Resume current work context",
+            "command": "python3 -m dockyard resume",
+            "why": "Restore objective, next steps, verification, and commands.",
+        },
+    ]
+
+    payload = {
+        "summary": "Dockyard quickstart: capture, discover, and resume engineering context.",
+        "aliases": {
+            "save": ["save", "s", "dock"],
+            "resume": ["resume", "r", "undock"],
+            "search": ["search", "f"],
+            "harbor": ["ls", "harbor"],
+        },
+        "safety": (
+            "Dockyard is non-invasive by default; only explicit run modes "
+            "(resume --run / r --run / undock --run) execute recorded commands."
+        ),
+        "steps": steps,
+    }
+    if as_json:
+        _emit_json(payload)
+        return
+
+    lines: list[str] = [payload["summary"], ""]
+    for index, step in enumerate(steps, start=1):
+        lines.extend(
+            [
+                f"{index}. {step['title']}",
+                f"   $ {step['command']}",
+                f"   Why: {step['why']}",
+                "",
+            ]
+        )
+    lines.append(f"Safety: {payload['safety']}")
+    lines.append("Aliases: save/s/dock, resume/r/undock, search/f, ls/harbor")
+    console.print(
+        Panel.fit(
+            "\n".join(lines),
+            title="Dockyard Quickstart",
+            border_style="cyan",
+        )
+    )
+
+
 @app.command("save")
 def save_command(
     root: str | None = typer.Option(None, "--root", help="Repository root override."),

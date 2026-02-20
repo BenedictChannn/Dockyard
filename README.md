@@ -22,6 +22,13 @@ Run via module:
 python3 -m dockyard --help
 ```
 
+First-run orientation:
+
+```bash
+python3 -m dockyard quickstart
+python3 -m dockyard quickstart --json
+```
+
 Or via console script (`dock`) if your user script directory is on `PATH`.
 Machine-readable `--json` outputs are emitted without ANSI escapes and preserve
 unicode text without `\u` escaping.
@@ -316,6 +323,32 @@ export DOCKYARD_HOME=/path/to/custom/store
 Optional `config.toml` can override review heuristic thresholds/patterns (see
 `docs/HEURISTICS.md`).
 
+## Proof and reliability checks
+
+Use the following command pack for a reproducible health snapshot:
+
+```bash
+python3 -m pytest tests/test_cli_integration.py
+python3 -m pytest tests/test_non_interference.py
+python3 -m pytest tests/test_search.py
+python3 -m pytest tests/test_perf_smoke.py tests/test_markdown_roundtrip.py
+python3 -m ruff check dockyard tests scripts
+```
+
+Latest local snapshot (2026-02-19):
+
+- integration suite: **775 passed**
+- non-interference suite: **622 passed**
+- search suite: **21 passed**
+- perf+markdown suites: **101 passed**
+- lint: **pass**
+
+Metrics and reporting references:
+
+- `STATE_OF_DOCKYARD.md`
+- `docs/METRICS.md`
+- `docs/MONTHLY_STATUS_TEMPLATE.md`
+
 ## Safety boundary
 
 Dockyard is intended to be non-invasive:
@@ -337,10 +370,13 @@ python3 -m pytest
 
 Project docs:
 
+- `STATE_OF_DOCKYARD.md`
 - `docs/PRD.md`
 - `docs/DATA_MODEL.md`
 - `docs/COMMANDS.md`
 - `docs/HEURISTICS.md`
+- `docs/METRICS.md`
+- `docs/MONTHLY_STATUS_TEMPLATE.md`
 
 Dogfood script:
 

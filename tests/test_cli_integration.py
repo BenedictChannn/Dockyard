@@ -20868,3 +20868,46 @@ def test_link_commands_reject_non_git_root_override(
     output = f"{failed.stdout}\n{failed.stderr}"
     assert "git repository" in output
     assert "Traceback" not in output
+
+
+def test_quickstart_command_outputs_core_guidance(tmp_path: Path) -> None:
+    """Quickstart command should print first-run workflow guidance."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(
+        ["quickstart"],
+        cwd=tmp_path,
+        env=env,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Dockyard Quickstart" in output
+    assert "python3 -m dockyard save --no-prompt" in output
+    assert "python3 -m dockyard harbor" in output
+    assert "python3 -m dockyard search" in output
+    assert "python3 -m dockyard resume" in output
+    assert "non-invasive by default" in output
+    assert "Traceback" not in output
+
+
+def test_quickstart_command_json_output_is_machine_readable(tmp_path: Path) -> None:
+    """Quickstart command JSON mode should expose summary, aliases, and steps."""
+    env = dict(os.environ)
+    env["DOCKYARD_HOME"] = str(tmp_path / ".dockyard_data")
+
+    result = _run_dock(
+        ["quickstart", "--json"],
+        cwd=tmp_path,
+        env=env,
+    )
+    payload = json.loads(result.stdout)
+    assert payload["summary"].startswith("Dockyard quickstart:")
+    assert payload["aliases"]["save"] == ["save", "s", "dock"]
+    assert payload["aliases"]["resume"] == ["resume", "r", "undock"]
+    assert payload["aliases"]["search"] == ["search", "f"]
+    assert payload["aliases"]["harbor"] == ["ls", "harbor"]
+    assert "non-invasive by default" in payload["safety"]
+    assert len(payload["steps"]) == 4
+    first_step = payload["steps"][0]
+    assert first_step["title"].startswith("Save a checkpoint")
+    assert "python3 -m dockyard save --no-prompt" in first_step["command"]

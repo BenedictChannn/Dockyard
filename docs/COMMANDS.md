@@ -9,6 +9,26 @@ python3 -m dockyard <command>
 JSON flags (`--json`) emit raw machine-parseable JSON suitable for piping to
 tools like `jq` (ANSI-free and including unicode text without escaping).
 
+## `quickstart`
+
+Print a concise, copy-paste first-run workflow.
+
+### Usage
+
+```bash
+python3 -m dockyard quickstart
+python3 -m dockyard quickstart --json
+```
+
+Notes:
+
+- default output prints a short narrative workflow (`save` → `harbor` →
+  `search` → `resume`)
+- `--json` returns structured quickstart payload for programmatic consumers
+- command is read-only and does not require repository context
+- safety guidance is included inline (non-invasive by default, explicit run
+  mode semantics)
+
 ## `save` (`s`, `dock`)
 
 Create a new checkpoint for current repo/branch.

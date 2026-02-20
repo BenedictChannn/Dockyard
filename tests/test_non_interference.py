@@ -7313,3 +7313,35 @@ def test_run_scopes_opt_in_can_modify_repo(
         decisions=case.decisions,
         next_step=case.next_step,
     )
+
+
+@pytest.mark.parametrize(
+    ("args_suffix", "is_json"),
+    [
+        (("quickstart",), False),
+        (("quickstart", "--json"), True),
+    ],
+    ids=["default", "json"],
+)
+@pytest.mark.parametrize("run_cwd_kind", ["repo", "tmp"], ids=["in_repo", "outside_repo"])
+def test_quickstart_read_paths_keep_repo_clean(
+    git_repo: Path,
+    tmp_path: Path,
+    args_suffix: tuple[str, ...],
+    is_json: bool,
+    run_cwd_kind: RunCwdKind,
+) -> None:
+    """Quickstart command should be read-only across output modes and contexts."""
+    env = _dockyard_env(tmp_path)
+    run_cwd = _resolve_run_cwd(git_repo, tmp_path, run_cwd_kind)
+
+    _assert_repo_clean(git_repo)
+    output = _run(_dockyard_command(*args_suffix), cwd=run_cwd, env=env)
+    if is_json:
+        payload = json.loads(output)
+        assert payload["aliases"]["save"] == ["save", "s", "dock"]
+        assert "non-invasive by default" in payload["safety"]
+    else:
+        assert "Dockyard Quickstart" in output
+        assert "python3 -m dockyard save --no-prompt" in output
+    _assert_repo_clean(git_repo)
