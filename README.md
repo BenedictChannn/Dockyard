@@ -377,6 +377,8 @@ Project docs:
 - `docs/HEURISTICS.md`
 - `docs/METRICS.md`
 - `docs/MONTHLY_STATUS_TEMPLATE.md`
+- `docs/DEMO_PLAYBOOK.md`
+- `docs/LAUNCH_KIT_X.md`
 
 Dogfood script:
 
